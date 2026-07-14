@@ -195,6 +195,36 @@
     setTimeout(() => root.classList.add("soft-float-ready"), 1600);
 
     const target = new Date(cfg.wedding?.datetime || Date.now()).getTime();
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    function setFlipUnit(unit, value) {
+      const el = root.querySelector(`[data-unit="${unit}"]`);
+      if (!el) return;
+      const str = pad(value);
+      const curr = el.querySelector(".countdown__curr");
+      const next = el.querySelector(".countdown__next");
+      if (!curr || !next) {
+        el.textContent = str;
+        return;
+      }
+      if (el.dataset.val === str) return;
+      const prev = el.dataset.val;
+      el.dataset.val = str;
+      if (!prev || reduce) {
+        curr.textContent = str;
+        next.textContent = str;
+        return;
+      }
+      next.textContent = str;
+      el.classList.remove("is-flip");
+      void el.offsetWidth;
+      el.classList.add("is-flip");
+      clearTimeout(el._flipT);
+      el._flipT = setTimeout(() => {
+        curr.textContent = str;
+        el.classList.remove("is-flip");
+      }, 480);
+    }
 
     function tick() {
       const now = Date.now();
@@ -216,15 +246,92 @@
       const minutes = Math.floor(diff / 60000);
       const seconds = Math.floor((diff % 60000) / 1000);
 
-      const map = { days, hours, minutes, seconds };
-      Object.keys(map).forEach((unit) => {
-        const el = root.querySelector(`[data-unit="${unit}"]`);
-        if (el) el.textContent = pad(map[unit]);
-      });
+      setFlipUnit("days", days);
+      setFlipUnit("hours", hours);
+      setFlipUnit("minutes", minutes);
+      setFlipUnit("seconds", seconds);
     }
 
     tick();
     setInterval(tick, 1000);
+  }
+
+  /* ---------- Cursor glow + soft trail ---------- */
+  function setupCursorFx() {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+
+    const glow = $("#cursor-glow");
+    const dot = $("#cursor-dot");
+    if (!glow || !dot) return;
+
+    document.body.classList.add("has-cursor-fx");
+    let x = window.innerWidth / 2;
+    let y = window.innerHeight / 2;
+    let gx = x;
+    let gy = y;
+    let raf = 0;
+    const trails = [];
+    const MAX_TRAIL = 10;
+
+    function loop() {
+      gx += (x - gx) * 0.12;
+      gy += (y - gy) * 0.12;
+      glow.style.transform = `translate3d(${gx}px, ${gy}px, 0)`;
+      dot.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+      raf = requestAnimationFrame(loop);
+    }
+
+    window.addEventListener(
+      "pointermove",
+      (e) => {
+        x = e.clientX;
+        y = e.clientY;
+        glow.classList.add("is-on");
+        dot.classList.add("is-on");
+
+        const t = document.createElement("span");
+        t.className = "cursor-trail";
+        t.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+        document.body.appendChild(t);
+        trails.push(t);
+        if (trails.length > MAX_TRAIL) {
+          const old = trails.shift();
+          old?.remove();
+        }
+        requestAnimationFrame(() => {
+          t.style.transition = "opacity 0.45s ease, transform 0.45s ease";
+          t.style.opacity = "0";
+          t.style.transform = `translate3d(${x}px, ${y}px, 0) scale(0.2)`;
+        });
+        setTimeout(() => t.remove(), 480);
+      },
+      { passive: true }
+    );
+
+    document.addEventListener(
+      "pointerover",
+      (e) => {
+        const hit = e.target.closest(
+          "a, button, .gallery__item, .wish-card, .wall-card, input, textarea, select, label"
+        );
+        dot.classList.toggle("is-hover", !!hit);
+      },
+      true
+    );
+
+    document.addEventListener("mouseleave", () => {
+      glow.classList.remove("is-on");
+      dot.classList.remove("is-on");
+    });
+
+    loop();
+  }
+
+  function enhanceGlassShine() {
+    $$(".timeline__card, .wish-card, .gallery__item, .card-panel, .coming-soon__card").forEach(
+      (el) => el.classList.add("glass-shine")
+    );
   }
 
   /* ---------- Story timeline ---------- */
@@ -619,6 +726,7 @@
     root.innerHTML = list.map((w) => renderWishCardHtml(w)).join("");
     observeReveal();
     bindWishOpenClicks(root);
+    enhanceGlassShine();
   }
 
   /* ---------- Wish open: burst + slow typewriter ---------- */
@@ -881,6 +989,7 @@
       stage.querySelectorAll(".wall-card").forEach((el) => el.classList.add("is-in"));
     });
     bindWishOpenClicks(stage);
+    enhanceGlassShine();
 
     const ms = Math.max(3500, cfg.guestbook.wallRotateMs || 5000);
     if (wallTimer) clearInterval(wallTimer);
@@ -1429,7 +1538,11 @@
     setupNav();
     setupPetals();
     setupParallax();
+    setupCursorFx();
     observeReveal();
+    enhanceGlassShine();
+    /* re-apply shine after dynamic content */
+    setTimeout(enhanceGlassShine, 800);
     setupIntro();
   }
 

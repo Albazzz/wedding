@@ -850,7 +850,7 @@ body.intro-lock {
   letter-spacing: 0.08em;
 }
 
-/* Countdown */
+/* Countdown — flip / roll */
 .countdown {
   display: flex;
   justify-content: center;
@@ -859,12 +859,14 @@ body.intro-lock {
 }
 
 .countdown__item {
-  min-width: 64px;
-  padding: 0.85rem 0.5rem;
+  min-width: 68px;
+  padding: 0.75rem 0.45rem 0.7rem;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.18);
   backdrop-filter: blur(8px);
   border-radius: var(--radius-sm);
+  overflow: hidden;
+  position: relative;
 }
 
 .countdown__num {
@@ -872,7 +874,64 @@ body.intro-lock {
   font-family: var(--font-display);
   font-size: clamp(1.5rem, 4vw, 2rem);
   font-weight: 500;
-  line-height: 1.2;
+  line-height: 1.15;
+  height: 1.2em;
+  perspective: 240px;
+}
+
+.countdown__slot {
+  position: relative;
+  display: block;
+  height: 1.2em;
+  overflow: hidden;
+}
+
+.countdown__curr,
+.countdown__next {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-variant-numeric: tabular-nums;
+  backface-visibility: hidden;
+}
+
+.countdown__curr {
+  position: relative;
+}
+
+.countdown__next {
+  position: absolute;
+  inset: 0;
+  transform: translateY(110%) rotateX(-50deg);
+  opacity: 0;
+}
+
+.countdown__num.is-flip .countdown__curr {
+  animation: cd-out 0.48s var(--ease-expo) forwards;
+}
+
+.countdown__num.is-flip .countdown__next {
+  animation: cd-in 0.48s var(--ease-expo) forwards;
+}
+
+@keyframes cd-out {
+  to {
+    transform: translateY(-105%) rotateX(40deg);
+    opacity: 0;
+  }
+}
+
+@keyframes cd-in {
+  from {
+    transform: translateY(105%) rotateX(-40deg);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) rotateX(0);
+    opacity: 1;
+  }
 }
 
 .countdown__label {
@@ -881,7 +940,142 @@ body.intro-lock {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   opacity: 0.75;
-  margin-top: 0.2rem;
+  margin-top: 0.35rem;
+}
+
+/* Glass reflection sweep */
+.glass-shine {
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-shine::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -60%;
+  width: 45%;
+  height: 100%;
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.08) 40%,
+    rgba(255, 255, 255, 0.28) 50%,
+    rgba(255, 255, 255, 0.08) 60%,
+    transparent 100%
+  );
+  transform: skewX(-18deg);
+  pointer-events: none;
+  animation: glass-sweep 7.5s var(--ease) infinite;
+  z-index: 2;
+}
+
+@keyframes glass-sweep {
+  0%,
+  55% {
+    left: -60%;
+    opacity: 0;
+  }
+  60% {
+    opacity: 1;
+  }
+  78% {
+    left: 130%;
+    opacity: 0.85;
+  }
+  100% {
+    left: 130%;
+    opacity: 0;
+  }
+}
+
+.timeline__card.glass-shine::after,
+.wish-card.glass-shine::after,
+.gallery__item.glass-shine::after {
+  border-radius: inherit;
+}
+
+/* Cursor glow trail (desktop fine pointer) */
+.cursor-glow,
+.cursor-dot {
+  display: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  body.has-cursor-fx {
+    cursor: none;
+  }
+
+  body.has-cursor-fx a,
+  body.has-cursor-fx button,
+  body.has-cursor-fx input,
+  body.has-cursor-fx textarea,
+  body.has-cursor-fx select,
+  body.has-cursor-fx label,
+  body.has-cursor-fx .gallery__item,
+  body.has-cursor-fx .wish-card,
+  body.has-cursor-fx .wall-card {
+    cursor: none;
+  }
+
+  .cursor-glow {
+    display: block;
+    position: fixed;
+    width: 120px;
+    height: 120px;
+    margin: -60px 0 0 -60px;
+    border-radius: 50%;
+    background: radial-gradient(
+      circle,
+      rgba(255, 200, 180, 0.28) 0%,
+      rgba(255, 170, 150, 0.1) 40%,
+      transparent 70%
+    );
+    pointer-events: none;
+    z-index: 9998;
+    mix-blend-mode: screen;
+    opacity: 0;
+    transition: opacity 0.35s ease;
+    will-change: transform;
+  }
+
+  .cursor-dot {
+    display: block;
+    position: fixed;
+    width: 8px;
+    height: 8px;
+    margin: -4px 0 0 -4px;
+    border-radius: 50%;
+    background: rgba(255, 245, 235, 0.9);
+    box-shadow: 0 0 12px rgba(255, 200, 170, 0.65);
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity 0.25s ease, transform 0.2s var(--ease-expo);
+    will-change: transform;
+  }
+
+  body.has-cursor-fx .cursor-glow.is-on,
+  body.has-cursor-fx .cursor-dot.is-on {
+    opacity: 1;
+  }
+
+  body.has-cursor-fx .cursor-dot.is-hover {
+    transform: scale(2.2);
+    background: rgba(255, 230, 210, 0.95);
+  }
+
+  .cursor-trail {
+    position: fixed;
+    width: 5px;
+    height: 5px;
+    margin: -2.5px 0 0 -2.5px;
+    border-radius: 50%;
+    background: rgba(255, 210, 190, 0.45);
+    pointer-events: none;
+    z-index: 9997;
+    mix-blend-mode: screen;
+  }
 }
 
 .countdown__ended {
@@ -3340,12 +3534,21 @@ input[type="range"] {
   .soft-float--slow,
   .scroll-hint__arrow,
   .music-toggle.is-playing,
-  .music-toggle.is-playing::after {
+  .music-toggle.is-playing::after,
+  .glass-shine::after,
+  .countdown__num.is-flip .countdown__curr,
+  .countdown__num.is-flip .countdown__next {
     animation: none !important;
     transition: none !important;
     opacity: 1;
     transform: none;
     filter: none;
+  }
+
+  .cursor-glow,
+  .cursor-dot,
+  .cursor-trail {
+    display: none !important;
   }
 
   .section__header .section__eyebrow,

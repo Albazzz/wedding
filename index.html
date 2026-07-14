@@ -27,6 +27,9 @@
   <body class="intro-lock">
     <!-- Petals canvas -->
     <canvas id="petals-canvas" aria-hidden="true"></canvas>
+    <!-- Soft cursor glow (desktop) -->
+    <div id="cursor-glow" class="cursor-glow" aria-hidden="true"></div>
+    <div id="cursor-dot" class="cursor-dot" aria-hidden="true"></div>
 
     <!-- Intro: cuộn thư mở từ giữa -->
     <div id="intro" class="intro" aria-hidden="false">
@@ -108,19 +111,39 @@
 
           <div class="countdown fade-up delay-3" id="countdown" aria-live="polite">
             <div class="countdown__item">
-              <span class="countdown__num" data-unit="days">00</span>
+              <span class="countdown__num" data-unit="days" data-val="">
+                <span class="countdown__slot">
+                  <span class="countdown__curr">00</span>
+                  <span class="countdown__next">00</span>
+                </span>
+              </span>
               <span class="countdown__label" data-i18n="countdown.days">Ngày</span>
             </div>
             <div class="countdown__item">
-              <span class="countdown__num" data-unit="hours">00</span>
+              <span class="countdown__num" data-unit="hours" data-val="">
+                <span class="countdown__slot">
+                  <span class="countdown__curr">00</span>
+                  <span class="countdown__next">00</span>
+                </span>
+              </span>
               <span class="countdown__label" data-i18n="countdown.hours">Giờ</span>
             </div>
             <div class="countdown__item">
-              <span class="countdown__num" data-unit="minutes">00</span>
+              <span class="countdown__num" data-unit="minutes" data-val="">
+                <span class="countdown__slot">
+                  <span class="countdown__curr">00</span>
+                  <span class="countdown__next">00</span>
+                </span>
+              </span>
               <span class="countdown__label" data-i18n="countdown.minutes">Phút</span>
             </div>
             <div class="countdown__item">
-              <span class="countdown__num" data-unit="seconds">00</span>
+              <span class="countdown__num" data-unit="seconds" data-val="">
+                <span class="countdown__slot">
+                  <span class="countdown__curr">00</span>
+                  <span class="countdown__next">00</span>
+                </span>
+              </span>
               <span class="countdown__label" data-i18n="countdown.seconds">Giây</span>
             </div>
           </div>
