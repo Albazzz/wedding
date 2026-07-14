@@ -1507,12 +1507,44 @@
   }
 
   /* ========== Export ========== */
-  function exportDataURL(type, quality) {
+  /**
+   * Render thiệp ở độ phân giải cao (không phóng to ảnh 360px).
+   * scale=2 → 720×1040, chữ/nét rõ khi mở full letter.
+   */
+  function exportDataURL(type, quality, pixelScale) {
+    if (!canvas || !ctx) return "";
     const prev = state.selected;
+    const scale = Math.max(1, pixelScale || 2);
     state.selected = -1;
     freezeMotion = true;
+    if (animId) {
+      cancelAnimationFrame(animId);
+      animId = 0;
+    }
+
+    const out = document.createElement("canvas");
+    out.width = Math.round(W * scale);
+    out.height = Math.round(H * scale);
+    const outCtx = out.getContext("2d");
+    if (!outCtx) {
+      freezeMotion = false;
+      state.selected = prev;
+      return "";
+    }
+
+    /* Tạm vẽ lên canvas hiDPI — mọi draw* dùng toạ độ logic W×H */
+    const viewCanvas = canvas;
+    const viewCtx = ctx;
+    canvas = out;
+    ctx = outCtx;
+    ctx.setTransform(scale, 0, 0, scale, 0, 0);
+    ctx.imageSmoothingEnabled = true;
+    if ("imageSmoothingQuality" in ctx) ctx.imageSmoothingQuality = "high";
     render();
-    const url = canvas.toDataURL(type || "image/jpeg", quality ?? 0.88);
+    const url = out.toDataURL(type || "image/jpeg", quality ?? 0.9);
+
+    canvas = viewCanvas;
+    ctx = viewCtx;
     freezeMotion = false;
     state.selected = prev;
     ensureAnim();
@@ -1521,7 +1553,7 @@
   }
 
   function download() {
-    const url = exportDataURL("image/png");
+    const url = exportDataURL("image/png", 1, 2);
     const a = document.createElement("a");
     a.href = url;
     a.download = `thiep-chuc-mung-${Date.now()}.png`;
@@ -1544,8 +1576,8 @@
       return;
     }
 
-    /* Ảnh thiệp canvas (nhẹ) — lưu Firestore data URL, không cần Storage */
-    const image = exportDataURL("image/jpeg", 0.72);
+    /* Ảnh thiệp 2× nét (720×1040 jpeg) — Firestore data URL, không cần Storage */
+    const image = exportDataURL("image/jpeg", 0.88, 2);
     const id = "wish_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8);
     const relation = relationLabel();
     const useCloud = !!(

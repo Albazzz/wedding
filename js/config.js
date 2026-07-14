@@ -156,6 +156,8 @@ window.WEDDING_CONFIG = {
     /** Chữ glow giữa orbit */
     wallCenterTitle: { vi: "Trăm năm hạnh phúc", en: "A hundred years of happiness" },
     wallCenterHint: { vi: "Chạm ♥ để đọc thư", en: "Tap ♥ to read the letter" },
+    wallFullscreen: { vi: "Toàn màn hình", en: "Fullscreen" },
+    wallFullscreenExit: { vi: "Thu nhỏ", en: "Exit" },
     wallEmpty: {
       vi: "Chưa có thư — hãy gửi lời chúc đầu tiên!",
       en: "No letters yet — send the first wish!",

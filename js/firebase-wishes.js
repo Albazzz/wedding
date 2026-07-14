@@ -85,7 +85,7 @@
     if (raw && String(raw).startsWith("data:image")) {
       if (raw.length > MAX_IMAGE_CHARS) {
         /* nén lại nhẹ hơn nếu quá to */
-        image = await recompressDataUrl(raw, 0.55) || raw.slice(0, MAX_IMAGE_CHARS);
+        image = (await recompressDataUrl(raw, 0.8)) || raw.slice(0, MAX_IMAGE_CHARS);
         if (image.length > MAX_IMAGE_CHARS) {
           image = ""; /* bỏ ảnh, vẫn lưu chữ */
           console.warn("[WishCloud] card image too large, saved text only");
@@ -124,12 +124,18 @@
       img.onload = () => {
         try {
           const c = document.createElement("canvas");
-          const maxW = 320;
-          const scale = Math.min(1, maxW / img.width);
-          c.width = Math.round(img.width * scale);
-          c.height = Math.round(img.height * scale);
-          c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
-          resolve(c.toDataURL("image/jpeg", quality));
+          /* Giữ nét khi mở full letter — không nén xuống 320px */
+          const maxW = 720;
+          const scale = Math.min(1, maxW / (img.naturalWidth || img.width || maxW));
+          c.width = Math.max(1, Math.round((img.naturalWidth || img.width) * scale));
+          c.height = Math.max(1, Math.round((img.naturalHeight || img.height) * scale));
+          const cx = c.getContext("2d");
+          if (cx) {
+            cx.imageSmoothingEnabled = true;
+            if ("imageSmoothingQuality" in cx) cx.imageSmoothingQuality = "high";
+            cx.drawImage(img, 0, 0, c.width, c.height);
+          }
+          resolve(c.toDataURL("image/jpeg", quality ?? 0.82));
         } catch {
           resolve("");
         }

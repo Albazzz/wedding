@@ -421,7 +421,7 @@
         ink.className = "ripple-ink";
         /* dark surfaces use light ripple; light cards use darker ink */
         const isDark =
-          host.closest(".hero, .intro, .wish-reveal, .header:not(.is-scrolled)") ||
+          host.closest(".hero, .intro, .letter-reveal, .wish-reveal, .header:not(.is-scrolled)") ||
           host.classList.contains("btn--primary");
         if (!isDark) ink.classList.add("is-dark");
         ink.style.width = size + "px";
@@ -863,120 +863,187 @@
     enhanceGlassShine();
   }
 
-  /* ---------- Wish open: burst + slow typewriter ---------- */
+  /* ---------- Letter open: shatter → 3D envelope → card slides up ---------- */
   function findWishById(id) {
     if (!id) return null;
     const all = loadWishes();
     return all.find((w) => w.id === id) || null;
   }
 
-  function spawnWishSparkles() {
-    const layer = $("#wish-reveal-sparkles");
-    if (!layer) return;
+  function clearLetterFxLayers() {
+    const shards = $("#letter-shards");
+    const ribbons = $("#letter-ribbons");
+    if (shards) shards.innerHTML = "";
+    if (ribbons) ribbons.innerHTML = "";
+  }
+
+  /** Heart pieces fly out from a screen point (client coords) */
+  function spawnLetterShards(clientX, clientY) {
+    const layer = $("#letter-shards");
+    const root = $("#wish-reveal");
+    if (!layer || !root) return;
     layer.innerHTML = "";
-    const n = 28;
+    const r = root.getBoundingClientRect();
+    const ox = clientX - r.left;
+    const oy = clientY - r.top;
+    const n = 12;
     for (let i = 0; i < n; i++) {
       const s = document.createElement("span");
-      s.className = "wish-reveal__spark";
-      const x = 10 + Math.random() * 80;
-      const y = 15 + Math.random() * 70;
-      const sx = (-80 + Math.random() * 160).toFixed(0) + "px";
-      const sy = (-120 + Math.random() * 80).toFixed(0) + "px";
-      s.style.left = x + "%";
-      s.style.top = y + "%";
-      s.style.setProperty("--sx", sx);
-      s.style.setProperty("--sy", sy);
-      s.style.animationDelay = (Math.random() * 0.45).toFixed(2) + "s";
+      s.className = "letter-shard";
+      s.textContent = "♥";
+      s.style.left = ox + "px";
+      s.style.top = oy + "px";
+      const angle = (Math.PI * 2 * i) / n + Math.random() * 0.45;
+      const dist = 48 + Math.random() * 56;
+      s.style.setProperty("--dx", Math.cos(angle) * dist + "px");
+      s.style.setProperty("--dy", Math.sin(angle) * dist + "px");
+      s.style.setProperty("--rot", Math.random() * 360 - 180 + "deg");
       layer.appendChild(s);
+      requestAnimationFrame(() => s.classList.add("is-go"));
+    }
+    window.setTimeout(() => {
+      if (layer) layer.innerHTML = "";
+    }, 800);
+  }
+
+  function spawnLetterRibbons() {
+    const layer = $("#letter-ribbons");
+    if (!layer) return;
+    layer.innerHTML = "";
+    const colors = ["#C77D82", "#C9A66B", "#E9CE94", "#5B2A3A", "#E9C7C4"];
+    const n = perfMode === "low" ? 12 : 28;
+    for (let i = 0; i < n; i++) {
+      const r = document.createElement("div");
+      r.className = "letter-ribbon";
+      r.style.left = Math.random() * 100 + "vw";
+      r.style.background = colors[i % colors.length];
+      r.style.animationDuration = 2.1 + Math.random() * 1.5 + "s";
+      r.style.setProperty("--drift", Math.random() * 140 - 70 + "px");
+      r.style.setProperty("--spin", Math.random() * 720 - 360 + "deg");
+      layer.appendChild(r);
+      requestAnimationFrame(() => r.classList.add("is-go"));
+    }
+    window.setTimeout(() => {
+      if (layer) layer.innerHTML = "";
+    }, 4200);
+  }
+
+  function setLetterImg(el, src) {
+    if (!el) return;
+    if (src) {
+      el.src = src;
+      el.hidden = false;
+    } else {
+      el.removeAttribute("src");
+      el.hidden = true;
     }
   }
 
-  function openWishReveal(w) {
+  function fillLetterCard(w) {
+    const name = w.name || "Khách mời";
+    const relation = w.relation || "";
+    const message = String(w.message || "").trim() || "💕";
+    const src = wishImageSrc(w);
+
+    /* Mini card inside envelope (preview during pull-out) */
+    const who = $("#letter-card-who");
+    const rel = $("#letter-card-rel");
+    const msg = $("#letter-card-msg");
+    if (who) who.textContent = name;
+    if (rel) {
+      rel.textContent = relation;
+      rel.hidden = !relation;
+    }
+    if (msg) msg.textContent = message;
+    setLetterImg($("#letter-card-img"), src);
+
+    /* Full readable letter — large card image; text only if no image */
+    const full = $("#letter-full");
+    const fWho = $("#letter-full-who");
+    const fRel = $("#letter-full-rel");
+    const fMsg = $("#letter-full-msg");
+    if (fWho) fWho.textContent = name ? "— " + name + " —" : "";
+    if (fRel) {
+      fRel.textContent = relation;
+      fRel.hidden = !relation;
+    }
+    if (fMsg) fMsg.textContent = message;
+    setLetterImg($("#letter-full-img"), src);
+    if (full) full.classList.toggle("has-image", !!src);
+  }
+
+  function resetEnvelope() {
+    const env = $("#letter-envelope");
     const root = $("#wish-reveal");
+    if (env) {
+      env.classList.remove("is-open");
+      const slot = env.querySelector(".envelope__card-slot");
+      if (slot) {
+        slot.style.animation = "none";
+        void slot.offsetHeight;
+        slot.style.animation = "";
+      }
+    }
+    root?.classList.remove("is-ready", "is-reading");
+  }
+
+  /**
+   * Open letter: shatter → envelope open → card slides out → full letter (envelope gone).
+   * @param {object} w wish
+   * @param {Element} [originEl] heart/card that was tapped
+   */
+  function openWishReveal(w, originEl) {
+    const root = $("#wish-reveal");
+    const env = $("#letter-envelope");
     if (!root || !w) return;
+
     if (wishRevealTimer) {
       clearTimeout(wishRevealTimer);
       wishRevealTimer = null;
     }
 
-    const img = $("#wish-reveal-img");
-    const msgEl = $("#wish-reveal-message");
-    const nameEl = $("#wish-reveal-name");
-    const relEl = $("#wish-reveal-relation");
-    const src = wishImageSrc(w);
+    fillLetterCard(w);
+    resetEnvelope();
+    clearLetterFxLayers();
 
-    if (img) {
-      if (src) {
-        img.src = src;
-        img.hidden = false;
-      } else {
-        img.removeAttribute("src");
-        img.hidden = true;
-      }
-    }
-
-    if (msgEl) msgEl.innerHTML = "";
-    if (nameEl) {
-      nameEl.textContent = w.name ? "— " + w.name + " —" : "";
-      nameEl.classList.remove("is-show");
-    }
-    if (relEl) {
-      relEl.textContent = w.relation || "";
-      relEl.classList.remove("is-show");
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let cx = window.innerWidth / 2;
+    let cy = window.innerHeight / 2;
+    if (originEl && originEl.getBoundingClientRect) {
+      const br = originEl.getBoundingClientRect();
+      cx = br.left + br.width / 2;
+      cy = br.top + br.height / 2;
+      originEl.classList.add("is-tapped");
     }
 
     root.hidden = false;
     document.body.style.overflow = "hidden";
     wishRevealOpen = true;
-    spawnWishSparkles();
 
     requestAnimationFrame(() => {
-      root.classList.add("is-open", "is-burst");
+      root.classList.add("is-open");
+      if (!reduce) spawnLetterShards(cx, cy);
     });
 
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const message = String(w.message || "").trim();
+    const delayReady = reduce ? 20 : 280;
+    const delayOpen = reduce ? 40 : 400;
+    /* after flap + card rise (~0.55+0.65s from open) */
+    const delayReading = reduce ? 80 : 1450;
 
-    function showFooter() {
-      nameEl?.classList.add("is-show");
-      setTimeout(() => relEl?.classList.add("is-show"), reduce ? 0 : 350);
-    }
-
-    function typeMessage() {
-      if (!msgEl || !message) {
-        showFooter();
-        return;
-      }
-      msgEl.innerHTML = "";
-      Array.from(message).forEach((ch) => {
-        const span = document.createElement("span");
-        span.className = "wchar" + (ch === " " ? " is-space" : "");
-        span.textContent = ch === " " ? "\u00a0" : ch;
-        msgEl.appendChild(span);
-      });
-      const chars = $$(".wchar", msgEl);
-      if (reduce) {
-        chars.forEach((c) => c.classList.add("is-on"));
-        showFooter();
-        return;
-      }
-      let i = 0;
-      const speed = 95; /* chậm, từng chữ */
-      function step() {
-        if (!wishRevealOpen) return;
-        if (i < chars.length) {
-          chars[i].classList.add("is-on");
-          i += 1;
-          wishRevealTimer = setTimeout(step, speed);
-          return;
-        }
-        wishRevealTimer = setTimeout(showFooter, 400);
-      }
-      /* chờ flash + card bay vào */
-      wishRevealTimer = setTimeout(step, 1100);
-    }
-
-    typeMessage();
+    wishRevealTimer = setTimeout(() => {
+      if (!wishRevealOpen) return;
+      root.classList.add("is-ready");
+      wishRevealTimer = setTimeout(() => {
+        if (!wishRevealOpen || !env) return;
+        env.classList.add("is-open");
+        if (!reduce) spawnLetterRibbons();
+        wishRevealTimer = setTimeout(() => {
+          if (!wishRevealOpen) return;
+          /* Card fully out → enlarge letter, hide envelope */
+          root.classList.add("is-reading");
+        }, delayReading);
+      }, delayOpen);
+    }, delayReady);
   }
 
   function closeWishReveal() {
@@ -987,8 +1054,13 @@
       clearTimeout(wishRevealTimer);
       wishRevealTimer = null;
     }
-    root.classList.remove("is-open", "is-burst");
+    resetEnvelope();
+    root.classList.remove("is-open", "is-ready", "is-reading");
     document.body.style.overflow = "";
+    $$(".wall-heart.is-tapped, .wish-card.is-tapped").forEach((el) =>
+      el.classList.remove("is-tapped")
+    );
+    clearLetterFxLayers();
     setTimeout(() => {
       if (!wishRevealOpen) root.hidden = true;
     }, 450);
@@ -1000,24 +1072,29 @@
     root.addEventListener("click", (e) => {
       const card = e.target.closest("[data-wish-id]");
       if (!card || !root.contains(card)) return;
-      const id = card.getAttribute("data-wish-id");
-      const w = findWishById(id);
-      if (w) openWishReveal(w);
+      /* wall hearts use bindWallLetterClicks */
+      if (card.classList.contains("wall-heart")) return;
+      const w = findWishById(card.getAttribute("data-wish-id"));
+      if (w) openWishReveal(w, card);
     });
     root.addEventListener("keydown", (e) => {
       if (e.key !== "Enter" && e.key !== " ") return;
       const card = e.target.closest("[data-wish-id]");
       if (!card || !root.contains(card)) return;
+      if (card.classList.contains("wall-heart")) return;
       e.preventDefault();
       const w = findWishById(card.getAttribute("data-wish-id"));
-      if (w) openWishReveal(w);
+      if (w) openWishReveal(w, card);
     });
   }
 
   function setupWishReveal() {
     $("#wish-reveal-close")?.addEventListener("click", closeWishReveal);
     $("#wish-reveal")?.addEventListener("click", (e) => {
-      if (e.target.id === "wish-reveal" || e.target.classList.contains("wish-reveal__burst")) {
+      if (
+        e.target.id === "wish-reveal" ||
+        e.target.classList.contains("letter-reveal__backdrop")
+      ) {
         closeWishReveal();
       }
     });
@@ -1070,10 +1147,14 @@
     wallObjectUrls = [];
   }
 
-  /* ---------- Wall letter (Vintage Galaxia orbit) ---------- */
+  /* ---------- Wall letter (Vintage Galaxia — winged hearts) ---------- */
   let wallLetterSig = "";
   let wallLetterFxRaf = 0;
   let wallLetterFxRunning = false;
+  let wallFlyRaf = 0;
+  let wallFlyRunning = false;
+  /** @type {{ el: HTMLElement, x: number, y: number, vx: number, vy: number, rot: number, vr: number, scale: number, phase: number }[]} */
+  let wallFlyBodies = [];
 
   function updateWallLetterLabels() {
     const title = $("#wall-letter-title");
@@ -1084,6 +1165,7 @@
     if (hint) hint.textContent = t(cfg.guestbook.wallCenterHint) || "Chạm ♥ để đọc thư";
     if (wallTitle) wallTitle.textContent = t(cfg.guestbook.wallTitle);
     if (wallSub) wallSub.textContent = t(cfg.guestbook.wallSubtitle);
+    syncWallFsButton();
   }
 
   function stopWallLetterFx() {
@@ -1092,6 +1174,15 @@
       cancelAnimationFrame(wallLetterFxRaf);
       wallLetterFxRaf = 0;
     }
+  }
+
+  function stopWallHeartFlight() {
+    wallFlyRunning = false;
+    if (wallFlyRaf) {
+      cancelAnimationFrame(wallFlyRaf);
+      wallFlyRaf = 0;
+    }
+    wallFlyBodies = [];
   }
 
   function startWallLetterFx(stage) {
@@ -1212,77 +1303,293 @@
     wallLetterFxRaf = requestAnimationFrame(tick);
   }
 
-  /** Distribute wishes onto 2–3 orbital rings */
-  function buildOrbitGroups(picks) {
-    const n = picks.length;
-    if (n <= 4) return [picks];
-    if (n <= 8) {
-      const mid = Math.ceil(n / 2);
-      return [picks.slice(0, mid), picks.slice(mid)];
-    }
-    const a = Math.ceil(n / 3);
-    const b = Math.ceil((n - a) / 2);
-    return [picks.slice(0, a), picks.slice(a, a + b), picks.slice(a + b)];
-  }
-
-  function wallHeartMarkup(w, angleDeg, orbitDur) {
+  function wallHeartMarkup(w, i) {
     const wid = escapeHtml(w.id || "");
     const rawName = String(w.name || "Guest");
     const short = escapeHtml(rawName.length > 14 ? rawName.slice(0, 13) + "…" : rawName);
     const label = w.name ? `Thư từ ${escapeHtml(w.name)}` : "Mở lá thư lời chúc";
+    /* nhịp vỗ chim thật: ~0.38–0.55s, lệch pha */
+    const flap = (0.38 + Math.random() * 0.16).toFixed(2);
+    const flapDelay = (-Math.random() * 0.4).toFixed(2);
     return `
       <button type="button" class="wall-heart" data-wish-id="${wid}"
-        style="--a:${angleDeg.toFixed(1)}deg;--orbit-dur:${orbitDur}s"
+        style="--enter-delay:${(i * 0.07).toFixed(2)}s;--flap:${flap}s;--flap-delay:${flapDelay}s"
         aria-label="${label}">
-        <span class="wall-heart__pin">
-          <span class="wall-heart__face">
+        <span class="wall-heart__body">
+          <span class="wall-heart__wing wall-heart__wing--left" aria-hidden="true"></span>
+          <span class="wall-heart__wing wall-heart__wing--right" aria-hidden="true"></span>
+          <span class="wall-heart__core">
             <span class="wall-heart__icon" aria-hidden="true">♥</span>
-            <span class="wall-heart__name">${short}</span>
           </span>
+          <span class="wall-heart__name">${short}</span>
         </span>
       </button>`;
   }
 
-  function renderWallOrbits(picks) {
-    const host = $("#wall-letter-orbits");
-    if (!host) return;
-    const groups = buildOrbitGroups(picks);
-    const sizes = groups.length === 1 ? [72] : groups.length === 2 ? [52, 78] : [42, 62, 84];
-    const durs = groups.length === 1 ? [52] : groups.length === 2 ? [44, 68] : [38, 56, 78];
-    const dirs = ["normal", "reverse", "normal"];
+  function isWallFullscreen() {
+    const stage = $("#wishes-wall-stage");
+    const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+    return !!(stage && (fsEl === stage || stage.classList.contains("is-fs")));
+  }
 
-    host.innerHTML = groups
-      .map((group, gi) => {
-        const size = sizes[gi] || 70;
-        const dur = durs[gi] || 50;
-        const dir = dirs[gi % dirs.length];
-        const phase = -(Math.random() * dur).toFixed(1);
-        const stars = Array.from({ length: 5 + gi * 2 }, (_, si) => {
-          const a = (360 / (5 + gi * 2)) * si + gi * 12;
-          return `<span class="wall-orbit__star" style="--a:${a}deg" aria-hidden="true"></span>`;
-        }).join("");
-        const hearts = group
-          .map((w, i) => {
-            const a = (360 / group.length) * i + gi * 18;
-            return wallHeartMarkup(w, a, dur);
-          })
-          .join("");
-        return `
-          <div class="wall-orbit" data-ring="${gi}" data-dir="${dir}"
-            style="--orbit-size:${size}%;--orbit-dur:${dur}s;--orbit-phase:${phase}s;--orbit-dir:${dir}">
-            <div class="wall-orbit__path" aria-hidden="true"></div>
-            ${stars}
-            ${hearts}
-          </div>`;
-      })
-      .join("");
+  function syncWallFsButton() {
+    const btn = $("#wall-letter-fs");
+    const label = $("#wall-letter-fs-label");
+    if (!btn) return;
+    const on = isWallFullscreen();
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+    btn.classList.toggle("is-active", on);
+    const text = on
+      ? t(cfg.guestbook.wallFullscreenExit) || "Thu nhỏ"
+      : t(cfg.guestbook.wallFullscreen) || "Toàn màn hình";
+    if (label) label.textContent = text;
+    btn.title = text;
+  }
+
+  function exitWallFullscreen() {
+    const stage = $("#wishes-wall-stage");
+    if (document.fullscreenElement || document.webkitFullscreenElement) {
+      const exit = document.exitFullscreen || document.webkitExitFullscreen;
+      if (exit) exit.call(document).catch(() => {});
+    }
+    stage?.classList.remove("is-fs");
+    document.body.classList.remove("wall-fs-lock");
+    syncWallFsButton();
+    /* reflow flight bounds after size change */
+    if (stage && wallFlyRunning) {
+      window.setTimeout(() => startWallHeartFlight(stage), 80);
+    }
+  }
+
+  function enterWallFullscreen() {
+    const stage = $("#wishes-wall-stage");
+    if (!stage) return;
+    const req = stage.requestFullscreen || stage.webkitRequestFullscreen;
+    if (req) {
+      Promise.resolve(req.call(stage))
+        .then(() => {
+          syncWallFsButton();
+          window.setTimeout(() => startWallHeartFlight(stage), 120);
+        })
+        .catch(() => {
+          /* iOS / blocked — CSS fallback */
+          stage.classList.add("is-fs");
+          document.body.classList.add("wall-fs-lock");
+          syncWallFsButton();
+          window.setTimeout(() => startWallHeartFlight(stage), 80);
+        });
+    } else {
+      stage.classList.add("is-fs");
+      document.body.classList.add("wall-fs-lock");
+      syncWallFsButton();
+      window.setTimeout(() => startWallHeartFlight(stage), 80);
+    }
+  }
+
+  function setupWallFullscreen() {
+    const stage = $("#wishes-wall-stage");
+    const btn = $("#wall-letter-fs");
+    if (!stage || !btn || btn._wallFsBound) return;
+    btn._wallFsBound = true;
+
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (isWallFullscreen()) exitWallFullscreen();
+      else enterWallFullscreen();
+    });
+
+    const onFsChange = () => {
+      if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+        stage.classList.remove("is-fs");
+        document.body.classList.remove("wall-fs-lock");
+      }
+      syncWallFsButton();
+      if (wallFlyRunning) {
+        window.setTimeout(() => startWallHeartFlight(stage), 100);
+      }
+    };
+    document.addEventListener("fullscreenchange", onFsChange);
+    document.addEventListener("webkitfullscreenchange", onFsChange);
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && stage.classList.contains("is-fs") && !document.fullscreenElement) {
+        exitWallFullscreen();
+      }
+    });
+
+    syncWallFsButton();
+  }
+
+  function makeFlyBody(el, stageW, stageH, i, total) {
+    const pad = 48;
+    /* spread seeds so they don't all spawn on one pile */
+    const col = total > 1 ? i / Math.max(1, total - 1) : 0.5;
+    const y = pad + Math.random() * Math.max(40, stageH - pad * 2);
+    const speed = 0.35 + Math.random() * 0.55;
+    const ang = Math.random() * Math.PI * 2;
+    return {
+      el,
+      x: pad + col * Math.max(40, stageW - pad * 2) + (Math.random() - 0.5) * 24,
+      y,
+      vx: Math.cos(ang) * speed,
+      vy: Math.sin(ang) * speed,
+      rot: (Math.random() - 0.5) * 16,
+      vr: (Math.random() - 0.5) * 0.25,
+      scale: 0.88 + Math.random() * 0.28,
+      phase: Math.random() * Math.PI * 2,
+      bob: 0.4 + Math.random() * 0.6,
+    };
+  }
+
+  function applyFlyTransform(b) {
+    b.el.style.transform = `translate3d(${b.x.toFixed(1)}px, ${b.y.toFixed(1)}px, 0) translate(-50%, -50%) rotate(${b.rot.toFixed(2)}deg) scale(${b.scale.toFixed(3)})`;
+  }
+
+  function startWallHeartFlight(stage) {
+    const host = $("#wall-letter-orbits", stage) || $("#wall-letter-orbits");
+    if (!stage || !host) return;
+
+    const reduce =
+      perfMode === "low" || window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const rect = stage.getBoundingClientRect();
+    const hearts = Array.from(host.querySelectorAll(".wall-heart:not(.is-leaving)"));
+
+    stopWallHeartFlight();
+    wallFlyBodies = hearts.map((el, i) => {
+      const b = makeFlyBody(el, rect.width, rect.height, i, hearts.length);
+      if (reduce) {
+        /* static scatter */
+        applyFlyTransform(b);
+      }
+      return b;
+    });
 
     requestAnimationFrame(() => {
-      host.querySelectorAll(".wall-heart").forEach((el, i) => {
-        el.style.setProperty("--enter-delay", `${(i * 0.06).toFixed(2)}s`);
-        el.classList.add("is-in");
-      });
+      hearts.forEach((el) => el.classList.add("is-in"));
     });
+
+    if (reduce || !wallFlyBodies.length) return;
+
+    wallFlyRunning = true;
+    let last = performance.now();
+
+    function tick(now) {
+      if (!wallFlyRunning || !stage.isConnected) {
+        wallFlyRunning = false;
+        return;
+      }
+      if (document.hidden) {
+        wallFlyRaf = requestAnimationFrame(tick);
+        last = now;
+        return;
+      }
+
+      const dt = Math.min(32, now - last) / 16.67;
+      last = now;
+      const r = stage.getBoundingClientRect();
+      const w = r.width;
+      const h = r.height;
+      const pad = 36;
+      const cx = w * 0.5;
+      const cy = h * 0.5;
+      /* soft keep-out around center title */
+      const keepR = Math.min(w, h) * 0.16;
+
+      wallFlyBodies = wallFlyBodies.filter((b) => b.el.isConnected && !b.el.classList.contains("is-leaving"));
+
+      for (const b of wallFlyBodies) {
+        b.phase += 0.03 * dt * b.bob;
+        /* gentle wander force */
+        b.vx += Math.sin(b.phase * 1.3) * 0.012 * dt;
+        b.vy += Math.cos(b.phase * 0.9) * 0.012 * dt;
+        /* soft repulsion from title center */
+        const dx = b.x - cx;
+        const dy = b.y - cy;
+        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+        if (dist < keepR) {
+          const push = ((keepR - dist) / keepR) * 0.08 * dt;
+          b.vx += (dx / dist) * push * 8;
+          b.vy += (dy / dist) * push * 8;
+        }
+        /* speed clamp */
+        const sp = Math.sqrt(b.vx * b.vx + b.vy * b.vy) || 1;
+        const maxSp = 1.35;
+        const minSp = 0.28;
+        if (sp > maxSp) {
+          b.vx = (b.vx / sp) * maxSp;
+          b.vy = (b.vy / sp) * maxSp;
+        } else if (sp < minSp) {
+          b.vx = (b.vx / sp) * minSp;
+          b.vy = (b.vy / sp) * minSp;
+        }
+
+        b.x += b.vx * dt * 1.15;
+        b.y += b.vy * dt * 1.15;
+        b.rot += b.vr * dt;
+        b.rot = Math.max(-22, Math.min(22, b.rot + Math.sin(b.phase) * 0.08));
+
+        /* bounce inside stage */
+        if (b.x < pad) {
+          b.x = pad;
+          b.vx = Math.abs(b.vx) * 0.95;
+        } else if (b.x > w - pad) {
+          b.x = w - pad;
+          b.vx = -Math.abs(b.vx) * 0.95;
+        }
+        if (b.y < pad) {
+          b.y = pad;
+          b.vy = Math.abs(b.vy) * 0.95;
+        } else if (b.y > h - pad) {
+          b.y = h - pad;
+          b.vy = -Math.abs(b.vy) * 0.95;
+        }
+
+        /* face flight direction slightly */
+        const face = (Math.atan2(b.vy, b.vx) * 180) / Math.PI;
+        const tilt = face * 0.08 + b.rot * 0.4;
+        b.el.style.transform = `translate3d(${b.x.toFixed(1)}px, ${b.y.toFixed(1)}px, 0) translate(-50%, -50%) rotate(${tilt.toFixed(2)}deg) scale(${b.scale.toFixed(3)})`;
+      }
+
+      wallFlyRaf = requestAnimationFrame(tick);
+    }
+
+    wallFlyRaf = requestAnimationFrame(tick);
+
+    if (!stage._wallFlyResize) {
+      stage._wallFlyResize = () => {
+        if (!wallFlyRunning) return;
+        /* clamp after resize */
+        const rr = stage.getBoundingClientRect();
+        wallFlyBodies.forEach((b) => {
+          b.x = Math.min(rr.width - 36, Math.max(36, b.x));
+          b.y = Math.min(rr.height - 36, Math.max(36, b.y));
+        });
+      };
+      window.addEventListener("resize", stage._wallFlyResize, { passive: true });
+    }
+  }
+
+  function renderWallHearts(picks) {
+    const host = $("#wall-letter-orbits");
+    if (!host) return;
+    /* decorative soft rings (no hearts locked to them) */
+    const rings = [48, 70, 88]
+      .map(
+        (size, gi) => `
+      <div class="wall-orbit wall-orbit--deco" data-ring="${gi}" aria-hidden="true"
+        style="--orbit-size:${size}%;--orbit-dur:${40 + gi * 18}s;--orbit-phase:${(-gi * 7).toFixed(1)}s;--orbit-dir:${gi % 2 ? "reverse" : "normal"}">
+        <div class="wall-orbit__path"></div>
+        ${Array.from({ length: 4 + gi }, (_, si) => {
+          const a = (360 / (4 + gi)) * si;
+          return `<span class="wall-orbit__star" style="--a:${a}deg"></span>`;
+        }).join("")}
+      </div>`
+      )
+      .join("");
+
+    const hearts = picks.map((w, i) => wallHeartMarkup(w, i)).join("");
+    host.innerHTML = rings + `<div class="wall-letter__fly" id="wall-letter-fly">${hearts}</div>`;
   }
 
   function bindWallLetterClicks(stage) {
@@ -1292,18 +1599,16 @@
       const btn = e.target.closest(".wall-heart[data-wish-id]");
       if (!btn || !stage.contains(btn)) return;
       e.preventDefault();
-      btn.classList.add("is-pulse");
-      window.setTimeout(() => btn.classList.remove("is-pulse"), 500);
       const w = findWishById(btn.getAttribute("data-wish-id"));
-      if (w) openWishReveal(w);
+      if (w) openWishReveal(w, btn);
     });
   }
 
-  /** Replace one orbit heart with another wish (living sky) */
+  /** Replace one flying heart with another wish */
   function liveWallSwap() {
     const stage = $("#wishes-wall-stage");
-    const host = $("#wall-letter-orbits");
-    if (!stage || !host || document.hidden) return;
+    const fly = $("#wall-letter-fly") || $("#wall-letter-orbits");
+    if (!stage || !fly || document.hidden) return;
 
     const all = loadWishes();
     if (!all.length) {
@@ -1311,7 +1616,7 @@
       return;
     }
 
-    const hearts = Array.from(host.querySelectorAll(".wall-heart:not(.is-leaving)"));
+    const hearts = Array.from(fly.querySelectorAll(".wall-heart:not(.is-leaving)"));
     if (!hearts.length) {
       renderWishWall(true);
       return;
@@ -1329,33 +1634,33 @@
       pool.find((w) => w.id !== leave.getAttribute("data-wish-id")) ||
       pool[Math.floor(Math.random() * pool.length)];
 
-    const orbit = leave.closest(".wall-orbit");
-    const angle = leave.style.getPropertyValue("--a") || "0deg";
-    const dur =
-      parseFloat(orbit?.style.getPropertyValue("--orbit-dur")) ||
-      parseFloat(leave.style.getPropertyValue("--orbit-dur")) ||
-      50;
-
+    const oldBody = wallFlyBodies.find((b) => b.el === leave);
     leave.classList.add("is-leaving");
     const leaveMs =
       perfMode === "low" || window.matchMedia("(prefers-reduced-motion: reduce)").matches
         ? 60
-        : 550;
+        : 500;
 
     window.setTimeout(() => {
-      if (!host.isConnected) return;
+      if (!fly.isConnected) return;
+      const host = $("#wall-letter-fly") || fly;
       const wrap = document.createElement("div");
-      wrap.innerHTML = wallHeartMarkup(
-        preferred,
-        parseFloat(angle) || 0,
-        dur
-      ).trim();
+      wrap.innerHTML = wallHeartMarkup(preferred, 0).trim();
       const next = wrap.firstElementChild;
-      if (!next || !orbit) {
+      if (!next) {
         leave.remove();
         return;
       }
       leave.replaceWith(next);
+      const rect = stage.getBoundingClientRect();
+      const body = makeFlyBody(next, rect.width, rect.height, 0, 1);
+      if (oldBody) {
+        body.x = oldBody.x;
+        body.y = oldBody.y;
+      }
+      wallFlyBodies = wallFlyBodies.filter((b) => b.el !== leave && b.el.isConnected);
+      wallFlyBodies.push(body);
+      applyFlyTransform(body);
       requestAnimationFrame(() => next.classList.add("is-in"));
       wallLetterSig = Array.from(host.querySelectorAll(".wall-heart"))
         .map((el) => el.getAttribute("data-wish-id"))
@@ -1378,7 +1683,7 @@
   }
 
   /**
-   * Vintage Galaxia wall letter — hearts on orbit open wish letters.
+   * Vintage Galaxia wall letter — winged hearts fly around; click opens letter.
    * @param {boolean} [forceFull]
    */
   function renderWishWall(forceFull) {
@@ -1390,10 +1695,12 @@
     if (!stage) return;
 
     updateWallLetterLabels();
+    setupWallFullscreen();
     const all = loadWishes();
 
     if (!all.length) {
       stopWallLetterFx();
+      stopWallHeartFlight();
       if (wallTimer) {
         clearInterval(wallTimer);
         wallTimer = null;
@@ -1416,10 +1723,10 @@
     const picks = shuffle(all).slice(0, count);
     const sig = picks.map((w) => w.id).join("|");
 
-    /* Keep orbit if same set size and already drawn (cloud re-renders) */
     const existing = orbits ? orbits.querySelectorAll(".wall-heart").length : 0;
     if (!forceFull && existing === count && existing > 0 && wallLetterSig) {
       startWallLetterFx(stage);
+      if (!wallFlyRunning) startWallHeartFlight(stage);
       startWallTimer();
       bindWallLetterClicks(stage);
       wall?.removeAttribute("hidden");
@@ -1427,9 +1734,8 @@
     }
 
     wallLetterSig = sig;
-    if (orbits) renderWallOrbits(picks);
+    if (orbits) renderWallHearts(picks);
     else {
-      /* fallback shell if markup missing */
       stage.innerHTML = `
         <canvas class="wall-letter__fx" id="wall-letter-fx" aria-hidden="true"></canvas>
         <div class="wall-letter__vignette" aria-hidden="true"></div>
@@ -1440,11 +1746,12 @@
         <div class="wall-letter__orbits" id="wall-letter-orbits"></div>
         <p class="wishes-wall__empty" id="wall-letter-empty" hidden></p>`;
       updateWallLetterLabels();
-      renderWallOrbits(picks);
+      renderWallHearts(picks);
     }
 
     bindWallLetterClicks(stage);
     startWallLetterFx(stage);
+    startWallHeartFlight(stage);
     startWallTimer();
     wall?.removeAttribute("hidden");
   }

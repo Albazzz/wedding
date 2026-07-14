@@ -211,23 +211,51 @@
         </button>
       </div>
 
-      <!-- Wish reveal: animation + typewriter message -->
-      <div class="wish-reveal" id="wish-reveal" hidden aria-modal="true" role="dialog">
-        <div class="wish-reveal__burst" aria-hidden="true"></div>
-        <div class="wish-reveal__sparkles" id="wish-reveal-sparkles" aria-hidden="true"></div>
-        <button type="button" class="wish-reveal__close" id="wish-reveal-close" aria-label="Close">
-          ×
+      <!-- Letter open: heart shatter → 3D envelope → card slides up -->
+      <div
+        class="letter-reveal"
+        id="wish-reveal"
+        hidden
+        aria-modal="true"
+        role="dialog"
+        aria-labelledby="letter-card-who"
+      >
+        <div class="letter-reveal__backdrop" aria-hidden="true"></div>
+        <div class="letter-reveal__glow" aria-hidden="true"></div>
+        <div class="letter-reveal__shards" id="letter-shards" aria-hidden="true"></div>
+        <div class="letter-reveal__ribbons" id="letter-ribbons" aria-hidden="true"></div>
+
+        <button type="button" class="letter-reveal__close" id="wish-reveal-close" aria-label="Đóng">
+          Đóng lại
         </button>
-        <div class="wish-reveal__stage">
-          <div class="wish-reveal__card-wrap">
-            <img class="wish-reveal__img" id="wish-reveal-img" src="" alt="" />
-          </div>
-          <div class="wish-reveal__text">
-            <p class="wish-reveal__message" id="wish-reveal-message" aria-live="polite"></p>
-            <p class="wish-reveal__name" id="wish-reveal-name"></p>
-            <p class="wish-reveal__relation" id="wish-reveal-relation"></p>
+
+        <div class="letter-reveal__stage" id="letter-stage">
+          <div class="envelope" id="letter-envelope">
+            <div class="envelope__body" aria-hidden="true"></div>
+            <div class="envelope__card-slot">
+              <div class="envelope__card" id="letter-card">
+                <img class="envelope__card-img" id="letter-card-img" src="" alt="" hidden />
+                <span class="envelope__card-who" id="letter-card-who">—</span>
+                <span class="envelope__card-rel" id="letter-card-rel"></span>
+                <p class="envelope__card-msg" id="letter-card-msg"></p>
+              </div>
+            </div>
+            <div class="envelope__pocket" aria-hidden="true"></div>
+            <div class="envelope__flap" aria-hidden="true">
+              <div class="envelope__seal">♥</div>
+            </div>
           </div>
         </div>
+
+        <!-- Full readable letter after card pulls out -->
+        <article class="letter-full" id="letter-full" aria-live="polite">
+          <div class="letter-full__frame">
+            <img class="letter-full__img" id="letter-full-img" src="" alt="" hidden />
+            <p class="letter-full__msg" id="letter-full-msg"></p>
+            <p class="letter-full__who" id="letter-full-who"></p>
+            <p class="letter-full__rel" id="letter-full-rel"></p>
+          </div>
+        </article>
       </div>
 
       <!-- GUESTBOOK + CARD DECORATOR -->
@@ -337,6 +365,16 @@
               id="wishes-wall-stage"
               aria-live="polite"
             >
+              <button
+                type="button"
+                class="wall-letter__fs"
+                id="wall-letter-fs"
+                aria-pressed="false"
+                title="Toàn màn hình"
+              >
+                <span class="wall-letter__fs-icon" aria-hidden="true">⛶</span>
+                <span class="wall-letter__fs-label" id="wall-letter-fs-label">Toàn màn hình</span>
+              </button>
               <canvas class="wall-letter__fx" id="wall-letter-fx" aria-hidden="true"></canvas>
               <div class="wall-letter__vignette" aria-hidden="true"></div>
               <div class="wall-letter__center">

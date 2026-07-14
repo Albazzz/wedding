@@ -2148,8 +2148,16 @@ body.is-low-power .wishes-wall__stage {
   right: max(0.75rem, var(--sar));
 }
 
-/* ---------- Wish reveal (click thiệp → animation + typewriter) ---------- */
-.wish-reveal {
+/* ---------- Letter reveal: shatter → 3D envelope → card slides up ---------- */
+.letter-reveal {
+  --letter-cream: #fbf4ec;
+  --letter-rose: #c77d82;
+  --letter-burgundy: #5b2a3a;
+  --letter-gold: #c9a66b;
+  --letter-gold-bright: #e9ce94;
+  --letter-ink: #3a2a2e;
+  --letter-shadow: rgba(59, 24, 38, 0.32);
+
   position: fixed;
   inset: 0;
   z-index: 400;
@@ -2160,215 +2168,538 @@ body.is-low-power .wishes-wall__stage {
     max(1rem, var(--sar))
     max(1.5rem, calc(1rem + var(--sab)))
     max(1rem, var(--sal));
-  background: rgba(20, 12, 14, 0.55);
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.45s ease, visibility 0.45s;
   overflow: hidden;
 }
 
-.wish-reveal.is-open {
+.letter-reveal.is-open {
   opacity: 1;
   visibility: visible;
 }
 
-.wish-reveal[hidden] {
+.letter-reveal[hidden] {
   display: none !important;
 }
 
-.wish-reveal__burst {
+.letter-reveal__backdrop {
   position: absolute;
-  inset: -20%;
+  inset: 0;
   background:
-    radial-gradient(circle at 50% 45%, rgba(255, 220, 200, 0.55) 0%, transparent 42%),
-    radial-gradient(circle at 30% 70%, rgba(255, 160, 180, 0.35) 0%, transparent 40%),
-    radial-gradient(circle at 70% 30%, rgba(255, 230, 150, 0.4) 0%, transparent 38%),
-    linear-gradient(160deg, #2a1818 0%, #4a2c2c 40%, #1a1014 100%);
-  opacity: 0;
-  transform: scale(0.6);
-  transition: opacity 0.8s ease, transform 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+    radial-gradient(ellipse at 50% -10%, #6b3550 0%, #3b1826 55%, #2a1019 100%);
+  opacity: 0.97;
 }
 
-.wish-reveal.is-open .wish-reveal__burst {
+.letter-reveal__glow {
+  position: absolute;
+  inset: -40px;
+  pointer-events: none;
+  background:
+    radial-gradient(120px 120px at 20% 30%, rgba(233, 206, 148, 0.16), transparent 70%),
+    radial-gradient(160px 160px at 80% 70%, rgba(199, 125, 130, 0.2), transparent 70%);
+  filter: blur(4px);
+  animation: letter-glow-drift 9s ease-in-out infinite alternate;
+}
+
+@keyframes letter-glow-drift {
+  from {
+    transform: translate(0, 0) scale(1);
+  }
+  to {
+    transform: translate(10px, -14px) scale(1.05);
+  }
+}
+
+.letter-reveal__close {
+  position: absolute;
+  top: max(1rem, calc(0.75rem + var(--sat)));
+  right: max(1rem, var(--sar));
+  z-index: 6;
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: var(--letter-cream);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.35s ease 0.45s, background 0.2s ease;
+}
+
+.letter-reveal.is-open .letter-reveal__close {
+  opacity: 0.85;
+}
+
+.letter-reveal__close:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.letter-reveal__stage {
+  position: relative;
+  z-index: 4;
+  width: min(92vw, 280px);
+  height: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 1200px;
+  opacity: 0;
+  transform: scale(0.86);
+  transition:
+    opacity 0.45s ease 0.12s,
+    transform 0.55s var(--ease-expo) 0.12s,
+    filter 0.55s ease;
+}
+
+.letter-reveal.is-ready .letter-reveal__stage {
   opacity: 1;
   transform: scale(1);
 }
 
-.wish-reveal.is-burst .wish-reveal__burst {
-  animation: wish-flash 1.1s ease-out;
+/* After pull-out: envelope fades away (no blur — avoids soft composite) */
+.letter-reveal.is-reading .letter-reveal__stage {
+  opacity: 0;
+  transform: scale(0.92) translateY(20px);
+  filter: none;
+  pointer-events: none;
+  transition:
+    opacity 0.45s var(--ease),
+    transform 0.55s var(--ease-expo);
 }
 
-@keyframes wish-flash {
-  0% {
-    filter: brightness(2.4) saturate(1.4);
-  }
-  40% {
-    filter: brightness(1.35) saturate(1.2);
-  }
-  100% {
-    filter: brightness(1) saturate(1);
-  }
+/* Envelope */
+.envelope {
+  position: relative;
+  width: 230px;
+  height: 150px;
+  transform-style: preserve-3d;
 }
 
-.wish-reveal__sparkles {
+.envelope__body {
   position: absolute;
   inset: 0;
-  pointer-events: none;
-  overflow: hidden;
+  background: linear-gradient(160deg, #f6e9da, #e7d2ba);
+  border-radius: 6px;
+  box-shadow:
+    0 24px 50px var(--letter-shadow),
+    0 2px 0 rgba(255, 255, 255, 0.5) inset;
 }
 
-.wish-reveal__spark {
+.envelope__pocket {
   position: absolute;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: radial-gradient(circle, #fff 0%, #ffd4a8 40%, transparent 70%);
-  opacity: 0;
-  animation: wish-spark 1.8s ease-out forwards;
-}
-
-@keyframes wish-spark {
-  0% {
-    opacity: 0;
-    transform: translate(0, 0) scale(0.3);
-  }
-  20% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-    transform: translate(var(--sx), var(--sy)) scale(0);
-  }
-}
-
-.wish-reveal__close {
-  position: absolute;
-  top: max(1rem, var(--sat));
-  right: max(1rem, var(--sar));
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 100%;
+  background: linear-gradient(160deg, #f0ddc6, #dcc0a2);
+  clip-path: polygon(0 100%, 50% 40%, 100% 100%);
+  border-radius: 0 0 6px 6px;
   z-index: 3;
-  width: 48px;
-  height: 48px;
+}
+
+.envelope__flap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 80px;
+  background: linear-gradient(200deg, #efd9c1, #d9b98f);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  transform-origin: top center;
+  transform-style: preserve-3d;
+  transition: transform 0.75s cubic-bezier(0.62, 0.02, 0.3, 1.15);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  z-index: 4;
+}
+
+.envelope.is-open .envelope__flap {
+  transform: rotateX(178deg);
+}
+
+.envelope__seal {
+  position: absolute;
+  top: 36px;
+  left: 50%;
+  margin-left: -19px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
-  color: #fff;
-  font-size: 1.75rem;
-  line-height: 1;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: radial-gradient(circle at 35% 30%, #c98a5a, var(--letter-burgundy));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  color: var(--letter-gold-bright);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  font-family: var(--font-display);
+}
+
+.envelope.is-open .envelope__seal {
   opacity: 0;
-  transition: opacity 0.4s ease 0.6s, background 0.2s;
+  transform: scale(0.4) rotate(25deg);
 }
 
-.wish-reveal.is-open .wish-reveal__close {
-  opacity: 0.9;
-}
-
-.wish-reveal__close:hover {
-  background: rgba(255, 255, 255, 0.22);
-}
-
-.wish-reveal__stage {
-  position: relative;
+/* Card slides out of envelope */
+.envelope__card-slot {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  width: 196px;
+  height: 0;
+  margin-left: -98px;
+  overflow: hidden;
+  border-radius: 8px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
   z-index: 2;
+  transition: none;
+}
+
+.envelope.is-open .envelope__card-slot {
+  animation: letter-card-rise 0.65s cubic-bezier(0.2, 0.7, 0.25, 1) 0.55s forwards;
+}
+
+@keyframes letter-card-rise {
+  from {
+    height: 0;
+    transform: translateY(0);
+  }
+  to {
+    height: 248px;
+    transform: translateY(-128px);
+  }
+}
+
+.envelope__card {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(155deg, #fffaf3, #f3e4e0);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.25rem;
-  width: min(100%, 420px);
-  max-height: min(90svh, 900px);
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-.wish-reveal__card-wrap {
-  width: min(100%, 320px);
-  border-radius: 14px;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.85rem 0.9rem 1rem;
+  text-align: center;
   overflow: hidden;
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.25),
-    0 24px 60px rgba(0, 0, 0, 0.45),
-    0 0 80px rgba(255, 180, 160, 0.35);
+}
+
+.envelope__card::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -60%;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.75), transparent);
+  transform: skewX(-18deg);
   opacity: 0;
-  transform: scale(0.5) rotate(-6deg);
-  transition:
-    opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1) 0.35s,
-    transform 1.05s cubic-bezier(0.22, 1, 0.36, 1) 0.35s;
+  pointer-events: none;
 }
 
-.wish-reveal.is-open .wish-reveal__card-wrap {
-  opacity: 1;
-  transform: scale(1) rotate(0deg);
+.envelope.is-open .envelope__card::after {
+  animation: letter-sheen 1s ease 1.15s forwards;
 }
 
-.wish-reveal__img {
-  display: block;
-  width: 100%;
-  height: auto;
-  vertical-align: middle;
+@keyframes letter-sheen {
+  0% {
+    opacity: 0;
+    left: -60%;
+  }
+  35% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    left: 130%;
+  }
+}
+
+.envelope__card-img {
+  width: 72px;
+  height: 96px;
+  object-fit: cover;
+  border-radius: 6px;
+  margin-bottom: 0.25rem;
+  box-shadow: 0 4px 12px rgba(59, 24, 38, 0.18);
   background: #f5e6e0;
 }
 
-.wish-reveal__text {
-  text-align: center;
-  color: #fff8f5;
-  width: 100%;
-  min-height: 4.5rem;
+.envelope__card-img[hidden] {
+  display: none !important;
 }
 
-.wish-reveal__message {
+.envelope__card-who {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.15rem;
+  color: var(--letter-burgundy);
+  line-height: 1.25;
+}
+
+.envelope__card-rel {
+  font-size: 0.68rem;
+  color: var(--letter-rose);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.envelope__card-msg {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 0.95rem;
+  color: var(--letter-ink);
+  margin: 0.35rem 0 0;
+  line-height: 1.4;
+  max-height: 5.6em;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+}
+
+/* Full letter — sharp, no scale/blur (replaces envelope after pull-out) */
+.letter-full {
+  position: absolute;
+  z-index: 5;
+  left: 50%;
+  top: 50%;
+  width: min(94vw, 420px);
+  max-height: min(90svh, 820px);
+  margin: 0;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  /* translate only — scale() causes GPU blur on photos */
+  transform: translate3d(-50%, calc(-50% + 18px), 0);
+  filter: none !important;
+  transition:
+    opacity 0.55s var(--ease-expo),
+    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1),
+    visibility 0.55s;
+  will-change: opacity, transform;
+}
+
+.letter-reveal.is-reading .letter-full {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translate3d(-50%, -50%, 0);
+}
+
+.letter-full__frame {
+  background: transparent;
+  border-radius: 12px;
+  padding: 0;
+  text-align: center;
+  max-height: min(90svh, 820px);
+  overflow: visible;
+  position: relative;
+  box-shadow: none;
+  filter: none !important;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* When only text (no card image): cream panel */
+.letter-full:not(.has-image) .letter-full__frame {
+  background: linear-gradient(160deg, #fffaf3 0%, #f6ebe4 55%, #f0e0d8 100%);
+  padding: 1.75rem 1.5rem 1.85rem;
+  max-height: min(88svh, 820px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.35),
+    0 32px 80px rgba(0, 0, 0, 0.5),
+    0 0 90px rgba(255, 180, 160, 0.3);
+}
+
+/* No sheen sweep on photo — it washes out / softens the card */
+.letter-full.has-image .letter-full__frame::after {
+  display: none;
+}
+
+.letter-full__frame::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -50%;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  transform: skewX(-16deg);
+  opacity: 0;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.letter-reveal.is-reading .letter-full:not(.has-image) .letter-full__frame::after {
+  animation: letter-sheen 1s ease 0.2s forwards;
+}
+
+/*
+  Card image — display near native 2× export (720px):
+  avoid stretching 360px JPEG to 520px (looked soft).
+*/
+.letter-full__img {
+  display: block;
+  width: auto;
+  max-width: min(92vw, 400px);
+  max-height: min(86svh, 780px);
+  height: auto;
+  object-fit: contain;
+  object-position: center;
+  margin: 0 auto;
+  border-radius: 8px;
+  background: #f5e6e0;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.28),
+    0 24px 56px rgba(0, 0, 0, 0.48);
+  filter: none !important;
+  image-rendering: auto;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+.letter-full__img[hidden] {
+  display: none !important;
+}
+
+/* With image: hide duplicate text (already on the card artwork) */
+.letter-full.has-image .letter-full__msg,
+.letter-full.has-image .letter-full__who,
+.letter-full.has-image .letter-full__rel {
+  display: none !important;
+}
+
+.letter-full__msg {
   font-family: var(--font-display);
   font-style: italic;
   font-weight: 500;
-  font-size: clamp(1.45rem, 4.8vw, 2.1rem);
-  line-height: 1.5;
-  min-height: 1.5em;
-  color: #ffe8dc;
-  text-shadow: 0 2px 24px rgba(255, 160, 140, 0.45);
+  font-size: clamp(1.45rem, 5vw, 2.15rem);
+  line-height: 1.55;
+  color: var(--letter-ink);
   margin: 0 auto;
-  max-width: 18em;
-  letter-spacing: 0.02em;
+  max-width: 22em;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
-.wish-reveal__message .wchar {
-  display: inline-block;
-  opacity: 0;
-  transform: translateY(0.4em) scale(0.9);
-  transition: opacity 0.45s ease, transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.wish-reveal__message .wchar.is-on {
-  opacity: 1;
-  transform: none;
-}
-
-.wish-reveal__message .wchar.is-space {
-  width: 0.28em;
-}
-
-.wish-reveal__name,
-.wish-reveal__relation {
-  opacity: 0;
-  transform: translateY(12px);
-  transition: opacity 0.8s ease, transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.wish-reveal__name.is-show,
-.wish-reveal__relation.is-show {
-  opacity: 1;
-  transform: none;
-}
-
-.wish-reveal__name {
-  margin-top: 1rem;
+.letter-full__who {
+  margin-top: 1.25rem;
   font-family: var(--font-display);
-  font-size: 1.25rem;
+  font-size: clamp(1.15rem, 3.5vw, 1.45rem);
   letter-spacing: 0.04em;
-  color: #fff;
+  color: var(--letter-burgundy);
 }
 
-.wish-reveal__relation {
-  margin-top: 0.25rem;
-  font-size: 0.88rem;
-  color: rgba(255, 230, 220, 0.75);
+.letter-full__rel {
+  margin-top: 0.3rem;
+  font-size: 0.95rem;
+  color: var(--letter-rose);
+  letter-spacing: 0.06em;
+}
+
+.letter-full__rel[hidden] {
+  display: none !important;
+}
+
+@media (min-width: 700px) {
+  .letter-full {
+    width: min(90vw, 420px);
+  }
+
+  .letter-full__img {
+    max-width: min(88vw, 400px);
+    max-height: min(88svh, 800px);
+  }
+}
+
+/* Heart shatter shards */
+.letter-reveal__shards {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.letter-shard {
+  position: absolute;
+  font-size: 14px;
+  color: var(--letter-rose);
+  opacity: 0;
+  pointer-events: none;
+  text-shadow: 0 0 8px rgba(199, 125, 130, 0.55);
+}
+
+.letter-shard.is-go {
+  animation: letter-shard-fly 0.7s ease-out forwards;
+}
+
+@keyframes letter-shard-fly {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--dx), var(--dy)) scale(0.3) rotate(var(--rot));
+  }
+}
+
+/* Ribbon confetti */
+.letter-reveal__ribbons {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  overflow: hidden;
+}
+
+.letter-ribbon {
+  position: absolute;
+  top: -5%;
+  width: 8px;
+  height: 26px;
+  border-radius: 2px;
+  opacity: 0;
+}
+
+.letter-ribbon.is-go {
+  animation: letter-ribbon-fall linear forwards;
+}
+
+@keyframes letter-ribbon-fall {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--drift), 108vh) rotate(var(--spin));
+  }
+}
+
+/* Wall heart tap pop before open */
+.wall-heart.is-tapped .wall-heart__icon {
+  animation: wall-heart-tap-pop 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes wall-heart-tap-pop {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  45% {
+    transform: scale(1.5);
+  }
+  100% {
+    transform: scale(0.2);
+    opacity: 0;
+  }
 }
 
 .wish-card,
@@ -2386,19 +2717,62 @@ body.is-low-power .wishes-wall__stage {
   pointer-events: auto;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .wish-reveal__burst,
-  .wish-reveal__card-wrap,
-  .wish-reveal__message .wchar,
-  .wish-reveal__name,
-  .wish-reveal__relation {
-    transition-duration: 0.01ms !important;
-    animation: none !important;
+@media (min-width: 700px) {
+  .letter-reveal__stage {
+    width: 300px;
+    height: 360px;
   }
 
-  .wish-reveal__message .wchar {
-    opacity: 1;
-    transform: none;
+  .envelope {
+    width: 250px;
+    height: 162px;
+  }
+
+  .envelope__card-slot {
+    width: 210px;
+    margin-left: -105px;
+  }
+
+  .envelope.is-open .envelope__card-slot {
+    animation-name: letter-card-rise-lg;
+  }
+
+  @keyframes letter-card-rise-lg {
+    from {
+      height: 0;
+      transform: translateY(0);
+    }
+    to {
+      height: 268px;
+      transform: translateY(-138px);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .letter-reveal__glow,
+  .envelope__flap,
+  .envelope__card-slot,
+  .envelope__card::after,
+  .letter-full__frame::after,
+  .letter-shard,
+  .letter-ribbon,
+  .wall-heart.is-tapped .wall-heart__icon {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .envelope.is-open .envelope__flap {
+    transform: rotateX(178deg);
+  }
+
+  .envelope.is-open .envelope__card-slot {
+    height: 248px;
+    transform: translateY(-128px);
+  }
+
+  .letter-reveal.is-reading .letter-full {
+    transform: translate3d(-50%, -50%, 0);
   }
 }
 
@@ -2922,6 +3296,85 @@ input[type="range"] {
     0 18px 40px rgba(40, 28, 24, 0.18);
 }
 
+/* Fullscreen wall */
+.wall-letter__fs {
+  position: absolute;
+  top: 0.65rem;
+  right: 0.65rem;
+  z-index: 12;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(232, 213, 181, 0.35);
+  background: rgba(40, 28, 24, 0.55);
+  color: #f3e6d8;
+  font-family: var(--font-body);
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: background 0.2s, border-color 0.2s, transform 0.15s;
+  pointer-events: auto;
+}
+
+.wall-letter__fs:hover {
+  background: rgba(61, 36, 40, 0.75);
+  border-color: rgba(232, 213, 181, 0.55);
+}
+
+.wall-letter__fs.is-active {
+  border-color: rgba(196, 165, 116, 0.65);
+  color: #e9ce94;
+}
+
+.wall-letter__fs-icon {
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.wishes-wall__stage.wall-letter:fullscreen,
+.wishes-wall__stage.wall-letter:-webkit-full-screen,
+.wishes-wall__stage.wall-letter.is-fs {
+  width: 100vw;
+  height: 100vh;
+  max-width: 100vw;
+  max-height: none;
+  min-height: 100vh;
+  border-radius: 0;
+  border: none;
+  z-index: 500;
+}
+
+/* CSS fallback when Fullscreen API blocked (e.g. some iOS) */
+.wishes-wall__stage.wall-letter.is-fs {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+}
+
+body.wall-fs-lock {
+  overflow: hidden;
+}
+
+@media (max-width: 480px) {
+  .wall-letter__fs-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+  }
+
+  .wall-letter__fs {
+    padding: 0.5rem 0.6rem;
+  }
+}
+
 .wall-letter__fx {
   position: absolute;
   inset: 0;
@@ -2999,6 +3452,7 @@ input[type="range"] {
   pointer-events: none;
 }
 
+/* Decorative rings only (hearts free-fly on top) */
 .wall-orbit {
   --orbit-size: 70%;
   --orbit-dur: 50s;
@@ -3014,14 +3468,15 @@ input[type="range"] {
   animation-delay: var(--orbit-phase);
   animation-direction: var(--orbit-dir);
   pointer-events: none;
+  opacity: 0.55;
 }
 
 .wall-orbit__path {
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  border: 1px dashed rgba(196, 165, 116, 0.18);
-  box-shadow: 0 0 24px rgba(196, 165, 116, 0.06);
+  border: 1px dashed rgba(196, 165, 116, 0.16);
+  box-shadow: 0 0 24px rgba(196, 165, 116, 0.05);
 }
 
 .wall-orbit__star {
@@ -3053,12 +3508,6 @@ input[type="range"] {
   }
 }
 
-@keyframes wall-orbit-spin-rev {
-  to {
-    transform: rotate(-360deg);
-  }
-}
-
 @keyframes wall-star-twinkle {
   0%,
   100% {
@@ -3071,21 +3520,35 @@ input[type="range"] {
   }
 }
 
-/* Heart = one letter / one sender */
-.wall-heart {
-  --a: 0deg;
-  --orbit-dur: 50s;
-  --enter-delay: 0s;
+/* Layer for free-flying letter hearts */
+.wall-letter__fly {
   position: absolute;
   inset: 0;
-  transform: rotate(var(--a));
+  z-index: 5;
   pointer-events: none;
-  background: none;
-  border: 0;
+}
+
+/* Winged heart = one letter / one sender — flies via JS transform */
+.wall-heart {
+  --enter-delay: 0s;
+  --flap: 0.34s;
+  --flap-delay: 0s;
+  --wing-hue: 0;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: max-content;
+  margin: 0;
   padding: 0;
+  border: 0;
+  background: none;
   cursor: pointer;
+  pointer-events: auto;
   opacity: 0;
+  will-change: transform, opacity;
+  transform: translate3d(0, 0, 0);
   transition: opacity 0.55s var(--ease) var(--enter-delay);
+  z-index: 6;
 }
 
 .wall-heart.is-in {
@@ -3094,51 +3557,184 @@ input[type="range"] {
 
 .wall-heart.is-leaving {
   opacity: 0;
-  transition: opacity 0.5s var(--ease);
+  transition: opacity 0.45s var(--ease);
+  pointer-events: none;
 }
 
-/* Pin sits on the ring; face counter-rotates so text stays upright */
-.wall-heart__pin {
-  position: absolute;
-  left: 50%;
-  top: 0;
-  transform: translate(-50%, -50%);
-  pointer-events: auto;
-  filter: drop-shadow(0 4px 10px rgba(40, 28, 24, 0.45));
-  transition: transform 0.35s var(--ease-expo), filter 0.35s ease;
+/* Khung cố định để cánh neo đúng tỉ lệ như demo “cánh chim thật” */
+.wall-heart__body {
+  position: relative;
+  display: block;
+  width: 4.6rem;
+  height: 4.6rem;
+  perspective: 220px;
+  filter: drop-shadow(0 6px 12px rgba(40, 28, 24, 0.4));
+  transition: filter 0.3s ease, transform 0.3s var(--ease-expo);
 }
 
-.wall-heart__face {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.15rem;
-  animation: wall-orbit-spin-rev var(--orbit-dur) linear infinite;
-  animation-delay: var(--orbit-phase, 0s);
-}
-
-/* When parent ring runs reverse, face spins the opposite way to cancel */
-.wall-orbit[data-dir="reverse"] .wall-heart__face {
-  animation-name: wall-orbit-spin;
-}
-
-.wall-heart:hover .wall-heart__pin,
-.wall-heart:focus-visible .wall-heart__pin {
-  transform: translate(-50%, -50%) scale(1.12);
-  filter: drop-shadow(0 0 12px rgba(212, 165, 165, 0.75));
+.wall-heart:hover .wall-heart__body,
+.wall-heart:focus-visible .wall-heart__body {
+  filter: drop-shadow(0 0 14px rgba(255, 255, 255, 0.35))
+    drop-shadow(0 0 12px rgba(212, 165, 165, 0.55));
+  transform: scale(1.08);
 }
 
 .wall-heart:focus-visible {
   outline: none;
 }
 
-.wall-heart:focus-visible .wall-heart__pin {
+.wall-heart:focus-visible .wall-heart__body {
   outline: 2px solid rgba(232, 213, 181, 0.7);
-  outline-offset: 4px;
-  border-radius: 10px;
+  outline-offset: 6px;
+  border-radius: 12px;
 }
 
-.wall-heart.is-pulse .wall-heart__icon {
+.wall-heart__core {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+/*
+  Cánh chim thật (clip-path lông vũ + vỗ 3D) — màu trắng kem.
+  Neo hai thùy trên ♥; transform-origin ở gốc cánh sát thân.
+*/
+.wall-heart__wing {
+  position: absolute;
+  top: 1.15rem;
+  width: 2.55rem;
+  height: 1.7rem;
+  pointer-events: none;
+  z-index: 0;
+  will-change: transform;
+  filter: drop-shadow(0 2px 4px rgba(40, 28, 24, 0.28));
+  background:
+    repeating-linear-gradient(
+      100deg,
+      rgba(255, 255, 255, 0.55) 0 1px,
+      transparent 1px 6px
+    ),
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.98) 0%,
+      rgba(248, 244, 240, 0.95) 42%,
+      rgba(232, 222, 214, 0.88) 100%
+    );
+}
+
+.wall-heart__wing--right {
+  left: 1.85rem;
+  transform-origin: 0% 40%;
+  -webkit-clip-path: polygon(
+    0% 28%,
+    22% 4%,
+    52% 0%,
+    100% 26%,
+    86% 42%,
+    92% 56%,
+    72% 50%,
+    76% 70%,
+    50% 58%,
+    24% 70%,
+    0% 52%
+  );
+  clip-path: polygon(
+    0% 28%,
+    22% 4%,
+    52% 0%,
+    100% 26%,
+    86% 42%,
+    92% 56%,
+    72% 50%,
+    76% 70%,
+    50% 58%,
+    24% 70%,
+    0% 52%
+  );
+  animation: wall-flap-right var(--flap, 0.42s) var(--flap-delay, 0s) infinite ease-in-out;
+}
+
+.wall-heart__wing--left {
+  right: 1.85rem;
+  transform-origin: 100% 40%;
+  -webkit-clip-path: polygon(
+    100% 28%,
+    78% 4%,
+    48% 0%,
+    0% 26%,
+    14% 42%,
+    8% 56%,
+    28% 50%,
+    24% 70%,
+    50% 58%,
+    76% 70%,
+    100% 52%
+  );
+  clip-path: polygon(
+    100% 28%,
+    78% 4%,
+    48% 0%,
+    0% 26%,
+    14% 42%,
+    8% 56%,
+    28% 50%,
+    24% 70%,
+    50% 58%,
+    76% 70%,
+    100% 52%
+  );
+  animation: wall-flap-left var(--flap, 0.42s) var(--flap-delay, 0s) infinite ease-in-out;
+}
+
+/* Nhịp vỗ chim thật: downstroke nhanh + rotateY chiều sâu */
+@keyframes wall-flap-right {
+  0% {
+    transform: rotateZ(-10deg) rotateY(0deg) scaleY(1) scaleX(1);
+  }
+  18% {
+    transform: rotateZ(40deg) rotateY(-30deg) scaleY(0.88) scaleX(0.82);
+  }
+  36% {
+    transform: rotateZ(58deg) rotateY(-42deg) scaleY(0.8) scaleX(0.7);
+  }
+  62% {
+    transform: rotateZ(14deg) rotateY(-14deg) scaleY(0.92) scaleX(0.9);
+  }
+  85% {
+    transform: rotateZ(-20deg) rotateY(6deg) scaleY(1.03) scaleX(1.02);
+  }
+  100% {
+    transform: rotateZ(-10deg) rotateY(0deg) scaleY(1) scaleX(1);
+  }
+}
+
+@keyframes wall-flap-left {
+  0% {
+    transform: rotateZ(10deg) rotateY(0deg) scaleY(1) scaleX(1);
+  }
+  18% {
+    transform: rotateZ(-40deg) rotateY(30deg) scaleY(0.88) scaleX(0.82);
+  }
+  36% {
+    transform: rotateZ(-58deg) rotateY(42deg) scaleY(0.8) scaleX(0.7);
+  }
+  62% {
+    transform: rotateZ(-14deg) rotateY(14deg) scaleY(0.92) scaleX(0.9);
+  }
+  85% {
+    transform: rotateZ(20deg) rotateY(-6deg) scaleY(1.03) scaleX(1.02);
+  }
+  100% {
+    transform: rotateZ(10deg) rotateY(0deg) scaleY(1) scaleX(1);
+  }
+}
+
+.wall-heart.is-pulse .wall-heart__icon,
+.wall-heart.is-tapped .wall-heart__icon {
   animation: wall-heart-pulse 0.5s var(--ease-expo);
 }
 
@@ -3155,13 +3751,16 @@ input[type="range"] {
 }
 
 .wall-heart__icon {
-  font-size: clamp(1.15rem, 3.2vw, 1.55rem);
+  position: relative;
+  z-index: 2;
+  font-size: clamp(1.45rem, 3.8vw, 1.9rem);
   line-height: 1;
-  color: #e8a0a0;
+  color: #f0a8a8;
   text-shadow:
-    0 0 10px rgba(232, 160, 160, 0.85),
-    0 0 20px rgba(201, 120, 120, 0.55);
+    0 0 10px rgba(232, 160, 160, 0.9),
+    0 0 22px rgba(201, 120, 120, 0.55);
   animation: wall-heart-beat 2.8s ease-in-out infinite;
+  filter: drop-shadow(0 2px 4px rgba(40, 28, 24, 0.25));
 }
 
 @keyframes wall-heart-beat {
@@ -3178,6 +3777,12 @@ input[type="range"] {
 }
 
 .wall-heart__name {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  z-index: 2;
+  transform: translateX(-50%);
+  margin-top: 0.2rem;
   max-width: 5.5rem;
   padding: 0.12rem 0.4rem;
   border-radius: 999px;
@@ -3223,6 +3828,25 @@ input[type="range"] {
     max-width: 6.5rem;
     font-size: 0.68rem;
   }
+
+  .wall-heart__body {
+    width: 5rem;
+    height: 5rem;
+  }
+
+  .wall-heart__wing {
+    top: 1.25rem;
+    width: 2.8rem;
+    height: 1.85rem;
+  }
+
+  .wall-heart__wing--right {
+    left: 2rem;
+  }
+
+  .wall-heart__wing--left {
+    right: 2rem;
+  }
 }
 
 @media (max-width: 480px) {
@@ -3238,6 +3862,25 @@ input[type="range"] {
     max-width: 4.6rem;
     font-size: 0.58rem;
   }
+
+  .wall-heart__body {
+    width: 4rem;
+    height: 4rem;
+  }
+
+  .wall-heart__wing {
+    top: 1rem;
+    width: 2.15rem;
+    height: 1.4rem;
+  }
+
+  .wall-heart__wing--right {
+    left: 1.55rem;
+  }
+
+  .wall-heart__wing--left {
+    right: 1.55rem;
+  }
 }
 
 body.is-low-power .wall-letter__title {
@@ -3248,6 +3891,10 @@ body.is-low-power .wall-heart__icon {
   animation: none;
 }
 
+body.is-low-power .wall-heart__wing {
+  animation-duration: 0.85s;
+}
+
 body.is-low-power .wall-orbit {
   animation-duration: 120s;
 }
@@ -3255,18 +3902,18 @@ body.is-low-power .wall-orbit {
 @media (prefers-reduced-motion: reduce) {
   .wall-letter__title,
   .wall-orbit,
-  .wall-heart__face,
   .wall-heart__icon,
+  .wall-heart__wing,
   .wall-orbit__star::after {
     animation: none !important;
   }
 
-  .wall-heart__pin {
-    transition: none;
-  }
-
   .wall-heart {
     opacity: 1;
+  }
+
+  .wall-heart__body {
+    transition: none;
   }
 }
 
