@@ -324,15 +324,28 @@
             </div>
           </div>
 
-          <!-- Tường lời chúc ngẫu nhiên -->
+          <!-- Wall letter — Vintage Galaxia: orbit tim → mở thư -->
           <div class="wishes-wall" id="wishes-wall">
             <header class="wishes-wall__header">
-              <h3 class="wishes-wall__title" id="wishes-wall-title">Tường lời chúc</h3>
+              <h3 class="wishes-wall__title" id="wishes-wall-title">Bầu trời lời chúc</h3>
               <p class="wishes-wall__subtitle" id="wishes-wall-subtitle">
-                Những lời chúc hiện ngẫu nhiên từ khách mời
+                Chạm trái tim mang tên khách — mở lá thư lời chúc
               </p>
             </header>
-            <div class="wishes-wall__stage" id="wishes-wall-stage" aria-live="polite"></div>
+            <div
+              class="wishes-wall__stage wall-letter"
+              id="wishes-wall-stage"
+              aria-live="polite"
+            >
+              <canvas class="wall-letter__fx" id="wall-letter-fx" aria-hidden="true"></canvas>
+              <div class="wall-letter__vignette" aria-hidden="true"></div>
+              <div class="wall-letter__center">
+                <p class="wall-letter__title" id="wall-letter-title">Trăm năm hạnh phúc</p>
+                <p class="wall-letter__hint" id="wall-letter-hint">Chạm ♥ để đọc thư</p>
+              </div>
+              <div class="wall-letter__orbits" id="wall-letter-orbits"></div>
+              <p class="wishes-wall__empty" id="wall-letter-empty" hidden></p>
+            </div>
           </div>
 
           <div class="wishes-gallery">

@@ -1070,74 +1070,382 @@
     wallObjectUrls = [];
   }
 
-  function renderWishWall() {
-    const stage = $("#wishes-wall-stage");
-    const wall = $("#wishes-wall");
-    if (!stage) return;
+  /* ---------- Wall letter (Vintage Galaxia orbit) ---------- */
+  let wallLetterSig = "";
+  let wallLetterFxRaf = 0;
+  let wallLetterFxRunning = false;
 
-    const all = loadWishes();
-    if (!all.length) {
-      stage.innerHTML = `<p class="wishes-wall__empty">${escapeHtml(t(cfg.guestbook.wallEmpty))}</p>`;
-      if (wallTimer) {
-        clearInterval(wallTimer);
-        wallTimer = null;
-      }
+  function updateWallLetterLabels() {
+    const title = $("#wall-letter-title");
+    const hint = $("#wall-letter-hint");
+    const wallTitle = $("#wishes-wall-title");
+    const wallSub = $("#wishes-wall-subtitle");
+    if (title) title.textContent = t(cfg.guestbook.wallCenterTitle) || "Trăm năm hạnh phúc";
+    if (hint) hint.textContent = t(cfg.guestbook.wallCenterHint) || "Chạm ♥ để đọc thư";
+    if (wallTitle) wallTitle.textContent = t(cfg.guestbook.wallTitle);
+    if (wallSub) wallSub.textContent = t(cfg.guestbook.wallSubtitle);
+  }
+
+  function stopWallLetterFx() {
+    wallLetterFxRunning = false;
+    if (wallLetterFxRaf) {
+      cancelAnimationFrame(wallLetterFxRaf);
+      wallLetterFxRaf = 0;
+    }
+  }
+
+  function startWallLetterFx(stage) {
+    const canvas = $("#wall-letter-fx", stage) || $("#wall-letter-fx");
+    if (!canvas || !canvas.getContext) return;
+    if (perfMode === "low" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      stopWallLetterFx();
+      const ctx = canvas.getContext("2d");
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const r = stage.getBoundingClientRect();
+      canvas.width = Math.max(1, Math.floor(r.width * dpr));
+      canvas.height = Math.max(1, Math.floor(r.height * dpr));
+      canvas.style.width = r.width + "px";
+      canvas.style.height = r.height + "px";
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, r.width, r.height);
       return;
     }
+    if (wallLetterFxRunning) return;
+    wallLetterFxRunning = true;
 
-    const count = Math.min(cfg.guestbook.wallCount || 6, all.length);
-    const picks = shuffle(all).slice(0, count);
+    const ctx = canvas.getContext("2d");
+    let w = 0;
+    let h = 0;
+    let stars = [];
+    let hearts = [];
 
-    clearWallUrls();
-    stage.innerHTML = picks
-      .map((w, i) => {
-        const rot = -12 + Math.random() * 24;
-        const x = 4 + Math.random() * 72;
-        const y = 6 + Math.random() * 58;
-        const delay = (i * 0.12).toFixed(2);
-        const scale = (0.88 + Math.random() * 0.18).toFixed(2);
-        const src = wishImageSrc(w);
-        const imgOk =
-          src &&
-          (String(src).startsWith("data:image") ||
-            String(src).startsWith("http://") ||
-            String(src).startsWith("https://"));
-        const msg = w.message
-          ? escapeHtml(w.message.length > 90 ? w.message.slice(0, 90) + "…" : w.message)
-          : "💕";
-        const wid = escapeHtml(w.id || "");
+    function resize() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const r = stage.getBoundingClientRect();
+      w = r.width;
+      h = r.height;
+      canvas.width = Math.max(1, Math.floor(w * dpr));
+      canvas.height = Math.max(1, Math.floor(h * dpr));
+      canvas.style.width = w + "px";
+      canvas.style.height = h + "px";
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const starN = Math.min(90, Math.floor(w * 0.12));
+      const heartN = Math.min(28, Math.floor(w * 0.04));
+      stars = Array.from({ length: starN }, () => ({
+        x: Math.random() * w,
+        y: Math.random() * h,
+        s: 0.4 + Math.random() * 1.6,
+        sp: 0.15 + Math.random() * 0.55,
+        a: 0.25 + Math.random() * 0.7,
+        tw: Math.random() * Math.PI * 2,
+      }));
+      hearts = Array.from({ length: heartN }, () => ({
+        x: Math.random() * w,
+        y: h + Math.random() * h * 0.5,
+        s: 6 + Math.random() * 10,
+        sp: 0.25 + Math.random() * 0.55,
+        a: 0.2 + Math.random() * 0.45,
+        drift: (Math.random() - 0.5) * 0.35,
+        rot: Math.random() * Math.PI,
+      }));
+    }
+
+    function drawHeart(x, y, size, rot, alpha) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(rot);
+      ctx.scale(size / 16, size / 16);
+      ctx.beginPath();
+      ctx.moveTo(0, 4);
+      ctx.bezierCurveTo(0, 0, -8, 0, -8, 5);
+      ctx.bezierCurveTo(-8, 10, 0, 14, 0, 18);
+      ctx.bezierCurveTo(0, 14, 8, 10, 8, 5);
+      ctx.bezierCurveTo(8, 0, 0, 0, 0, 4);
+      ctx.fillStyle = `rgba(201, 120, 120, ${alpha})`;
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function tick() {
+      if (!wallLetterFxRunning || !stage.isConnected) {
+        wallLetterFxRunning = false;
+        return;
+      }
+      if (document.hidden) {
+        wallLetterFxRaf = requestAnimationFrame(tick);
+        return;
+      }
+      ctx.clearRect(0, 0, w, h);
+      for (const st of stars) {
+        st.y += st.sp;
+        st.tw += 0.04;
+        if (st.y > h + 4) {
+          st.y = -4;
+          st.x = Math.random() * w;
+        }
+        const tw = 0.55 + Math.sin(st.tw) * 0.45;
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(232, 213, 181, ${st.a * tw})`;
+        ctx.arc(st.x, st.y, st.s, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      for (const ht of hearts) {
+        ht.y -= ht.sp;
+        ht.x += ht.drift;
+        ht.rot += 0.008;
+        if (ht.y < -20) {
+          ht.y = h + 10;
+          ht.x = Math.random() * w;
+        }
+        drawHeart(ht.x, ht.y, ht.s, ht.rot, ht.a);
+      }
+      wallLetterFxRaf = requestAnimationFrame(tick);
+    }
+
+    resize();
+    if (!stage._wallFxResize) {
+      stage._wallFxResize = () => {
+        if (wallLetterFxRunning) resize();
+      };
+      window.addEventListener("resize", stage._wallFxResize, { passive: true });
+    }
+    wallLetterFxRaf = requestAnimationFrame(tick);
+  }
+
+  /** Distribute wishes onto 2–3 orbital rings */
+  function buildOrbitGroups(picks) {
+    const n = picks.length;
+    if (n <= 4) return [picks];
+    if (n <= 8) {
+      const mid = Math.ceil(n / 2);
+      return [picks.slice(0, mid), picks.slice(mid)];
+    }
+    const a = Math.ceil(n / 3);
+    const b = Math.ceil((n - a) / 2);
+    return [picks.slice(0, a), picks.slice(a, a + b), picks.slice(a + b)];
+  }
+
+  function wallHeartMarkup(w, angleDeg, orbitDur) {
+    const wid = escapeHtml(w.id || "");
+    const rawName = String(w.name || "Guest");
+    const short = escapeHtml(rawName.length > 14 ? rawName.slice(0, 13) + "…" : rawName);
+    const label = w.name ? `Thư từ ${escapeHtml(w.name)}` : "Mở lá thư lời chúc";
+    return `
+      <button type="button" class="wall-heart" data-wish-id="${wid}"
+        style="--a:${angleDeg.toFixed(1)}deg;--orbit-dur:${orbitDur}s"
+        aria-label="${label}">
+        <span class="wall-heart__pin">
+          <span class="wall-heart__face">
+            <span class="wall-heart__icon" aria-hidden="true">♥</span>
+            <span class="wall-heart__name">${short}</span>
+          </span>
+        </span>
+      </button>`;
+  }
+
+  function renderWallOrbits(picks) {
+    const host = $("#wall-letter-orbits");
+    if (!host) return;
+    const groups = buildOrbitGroups(picks);
+    const sizes = groups.length === 1 ? [72] : groups.length === 2 ? [52, 78] : [42, 62, 84];
+    const durs = groups.length === 1 ? [52] : groups.length === 2 ? [44, 68] : [38, 56, 78];
+    const dirs = ["normal", "reverse", "normal"];
+
+    host.innerHTML = groups
+      .map((group, gi) => {
+        const size = sizes[gi] || 70;
+        const dur = durs[gi] || 50;
+        const dir = dirs[gi % dirs.length];
+        const phase = -(Math.random() * dur).toFixed(1);
+        const stars = Array.from({ length: 5 + gi * 2 }, (_, si) => {
+          const a = (360 / (5 + gi * 2)) * si + gi * 12;
+          return `<span class="wall-orbit__star" style="--a:${a}deg" aria-hidden="true"></span>`;
+        }).join("");
+        const hearts = group
+          .map((w, i) => {
+            const a = (360 / group.length) * i + gi * 18;
+            return wallHeartMarkup(w, a, dur);
+          })
+          .join("");
         return `
-          <article class="wall-card" data-wish-id="${wid}" role="button" tabindex="0" style="--wx:${x.toFixed(1)}%;--wy:${y.toFixed(1)}%;--wrot:${rot.toFixed(1)}deg;--wscale:${scale};--wdelay:${delay}s">
-            ${imgOk ? `<img class="wall-card__img" src="${src}" alt="" loading="lazy" />` : `<div class="wall-card__placeholder" aria-hidden="true">❧</div>`}
-            <div class="wall-card__body">
-              <p class="wall-card__msg">${msg}</p>
-              <p class="wall-card__name">${escapeHtml(w.name || "")}</p>
-              ${w.relation ? `<p class="wall-card__rel">${escapeHtml(w.relation)}</p>` : ""}
-            </div>
-          </article>`;
+          <div class="wall-orbit" data-ring="${gi}" data-dir="${dir}"
+            style="--orbit-size:${size}%;--orbit-dur:${dur}s;--orbit-phase:${phase}s;--orbit-dir:${dir}">
+            <div class="wall-orbit__path" aria-hidden="true"></div>
+            ${stars}
+            ${hearts}
+          </div>`;
       })
       .join("");
 
-    /* reflow animation */
     requestAnimationFrame(() => {
-      stage.querySelectorAll(".wall-card").forEach((el) => el.classList.add("is-in"));
+      host.querySelectorAll(".wall-heart").forEach((el, i) => {
+        el.style.setProperty("--enter-delay", `${(i * 0.06).toFixed(2)}s`);
+        el.classList.add("is-in");
+      });
     });
-    bindWishOpenClicks(stage);
-    enhanceGlassShine();
+  }
 
-    const ms = Math.max(3500, cfg.guestbook.wallRotateMs || 5000);
+  function bindWallLetterClicks(stage) {
+    if (!stage || stage._wallLetterBound) return;
+    stage._wallLetterBound = true;
+    stage.addEventListener("click", (e) => {
+      const btn = e.target.closest(".wall-heart[data-wish-id]");
+      if (!btn || !stage.contains(btn)) return;
+      e.preventDefault();
+      btn.classList.add("is-pulse");
+      window.setTimeout(() => btn.classList.remove("is-pulse"), 500);
+      const w = findWishById(btn.getAttribute("data-wish-id"));
+      if (w) openWishReveal(w);
+    });
+  }
+
+  /** Replace one orbit heart with another wish (living sky) */
+  function liveWallSwap() {
+    const stage = $("#wishes-wall-stage");
+    const host = $("#wall-letter-orbits");
+    if (!stage || !host || document.hidden) return;
+
+    const all = loadWishes();
+    if (!all.length) {
+      renderWishWall(true);
+      return;
+    }
+
+    const hearts = Array.from(host.querySelectorAll(".wall-heart:not(.is-leaving)"));
+    if (!hearts.length) {
+      renderWishWall(true);
+      return;
+    }
+
+    const onIds = new Set(hearts.map((el) => el.getAttribute("data-wish-id")));
+    let pool = all.filter((w) => w.id && !onIds.has(w.id));
+    if (!pool.length) {
+      if (all.length <= hearts.length) return;
+      pool = all;
+    }
+
+    const leave = hearts[Math.floor(Math.random() * hearts.length)];
+    const preferred =
+      pool.find((w) => w.id !== leave.getAttribute("data-wish-id")) ||
+      pool[Math.floor(Math.random() * pool.length)];
+
+    const orbit = leave.closest(".wall-orbit");
+    const angle = leave.style.getPropertyValue("--a") || "0deg";
+    const dur =
+      parseFloat(orbit?.style.getPropertyValue("--orbit-dur")) ||
+      parseFloat(leave.style.getPropertyValue("--orbit-dur")) ||
+      50;
+
+    leave.classList.add("is-leaving");
+    const leaveMs =
+      perfMode === "low" || window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? 60
+        : 550;
+
+    window.setTimeout(() => {
+      if (!host.isConnected) return;
+      const wrap = document.createElement("div");
+      wrap.innerHTML = wallHeartMarkup(
+        preferred,
+        parseFloat(angle) || 0,
+        dur
+      ).trim();
+      const next = wrap.firstElementChild;
+      if (!next || !orbit) {
+        leave.remove();
+        return;
+      }
+      leave.replaceWith(next);
+      requestAnimationFrame(() => next.classList.add("is-in"));
+      wallLetterSig = Array.from(host.querySelectorAll(".wall-heart"))
+        .map((el) => el.getAttribute("data-wish-id"))
+        .join("|");
+    }, leaveMs);
+  }
+
+  function startWallTimer() {
+    const ms = Math.max(5000, cfg.guestbook.wallRotateMs || 7500);
     if (wallTimer) clearInterval(wallTimer);
     wallTimer = setInterval(() => {
       if (document.hidden) return;
-      /* only rotate if still on page */
-      if (!$("#wishes-wall-stage")) {
+      if (!$("#wall-letter-orbits")) {
         clearInterval(wallTimer);
         wallTimer = null;
         return;
       }
-      renderWishWall();
+      liveWallSwap();
     }, ms);
+  }
 
+  /**
+   * Vintage Galaxia wall letter — hearts on orbit open wish letters.
+   * @param {boolean} [forceFull]
+   */
+  function renderWishWall(forceFull) {
+    const stage = $("#wishes-wall-stage");
+    const wall = $("#wishes-wall");
+    const orbits = $("#wall-letter-orbits");
+    const emptyEl = $("#wall-letter-empty");
+    const center = stage?.querySelector(".wall-letter__center");
+    if (!stage) return;
+
+    updateWallLetterLabels();
+    const all = loadWishes();
+
+    if (!all.length) {
+      stopWallLetterFx();
+      if (wallTimer) {
+        clearInterval(wallTimer);
+        wallTimer = null;
+      }
+      wallLetterSig = "";
+      if (orbits) orbits.innerHTML = "";
+      if (center) center.hidden = true;
+      if (emptyEl) {
+        emptyEl.hidden = false;
+        emptyEl.textContent = t(cfg.guestbook.wallEmpty);
+      }
+      wall?.removeAttribute("hidden");
+      return;
+    }
+
+    if (center) center.hidden = false;
+    if (emptyEl) emptyEl.hidden = true;
+
+    const count = Math.min(cfg.guestbook.wallCount || 12, all.length);
+    const picks = shuffle(all).slice(0, count);
+    const sig = picks.map((w) => w.id).join("|");
+
+    /* Keep orbit if same set size and already drawn (cloud re-renders) */
+    const existing = orbits ? orbits.querySelectorAll(".wall-heart").length : 0;
+    if (!forceFull && existing === count && existing > 0 && wallLetterSig) {
+      startWallLetterFx(stage);
+      startWallTimer();
+      bindWallLetterClicks(stage);
+      wall?.removeAttribute("hidden");
+      return;
+    }
+
+    wallLetterSig = sig;
+    if (orbits) renderWallOrbits(picks);
+    else {
+      /* fallback shell if markup missing */
+      stage.innerHTML = `
+        <canvas class="wall-letter__fx" id="wall-letter-fx" aria-hidden="true"></canvas>
+        <div class="wall-letter__vignette" aria-hidden="true"></div>
+        <div class="wall-letter__center">
+          <p class="wall-letter__title" id="wall-letter-title"></p>
+          <p class="wall-letter__hint" id="wall-letter-hint"></p>
+        </div>
+        <div class="wall-letter__orbits" id="wall-letter-orbits"></div>
+        <p class="wishes-wall__empty" id="wall-letter-empty" hidden></p>`;
+      updateWallLetterLabels();
+      renderWallOrbits(picks);
+    }
+
+    bindWallLetterClicks(stage);
+    startWallLetterFx(stage);
+    startWallTimer();
     wall?.removeAttribute("hidden");
   }
 

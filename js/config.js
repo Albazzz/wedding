@@ -148,14 +148,17 @@ window.WEDDING_CONFIG = {
       en: "No cards yet — decorate and send the first wish!",
     },
     galleryTitle: { vi: "Thiệp đã gửi", en: "Sent cards" },
-    wallTitle: { vi: "Tường lời chúc", en: "Wish wall" },
+    wallTitle: { vi: "Bầu trời lời chúc", en: "Sky of wishes" },
     wallSubtitle: {
-      vi: "Những thiệp chúc mừng hiện ngẫu nhiên từ khách mời",
-      en: "Congratulatory cards appear randomly from guests",
+      vi: "Chạm trái tim mang tên khách — mở lá thư lời chúc",
+      en: "Tap a heart with a guest's name to open their letter",
     },
+    /** Chữ glow giữa orbit */
+    wallCenterTitle: { vi: "Trăm năm hạnh phúc", en: "A hundred years of happiness" },
+    wallCenterHint: { vi: "Chạm ♥ để đọc thư", en: "Tap ♥ to read the letter" },
     wallEmpty: {
-      vi: "Chưa có thiệp — hãy gửi lời chúc đầu tiên!",
-      en: "No wishes yet — send the first one!",
+      vi: "Chưa có thư — hãy gửi lời chúc đầu tiên!",
+      en: "No letters yet — send the first wish!",
     },
     filterLabel: { vi: "Lọc theo mối quan hệ", en: "Filter by relation" },
     filterAll: { vi: "Tất cả", en: "All" },
@@ -163,10 +166,13 @@ window.WEDDING_CONFIG = {
       vi: "Không có thiệp thuộc nhóm này",
       en: "No cards in this relation group",
     },
-    /** Số thiệp hiện cùng lúc trên tường */
-    wallCount: 6,
-    /** Đổi thiệp tường sau bao nhiêu ms */
-    wallRotateMs: 5000,
+    /** Số trái tim (lá thư) tối đa trên orbit */
+    wallCount: 12,
+    /**
+     * Living orbit: mỗi wallRotateMs thay 1 trái tim bằng lời chúc khác.
+     * Gợi ý 6000–10000.
+     */
+    wallRotateMs: 7500,
 
     /* ----- Editor labels (đổi chữ UI) ----- */
     labels: {
