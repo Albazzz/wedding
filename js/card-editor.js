@@ -541,6 +541,30 @@
     return { hw: r, hh: r };
   }
 
+  /**
+   * Color emoji on canvas: Chrome/Edge only draw full-color glyphs when
+   * fillStyle is pure black. Any other fill (ink from drawText) → monochrome
+   * silhouette that looks like a grey "shadow" on the card.
+   */
+  function fillEmoji(emoji, sizePx) {
+    ctx.save();
+    ctx.shadowBlur = 0;
+    ctx.shadowColor = "transparent";
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = "source-over";
+    ctx.fillStyle = "#000000";
+    ctx.strokeStyle = "rgba(0,0,0,0)";
+    ctx.lineWidth = 0;
+    ctx.setLineDash([]);
+    ctx.font = `${sizePx}px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", "Twemoji Mozilla", sans-serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(emoji || "✨", 0, 0);
+    ctx.restore();
+  }
+
   function drawStickers() {
     const tNow = performance.now() * 0.001;
     state.stickers.forEach((s, i) => {
@@ -569,18 +593,17 @@
         ctx.shadowBlur = 8;
         ctx.fillRect(-w / 2 - 4, -h / 2 - 4, w + 8, h + 14);
         ctx.shadowBlur = 0;
+        ctx.shadowColor = "transparent";
         ctx.drawImage(s.img, -w / 2, -h / 2, w, h);
         if (i === state.selected && !freezeMotion) {
           ctx.strokeStyle = "rgba(139,94,79,0.75)";
           ctx.lineWidth = 1.5;
           ctx.setLineDash([5, 4]);
           ctx.strokeRect(-w / 2 - 4, -h / 2 - 4, w + 8, h + 14);
+          ctx.setLineDash([]);
         }
       } else {
-        ctx.font = `${s.size || 36}px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif`;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(s.emoji || "✨", 0, 0);
+        fillEmoji(s.emoji || "✨", s.size || 36);
         if (i === state.selected && !freezeMotion) {
           ctx.strokeStyle = "rgba(139,94,79,0.65)";
           ctx.lineWidth = 1.5;
@@ -588,6 +611,7 @@
           ctx.beginPath();
           ctx.arc(0, 0, (s.size || 36) * 0.7, 0, Math.PI * 2);
           ctx.stroke();
+          ctx.setLineDash([]);
         }
       }
       ctx.restore();
@@ -782,7 +806,10 @@
       ctx.translate(p.x, p.y);
       ctx.rotate(((p.rot || 0) * Math.PI) / 180);
       ctx.globalAlpha = p.alpha;
-      ctx.font = `${p.r}px "Segoe UI Emoji", "Apple Color Emoji", sans-serif`;
+      /* same black fillStyle so motion emoji keep color */
+      ctx.fillStyle = "#000000";
+      ctx.shadowBlur = 0;
+      ctx.font = `${p.r}px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText(p.emoji, 0, 0);
