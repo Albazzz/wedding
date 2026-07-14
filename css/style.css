@@ -3380,7 +3380,7 @@ input[type="range"] {
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.4s ease, visibility 0.4s;
-  background: #050308;
+  background: #000000;
 }
 
 .galaxy-show.is-open {

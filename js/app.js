@@ -2442,21 +2442,9 @@
     setTimeout(openScroll, delay);
   }
 
-  /* ---------- Galaxy + heart particles (pháo hoa) ---------- */
+  /* ---------- Galaxy + Three.js heart fireworks ---------- */
   let galaxyRaf = 0;
   let galaxyRunning = false;
-
-  function heartCurve(t) {
-    /* classic parametric heart */
-    const x = 16 * Math.pow(Math.sin(t), 3);
-    const y = -(
-      13 * Math.cos(t) -
-      5 * Math.cos(2 * t) -
-      2 * Math.cos(3 * t) -
-      Math.cos(4 * t)
-    );
-    return { x, y };
-  }
 
   function setupGalaxyShow() {
     const root = $("#galaxy-show");
@@ -2480,180 +2468,372 @@
       namesEl.classList.add("couple-names-line");
     }
 
-    const ctx = canvas.getContext("2d");
-    let w = 0;
-    let h = 0;
-    let particles = [];
-    let stars = [];
-    let sparks = [];
-    let start = 0;
-    let phase = "gather"; /* gather | hold | burst */
+    /* Three.js engine — lazy init on first open */
+    let engine = null;
 
-    function resize() {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      w = window.innerWidth;
-      h = window.innerHeight;
-      canvas.width = Math.floor(w * dpr);
-      canvas.height = Math.floor(h * dpr);
-      canvas.style.width = w + "px";
-      canvas.style.height = h + "px";
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    function heartShape(t) {
+      const x = 16 * Math.pow(Math.sin(t), 3);
+      const y =
+        13 * Math.cos(t) -
+        5 * Math.cos(2 * t) -
+        2 * Math.cos(3 * t) -
+        Math.cos(4 * t);
+      return { x, y };
     }
 
-    function buildStars() {
-      const n = perfMode === "low" ? 80 : 160;
-      stars = Array.from({ length: n }, () => ({
-        x: Math.random() * w,
-        y: Math.random() * h,
-        r: 0.4 + Math.random() * 1.6,
-        a: 0.25 + Math.random() * 0.7,
-        tw: Math.random() * Math.PI * 2,
-        sp: 0.01 + Math.random() * 0.03,
-      }));
-    }
-
-    function buildHeartParticles() {
-      const n = perfMode === "low" ? 280 : 520;
-      const scale = Math.min(w, h) * 0.028;
-      const cx = w * 0.5;
-      const cy = h * 0.48;
-      particles = [];
-      for (let i = 0; i < n; i++) {
-        const t = (i / n) * Math.PI * 2;
-        const hp = heartCurve(t);
-        /* denser fill: jitter inside heart shell */
-        const jitter = 0.15 + Math.random() * 0.85;
-        const tx = cx + hp.x * scale * jitter + (Math.random() - 0.5) * 6;
-        const ty = cy + hp.y * scale * jitter + (Math.random() - 0.5) * 6;
-        particles.push({
-          x: Math.random() * w,
-          y: Math.random() * h,
-          tx,
-          ty,
-          size: 1.2 + Math.random() * 2.4,
-          hue: 320 + Math.random() * 40,
-          delay: Math.random() * 0.25,
-        });
+    function ensureEngine() {
+      if (engine) return engine;
+      if (typeof THREE === "undefined") {
+        console.warn("[galaxy] Three.js missing");
+        return null;
       }
-    }
 
-    function spawnFirework(x, y) {
-      const colors = ["#ff69b4", "#ff9ec8", "#e9ce94", "#c4a574", "#fff5f0", "#ff4d8d"];
-      const count = perfMode === "low" ? 24 : 42;
-      for (let i = 0; i < count; i++) {
-        const ang = (Math.PI * 2 * i) / count + Math.random() * 0.2;
-        const sp = 2 + Math.random() * 5.5;
-        sparks.push({
-          x,
-          y,
-          vx: Math.cos(ang) * sp,
-          vy: Math.sin(ang) * sp,
-          life: 1,
-          decay: 0.012 + Math.random() * 0.016,
-          color: colors[i % colors.length],
-          size: 1.5 + Math.random() * 2,
-        });
+      const low = perfMode === "low";
+      const particleCount = low ? 1800 : 4000;
+      const MAX_BURSTS = low ? 4 : 6;
+      const burstParticleCount = low ? 140 : 220;
+      const HOLD_DURATION = 2.2;
+
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(
+        75,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000
+      );
+      camera.position.z = 280;
+
+      const renderer = new THREE.WebGLRenderer({
+        canvas,
+        antialias: !low,
+        alpha: true,
+      });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, low ? 1.5 : 2));
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setClearColor(0x000000, 1);
+
+      const cx = 0;
+      const cy = 10;
+
+      const geometry = new THREE.BufferGeometry();
+      const positions = new Float32Array(particleCount * 3);
+      const colors = new Float32Array(particleCount * 3);
+      const sizes = new Float32Array(particleCount);
+      const delays = new Float32Array(particleCount);
+      const targetPositions = new Float32Array(particleCount * 3);
+      const burstDir = new Float32Array(particleCount * 3);
+      const burstSpeed = new Float32Array(particleCount);
+      const twinkleSeed = new Float32Array(particleCount);
+      const twinkleSpeed = new Float32Array(particleCount);
+      const heartColorR = new Float32Array(particleCount);
+      const heartColorG = new Float32Array(particleCount);
+      const heartColorB = new Float32Array(particleCount);
+
+      for (let i = 0; i < particleCount; i++) {
+        const t = (i / particleCount) * Math.PI * 2;
+        const pos = heartShape(t);
+        const tx = pos.x * 9.2 + cx;
+        const ty = pos.y * 9.2 + cy;
+        const tz = (Math.random() - 0.5) * 35;
+
+        targetPositions[i * 3] = tx;
+        targetPositions[i * 3 + 1] = ty;
+        targetPositions[i * 3 + 2] = tz;
+
+        positions[i * 3] = cx;
+        positions[i * 3 + 1] = cy;
+        positions[i * 3 + 2] = 0;
+
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos(Math.random() * 2 - 1);
+        burstDir[i * 3] = Math.sin(phi) * Math.cos(theta);
+        burstDir[i * 3 + 1] = Math.sin(phi) * Math.sin(theta);
+        burstDir[i * 3 + 2] = Math.cos(phi) * 0.4;
+        burstSpeed[i] = 60 + Math.random() * 140;
+
+        const fc = Math.random();
+        if (fc < 0.33) {
+          colors[i * 3] = 1.0;
+          colors[i * 3 + 1] = 0.85 + Math.random() * 0.15;
+          colors[i * 3 + 2] = 0.4 + Math.random() * 0.3;
+        } else if (fc < 0.66) {
+          colors[i * 3] = 1.0;
+          colors[i * 3 + 1] = 0.3 + Math.random() * 0.3;
+          colors[i * 3 + 2] = 0.5 + Math.random() * 0.3;
+        } else {
+          colors[i * 3] = 1.0;
+          colors[i * 3 + 1] = 1.0;
+          colors[i * 3 + 2] = 1.0;
+        }
+
+        sizes[i] = Math.random() * 2.4 + 1.6;
+        const angle = Math.atan2(ty - cy, tx - cx);
+        delays[i] = ((angle + Math.PI) / (Math.PI * 2) + 0.08) % 1;
+        twinkleSeed[i] = Math.random() * Math.PI * 2;
+        twinkleSpeed[i] = 2 + Math.random() * 4;
+        heartColorR[i] = 1.0;
+        heartColorG[i] = 0.18 + Math.random() * 0.32;
+        heartColorB[i] = 0.68 + Math.random() * 0.22;
       }
+
+      geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+      geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+      geometry.setAttribute("size", new THREE.BufferAttribute(sizes, 1));
+
+      const material = new THREE.PointsMaterial({
+        size: 2.9,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.95,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      });
+
+      const points = new THREE.Points(geometry, material);
+      scene.add(points);
+
+      function makeBurstSystem(n) {
+        const geo = new THREE.BufferGeometry();
+        const pos = new Float32Array(n * 3);
+        const col = new Float32Array(n * 3);
+        const vel = new Float32Array(n * 3);
+        geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+        geo.setAttribute("color", new THREE.BufferAttribute(col, 3));
+        const mat = new THREE.PointsMaterial({
+          size: 2.2,
+          vertexColors: true,
+          transparent: true,
+          opacity: 1,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+        });
+        const pts = new THREE.Points(geo, mat);
+        pts.visible = false;
+        scene.add(pts);
+        return {
+          geo,
+          pos,
+          col,
+          vel,
+          mat,
+          pts,
+          alive: false,
+          age: 0,
+          life: 1.6,
+          origin: new THREE.Vector3(),
+        };
+      }
+
+      const bursts = [];
+      for (let b = 0; b < MAX_BURSTS; b++) {
+        bursts.push(makeBurstSystem(burstParticleCount));
+      }
+
+      function fireBurst(system) {
+        const ox = (Math.random() - 0.5) * 260;
+        const oy = (Math.random() - 0.5) * 160 + 20;
+        const oz = (Math.random() - 0.5) * 60 - 40;
+        system.origin.set(ox, oy, oz);
+
+        const hue = Math.random();
+        let r;
+        let g;
+        let bl;
+        if (hue < 0.25) {
+          r = 1.0;
+          g = 0.3;
+          bl = 0.4;
+        } else if (hue < 0.5) {
+          r = 1.0;
+          g = 0.85;
+          bl = 0.4;
+        } else if (hue < 0.75) {
+          r = 0.6;
+          g = 0.6;
+          bl = 1.0;
+        } else {
+          r = 1.0;
+          g = 1.0;
+          bl = 1.0;
+        }
+
+        for (let i = 0; i < burstParticleCount; i++) {
+          system.pos[i * 3] = ox;
+          system.pos[i * 3 + 1] = oy;
+          system.pos[i * 3 + 2] = oz;
+          const theta = Math.random() * Math.PI * 2;
+          const phi = Math.acos(Math.random() * 2 - 1);
+          const speed = 30 + Math.random() * 60;
+          system.vel[i * 3] = Math.sin(phi) * Math.cos(theta) * speed;
+          system.vel[i * 3 + 1] = Math.sin(phi) * Math.sin(theta) * speed;
+          system.vel[i * 3 + 2] = Math.cos(phi) * speed * 0.5;
+          system.col[i * 3] = r + (Math.random() - 0.5) * 0.15;
+          system.col[i * 3 + 1] = g + (Math.random() - 0.5) * 0.15;
+          system.col[i * 3 + 2] = bl + (Math.random() - 0.5) * 0.15;
+        }
+        system.geo.attributes.position.needsUpdate = true;
+        system.geo.attributes.color.needsUpdate = true;
+        system.mat.opacity = 1;
+        system.age = 0;
+        system.alive = true;
+        system.pts.visible = true;
+      }
+
+      engine = {
+        scene,
+        camera,
+        renderer,
+        points,
+        geometry,
+        material,
+        particleCount,
+        burstParticleCount,
+        targetPositions,
+        burstDir,
+        burstSpeed,
+        delays,
+        colors,
+        heartColorR,
+        heartColorG,
+        heartColorB,
+        twinkleSeed,
+        twinkleSpeed,
+        bursts,
+        fireBurst,
+        cx,
+        cy,
+        time: 0,
+        holdTimer: 0,
+        HOLD_DURATION,
+        state: "assembling",
+        clockTime: 0,
+        nextBurstTime: 1.5,
+        prevT: 0,
+        captionShown: false,
+      };
+      return engine;
     }
 
-    function easeOutCubic(t) {
-      return 1 - Math.pow(1 - t, 3);
+    function resizeEngine() {
+      if (!engine) return;
+      const { camera, renderer } = engine;
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
     function tick(now) {
-      if (!galaxyRunning) return;
-      if (!start) start = now;
-      const elapsed = (now - start) / 1000;
+      if (!galaxyRunning || !engine) return;
+      const e = engine;
+      if (!e.prevT) e.prevT = now;
+      const dt = Math.min((now - e.prevT) / 1000, 0.05);
+      e.prevT = now;
+      e.clockTime += dt;
 
-      /* galaxy backdrop */
-      const g = ctx.createRadialGradient(w * 0.5, h * 0.35, 0, w * 0.5, h * 0.5, Math.max(w, h) * 0.75);
-      g.addColorStop(0, "#3d2458");
-      g.addColorStop(0.35, "#1a1028");
-      g.addColorStop(0.7, "#0c0814");
-      g.addColorStop(1, "#050308");
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, w, h);
-
-      /* nebula washes */
-      ctx.save();
-      ctx.globalAlpha = 0.35;
-      const n1 = ctx.createRadialGradient(w * 0.25, h * 0.3, 0, w * 0.25, h * 0.3, w * 0.35);
-      n1.addColorStop(0, "rgba(180,80,140,0.45)");
-      n1.addColorStop(1, "transparent");
-      ctx.fillStyle = n1;
-      ctx.fillRect(0, 0, w, h);
-      const n2 = ctx.createRadialGradient(w * 0.75, h * 0.55, 0, w * 0.75, h * 0.55, w * 0.4);
-      n2.addColorStop(0, "rgba(90,70,180,0.35)");
-      n2.addColorStop(1, "transparent");
-      ctx.fillStyle = n2;
-      ctx.fillRect(0, 0, w, h);
-      ctx.restore();
-
-      /* stars */
-      stars.forEach((s) => {
-        s.tw += s.sp;
-        const a = s.a * (0.55 + Math.sin(s.tw) * 0.45);
-        ctx.beginPath();
-        ctx.fillStyle = `rgba(255,245,250,${a})`;
-        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-        ctx.fill();
-      });
-
-      /* heart gather ~2.2s then hold, occasional fireworks */
-      let progress = Math.min(1, Math.max(0, (elapsed - 0.15) / 2.2));
-      progress = easeOutCubic(progress);
-      if (elapsed > 2.5 && phase === "gather") phase = "hold";
-      if (elapsed > 2.8 && phase === "hold") {
-        phase = "burst";
-        spawnFirework(w * 0.5, h * 0.38);
-        spawnFirework(w * 0.28, h * 0.55);
-        spawnFirework(w * 0.72, h * 0.52);
-      }
-      if (phase === "burst" && Math.random() < 0.018) {
-        spawnFirework(Math.random() * w * 0.7 + w * 0.15, Math.random() * h * 0.45 + h * 0.15);
+      if (e.state === "assembling") {
+        e.time += 0.42 * dt;
+        if (e.time >= 1) {
+          e.time = 1;
+          e.state = "holding";
+          e.holdTimer = 0;
+        }
+      } else if (e.state === "holding") {
+        e.holdTimer += dt;
+        if (e.holdTimer >= e.HOLD_DURATION) e.state = "exploding";
+      } else if (e.state === "exploding") {
+        e.time -= 0.9 * dt;
+        if (e.time <= 0) {
+          e.time = 0;
+          e.state = "assembling";
+        }
       }
 
-      particles.forEach((p) => {
-        const local = Math.min(1, Math.max(0, (progress - p.delay) / (1 - p.delay * 0.5)));
-        const e = easeOutCubic(local);
-        const x = p.x + (p.tx - p.x) * e;
-        const y = p.y + (p.ty - p.y) * e;
-        /* soft glow */
-        ctx.beginPath();
-        ctx.fillStyle = `hsla(${p.hue}, 85%, 68%, 0.35)`;
-        ctx.arc(x, y, p.size * 2.2, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.beginPath();
-        ctx.fillStyle = `hsl(${p.hue}, 90%, 72%)`;
-        ctx.arc(x, y, p.size, 0, Math.PI * 2);
-        ctx.fill();
-      });
+      if (!e.captionShown && e.time > 0.85) {
+        e.captionShown = true;
+        root.classList.add("is-caption");
+      }
 
-      /* fireworks sparks */
-      sparks = sparks.filter((s) => s.life > 0.02);
-      sparks.forEach((s) => {
-        s.x += s.vx;
-        s.y += s.vy;
-        s.vy += 0.06;
-        s.vx *= 0.99;
-        s.life -= s.decay;
-        ctx.beginPath();
-        ctx.fillStyle = s.color;
-        ctx.globalAlpha = Math.max(0, s.life);
-        ctx.arc(s.x, s.y, s.size * s.life, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.globalAlpha = 1;
-      });
+      const posArray = e.geometry.attributes.position.array;
+      const colArray = e.geometry.attributes.color.array;
+      const { cx, cy, particleCount } = e;
 
-      /* show caption after heart forms */
-      if (elapsed > 1.8) root.classList.add("is-caption");
+      for (let i = 0; i < particleCount; i++) {
+        const delay = e.delays[i] * 0.5;
+        let localProgress = (e.time - delay) / (1 - delay);
+        localProgress = Math.max(0, Math.min(1, localProgress));
+        const ease =
+          localProgress < 0.5
+            ? 2 * localProgress * localProgress
+            : 1 - Math.pow(-2 * localProgress + 2, 2) / 2;
 
+        const tx = e.targetPositions[i * 3];
+        const ty = e.targetPositions[i * 3 + 1];
+        const tz = e.targetPositions[i * 3 + 2];
+        const burstEase = Math.sin(ease * Math.PI);
+        const bx = e.burstDir[i * 3] * e.burstSpeed[i] * burstEase * 0.35;
+        const by = e.burstDir[i * 3 + 1] * e.burstSpeed[i] * burstEase * 0.35;
+        const bz = e.burstDir[i * 3 + 2] * e.burstSpeed[i] * burstEase * 0.35;
+
+        posArray[i * 3] = cx + (tx - cx) * ease + bx;
+        posArray[i * 3 + 1] = cy + (ty - cy) * ease + by;
+        posArray[i * 3 + 2] = tz * ease * 0.5 + bz;
+
+        const blend = ease;
+        const twinkle =
+          0.75 +
+          0.25 * Math.sin(e.clockTime * e.twinkleSpeed[i] + e.twinkleSeed[i]);
+        colArray[i * 3] =
+          e.colors[i * 3] * (1 - blend) + e.heartColorR[i] * blend;
+        colArray[i * 3 + 1] =
+          (e.colors[i * 3 + 1] * (1 - blend) + e.heartColorG[i] * blend) * twinkle;
+        colArray[i * 3 + 2] =
+          (e.colors[i * 3 + 2] * (1 - blend) + e.heartColorB[i] * blend) * twinkle;
+      }
+
+      e.geometry.attributes.position.needsUpdate = true;
+      e.geometry.attributes.color.needsUpdate = true;
+      e.points.rotation.y = Math.sin(e.clockTime * 0.5) * 0.08;
+      e.points.rotation.x = Math.sin(e.clockTime * 0.32) * 0.04;
+      e.material.size = 2.9 + Math.sin(e.clockTime * 3) * 0.3;
+
+      if (e.clockTime >= e.nextBurstTime) {
+        const free = e.bursts.find((b) => !b.alive);
+        if (free) e.fireBurst(free);
+        e.nextBurstTime = e.clockTime + 0.6 + Math.random() * 1.2;
+      }
+
+      for (const b of e.bursts) {
+        if (!b.alive) continue;
+        b.age += dt;
+        const lp = b.age / b.life;
+        if (lp >= 1) {
+          b.alive = false;
+          b.pts.visible = false;
+          continue;
+        }
+        const gravity = -25;
+        const p = b.pos;
+        const v = b.vel;
+        for (let i = 0; i < e.burstParticleCount; i++) {
+          p[i * 3] += v[i * 3] * dt;
+          p[i * 3 + 1] += v[i * 3 + 1] * dt + 0.5 * gravity * dt * dt;
+          p[i * 3 + 2] += v[i * 3 + 2] * dt;
+          v[i * 3 + 1] += gravity * dt;
+          v[i * 3] *= 0.985;
+          v[i * 3 + 1] *= 0.985;
+          v[i * 3 + 2] *= 0.985;
+        }
+        b.geo.attributes.position.needsUpdate = true;
+        b.mat.opacity = 1 - lp;
+        b.mat.size = 2.2 * (1 - lp * 0.4);
+      }
+
+      e.renderer.render(e.scene, e.camera);
       galaxyRaf = requestAnimationFrame(tick);
     }
 
     function openShow() {
       if (galaxyRunning) return;
-      /* wall fullscreen would hide body-level overlay */
       if (typeof isWallFullscreen === "function" && isWallFullscreen()) {
         exitWallFullscreen();
       }
@@ -2668,12 +2848,30 @@
         namesEl.classList.add("couple-names-line");
       }
       if (labelEl) labelEl.textContent = t(cfg.guestbook?.wallFireworks) || "Pháo hoa";
-      resize();
-      buildStars();
-      buildHeartParticles();
-      sparks = [];
-      start = 0;
-      phase = "gather";
+
+      const eng = ensureEngine();
+      if (!eng) {
+        showToast(
+          lang === "vi"
+            ? "Không tải được hiệu ứng 3D"
+            : "Could not load 3D effect"
+        );
+        return;
+      }
+
+      eng.time = 0;
+      eng.holdTimer = 0;
+      eng.state = "assembling";
+      eng.clockTime = 0;
+      eng.nextBurstTime = 1.5;
+      eng.prevT = 0;
+      eng.captionShown = false;
+      eng.bursts.forEach((b) => {
+        b.alive = false;
+        b.pts.visible = false;
+      });
+
+      resizeEngine();
       root.hidden = false;
       root.classList.remove("is-caption");
       document.body.style.overflow = "hidden";
@@ -2699,7 +2897,16 @@
     });
     closeBtn?.addEventListener("click", closeShow);
     root.addEventListener("click", (e) => {
-      if (e.target === root) closeShow();
+      if (e.target === root || e.target === canvas) {
+        /* click canvas = re-explode like demo, not close */
+        if (e.target === canvas && engine && galaxyRunning) {
+          if (engine.state !== "exploding") engine.state = "exploding";
+          const free = engine.bursts.find((b) => !b.alive);
+          if (free) engine.fireBurst(free);
+          return;
+        }
+        if (e.target === root) closeShow();
+      }
     });
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && galaxyRunning) {
@@ -2710,10 +2917,7 @@
     window.addEventListener(
       "resize",
       () => {
-        if (!galaxyRunning) return;
-        resize();
-        buildStars();
-        buildHeartParticles();
+        if (galaxyRunning) resizeEngine();
       },
       { passive: true }
     );
