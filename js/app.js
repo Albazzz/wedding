@@ -22,6 +22,27 @@
   let wishCloudUnsub = null;
   let wishRevealTimer = null;
   let wishRevealOpen = false;
+  /** performance profile: full | balanced | low */
+  let perfMode = "full";
+
+  function detectPerfMode() {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return "low";
+    }
+    const cores = navigator.hardwareConcurrency || 4;
+    const mem = navigator.deviceMemory || 4;
+    const saveData = !!(navigator.connection && navigator.connection.saveData);
+    const coarse = window.matchMedia("(pointer: coarse)").matches;
+    if (saveData || mem <= 2 || cores <= 2) return "low";
+    if (coarse || mem <= 4 || cores <= 4) return "balanced";
+    return "full";
+  }
+
+  function applyPerfMode() {
+    perfMode = detectPerfMode();
+    document.body.classList.toggle("is-low-power", perfMode !== "full");
+    document.body.dataset.perf = perfMode;
+  }
 
   /* ---------- Helpers ---------- */
   function t(obj, fallback) {
@@ -258,6 +279,7 @@
 
   /* ---------- Cursor glow + soft trail ---------- */
   function setupCursorFx() {
+    if (perfMode === "low") return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
 
@@ -337,6 +359,7 @@
 
   /* ---------- 3D tilt on cards (desktop) ---------- */
   function setupCardTilt() {
+    if (perfMode === "low") return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
 
@@ -373,6 +396,7 @@
 
   /* ---------- Click ripple ---------- */
   function setupClickRipple() {
+    if (perfMode === "low") return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     document.addEventListener(
@@ -1318,11 +1342,19 @@
 
     function init() {
       resize();
-      const n = cfg.effects.petalCount || 22;
+      let n = cfg.effects.petalCount || 22;
+      if (perfMode === "low") n = Math.min(n, 8);
+      else if (perfMode === "balanced") n = Math.min(n, 14);
+
+      const bokehN =
+        perfMode === "low" ? 0 : Math.max(4, Math.floor(n * (perfMode === "balanced" ? 0.2 : 0.35)));
+      const sparkN =
+        perfMode === "low" ? Math.floor(n * 0.4) : Math.max(8, Math.floor(n * 0.7));
+
       layers = [
-        ...Array.from({ length: Math.max(8, Math.floor(n * 0.35)) }, makeBokeh),
+        ...Array.from({ length: bokehN }, makeBokeh),
         ...Array.from({ length: n }, makePetal),
-        ...Array.from({ length: Math.max(14, Math.floor(n * 0.7)) }, makeSparkle),
+        ...Array.from({ length: sparkN }, makeSparkle),
       ];
     }
 
@@ -1407,6 +1439,7 @@
   function setupParallax() {
     const hero = $("#hero");
     if (!hero) return;
+    if (perfMode === "low") return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     if (window.matchMedia("(hover: none)").matches) return;
 
@@ -1492,7 +1525,8 @@
 
     if (!intro || cfgIntro.enabled === false) {
       intro?.remove();
-      document.body.classList.remove("intro-lock");
+      document.body.classList.remove("intro-lock", "is-booting");
+      requestAnimationFrame(() => document.body.classList.add("is-camera-in"));
       return;
     }
 
@@ -1500,7 +1534,8 @@
       try {
         if (sessionStorage.getItem("wedding_intro_seen") === "1") {
           intro.remove();
-          document.body.classList.remove("intro-lock");
+          document.body.classList.remove("intro-lock", "is-booting");
+          requestAnimationFrame(() => document.body.classList.add("is-camera-in"));
           return;
         }
       } catch (_) {
@@ -1550,7 +1585,11 @@
       closed = true;
       if (typeTimer) clearTimeout(typeTimer);
       intro.classList.add("is-done");
-      document.body.classList.remove("intro-lock");
+      document.body.classList.remove("intro-lock", "is-booting");
+      /* camera zoom into hero after envelope closes */
+      requestAnimationFrame(() => {
+        document.body.classList.add("is-camera-in");
+      });
       try {
         sessionStorage.setItem("wedding_intro_seen", "1");
       } catch (_) {
@@ -1627,6 +1666,7 @@
 
   /* ---------- Boot ---------- */
   function init() {
+    applyPerfMode();
     applyI18n();
     setupHero();
     setupCountdown();

@@ -1903,6 +1903,71 @@ body.intro-lock {
   position: relative;
 }
 
+.music-toggle__icon {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.music-eq {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 2px;
+  padding: 12px 10px;
+  pointer-events: none;
+}
+
+.music-eq i {
+  display: block;
+  width: 2.5px;
+  height: 40%;
+  border-radius: 2px;
+  background: currentColor;
+  transform-origin: bottom center;
+  animation: eq-bar 0.55s ease-in-out infinite alternate;
+}
+
+.music-eq i:nth-child(1) {
+  animation-duration: 0.42s;
+  height: 35%;
+}
+.music-eq i:nth-child(2) {
+  animation-duration: 0.58s;
+  animation-delay: 0.08s;
+  height: 55%;
+}
+.music-eq i:nth-child(3) {
+  animation-duration: 0.48s;
+  animation-delay: 0.14s;
+  height: 45%;
+}
+.music-eq i:nth-child(4) {
+  animation-duration: 0.62s;
+  animation-delay: 0.04s;
+  height: 30%;
+}
+
+.music-toggle.is-playing .music-toggle__icon {
+  opacity: 0;
+  transform: scale(0.6);
+}
+
+.music-toggle.is-playing .music-eq {
+  display: flex;
+}
+
+@keyframes eq-bar {
+  from {
+    transform: scaleY(0.35);
+    opacity: 0.65;
+  }
+  to {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
 @keyframes music-ring {
   0% {
     transform: scale(0.92);
@@ -1912,6 +1977,61 @@ body.intro-lock {
     transform: scale(1.35);
     opacity: 0;
   }
+}
+
+/* Page load / intro exit — camera zoom */
+body.is-booting #hero {
+  transform: scale(1.08);
+  filter: blur(8px);
+  opacity: 0.65;
+}
+
+body.is-booting #hero .hero__content {
+  transform: scale(0.94) translateY(18px);
+  opacity: 0.5;
+}
+
+body:not(.intro-lock) #hero {
+  transition:
+    transform 1.45s var(--ease-expo),
+    filter 1.2s var(--ease),
+    opacity 1s var(--ease);
+}
+
+body:not(.intro-lock) #hero .hero__content {
+  transition:
+    transform 1.35s var(--ease-expo) 0.08s,
+    opacity 1.1s var(--ease) 0.08s;
+}
+
+body.is-camera-in #hero {
+  transform: scale(1);
+  filter: blur(0);
+  opacity: 1;
+}
+
+body.is-camera-in #hero .hero__content {
+  transform: none;
+  opacity: 1;
+}
+
+/* Low-power mode: tone down heavy FX via class on body */
+body.is-low-power .hero__ambient,
+body.is-low-power .hero__glow {
+  animation: none !important;
+  opacity: 0.35;
+}
+
+body.is-low-power .glass-shine::after,
+body.is-low-power .cursor-glow,
+body.is-low-power .cursor-dot,
+body.is-low-power .cursor-trail {
+  display: none !important;
+}
+
+body.is-low-power .soft-float,
+body.is-low-power .soft-float-ready {
+  animation: none !important;
 }
 
 .gallery__item.is-placeholder {
@@ -3608,6 +3728,7 @@ input[type="range"] {
   .scroll-hint__arrow,
   .music-toggle.is-playing,
   .music-toggle.is-playing::after,
+  .music-eq i,
   .glass-shine::after,
   .countdown__num.is-flip .countdown__curr,
   .countdown__num.is-flip .countdown__next {
