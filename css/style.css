@@ -3741,17 +3741,15 @@ body.wall-fs-lock {
   z-index: 6;
 }
 
-/* Demo hearts (no real wish yet) — slightly softer */
+/* Fillers when < wallMinHearts real wishes — décor only, no click */
 .wall-heart--demo {
   opacity: 0;
+  pointer-events: none;
+  cursor: default;
 }
 
 .wall-heart--demo.is-in {
-  opacity: 0.92;
-}
-
-.wall-heart--demo .wall-heart__name {
-  opacity: 0.88;
+  opacity: 0.78;
 }
 
 .wall-heart.is-in {

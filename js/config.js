@@ -164,30 +164,19 @@ window.WEDDING_CONFIG = {
       vi: "Chưa có thư — hãy gửi lời chúc đầu tiên!",
       en: "No letters yet — send the first wish!",
     },
-    /** Toast khi chạm tim trang trí (chưa có thư thật) */
-    wallDemoTap: {
-      vi: "Hãy gửi lời chúc đầu tiên nhé 💕",
-      en: "Send the first wish 💕",
-    },
-    /**
-     * Tim có cánh bay sẵn khi chưa ai gửi thư (tránh tường trống).
-     * Chỉ trang trí — click sẽ gợi gửi lời chúc.
-     */
-    wallDemoHearts: [
-      { name: { vi: "Bạn bè", en: "Friends" } },
-      { name: { vi: "Người thân", en: "Family" } },
-      { name: { vi: "Đồng nghiệp", en: "Colleagues" } },
-      { name: { vi: "Khách mời", en: "Guest" } },
-      { name: { vi: "Yêu thương", en: "With love" } },
-    ],
     filterLabel: { vi: "Lọc theo mối quan hệ", en: "Filter by relation" },
     filterAll: { vi: "Tất cả", en: "All" },
     filterEmpty: {
       vi: "Không có thiệp thuộc nhóm này",
       en: "No cards in this relation group",
     },
-    /** Số trái tim (lá thư) tối đa trên orbit */
+    /** Số trái tim (lá thư) tối đa trên tường */
     wallCount: 12,
+    /**
+     * Luôn hiện ít nhất wallMinHearts tim bay.
+     * Nếu chưa đủ lời chúc thật → chèn tim trang trí (không bấm được).
+     */
+    wallMinHearts: 5,
     /**
      * Living orbit: mỗi wallRotateMs thay 1 trái tim bằng lời chúc khác.
      * Gợi ý 6000–10000.

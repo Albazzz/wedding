@@ -1416,53 +1416,58 @@
     wallLetterFxRaf = requestAnimationFrame(tick);
   }
 
-  /** Decorative winged hearts when guestbook is still empty */
-  function makeDemoWallWishes() {
-    const list = cfg.guestbook?.wallDemoHearts;
-    const defaults = [
-      { name: { vi: "Bạn bè", en: "Friends" } },
-      { name: { vi: "Người thân", en: "Family" } },
-      { name: { vi: "Đồng nghiệp", en: "Colleagues" } },
-      { name: { vi: "Khách mời", en: "Guest" } },
-      { name: { vi: "Yêu thương", en: "With love" } },
-    ];
-    const src = Array.isArray(list) && list.length ? list : defaults;
-    return src.slice(0, 5).map((item, i) => ({
-      id: "demo_wall_" + i,
-      name: typeof item.name === "string" ? item.name : t(item.name) || "♥",
+  /**
+   * Always show at least minWall hearts.
+   * Real wishes are clickable; if count < min, pad with decorative fillers (no click).
+   */
+  function pickWallHearts(all) {
+    const maxWall = cfg.guestbook.wallCount || 12;
+    const minWall = Math.max(1, Number(cfg.guestbook.wallMinHearts) || 5);
+    const real = shuffle(all).slice(0, maxWall);
+    if (real.length >= minWall) return real;
+    const need = minWall - real.length;
+    const fillers = Array.from({ length: need }, (_, i) => ({
+      id: "fill_wall_" + i,
+      name: "",
       relation: "",
       message: "",
       isDemo: true,
     }));
+    return real.concat(fillers);
   }
 
   function wallHeartMarkup(w, i) {
     const wid = escapeHtml(w.id || "");
-    const rawName = String(w.name || "Guest");
-    const short = escapeHtml(rawName.length > 14 ? rawName.slice(0, 13) + "…" : rawName);
     const isDemo = !!w.isDemo;
+    const rawName = String(w.name || "").trim();
+    const short = rawName
+      ? escapeHtml(rawName.length > 14 ? rawName.slice(0, 13) + "…" : rawName)
+      : "";
     const label = isDemo
-      ? t(cfg.guestbook?.wallDemoTap) || "Hãy gửi lời chúc đầu tiên"
-      : w.name
-        ? `Thư từ ${escapeHtml(w.name)}`
+      ? ""
+      : rawName
+        ? `Thư từ ${escapeHtml(rawName)}`
         : "Mở lá thư lời chúc";
     /* nhịp vỗ chim thật: ~0.38–0.55s, lệch pha */
     const flap = (0.38 + Math.random() * 0.16).toFixed(2);
     const flapDelay = (-Math.random() * 0.4).toFixed(2);
+    /* demo fillers = decorative only (span, not button) */
+    const tag = isDemo ? "span" : "button";
+    const typeAttr = isDemo ? "" : ' type="button"';
+    const role = isDemo ? ' role="presentation" aria-hidden="true"' : ` aria-label="${escapeHtml(label)}"`;
     return `
-      <button type="button" class="wall-heart${isDemo ? " wall-heart--demo" : ""}" data-wish-id="${wid}"
+      <${tag}${typeAttr} class="wall-heart${isDemo ? " wall-heart--demo" : ""}" data-wish-id="${wid}"
         data-demo="${isDemo ? "1" : "0"}"
-        style="--enter-delay:${(i * 0.07).toFixed(2)}s;--flap:${flap}s;--flap-delay:${flapDelay}s"
-        aria-label="${escapeHtml(label)}">
+        style="--enter-delay:${(i * 0.07).toFixed(2)}s;--flap:${flap}s;--flap-delay:${flapDelay}s"${role}>
         <span class="wall-heart__body">
           <span class="wall-heart__wing wall-heart__wing--left" aria-hidden="true"></span>
           <span class="wall-heart__wing wall-heart__wing--right" aria-hidden="true"></span>
           <span class="wall-heart__core">
             <span class="wall-heart__icon" aria-hidden="true">♥</span>
           </span>
-          <span class="wall-heart__name">${short}</span>
+          ${short ? `<span class="wall-heart__name">${short}</span>` : ""}
         </span>
-      </button>`;
+      </${tag}>`;
   }
 
   function isWallFullscreen() {
@@ -1739,12 +1744,15 @@
     stage.addEventListener("click", (e) => {
       const btn = e.target.closest(".wall-heart[data-wish-id]");
       if (!btn || !stage.contains(btn)) return;
-      e.preventDefault();
-      /* Decorative demo hearts (empty guestbook) */
-      if (btn.getAttribute("data-demo") === "1" || btn.classList.contains("wall-heart--demo")) {
-        showToast(t(cfg.guestbook?.wallDemoTap) || "Hãy gửi lời chúc đầu tiên 💕");
+      /* Decorative fillers — not clickable */
+      if (
+        btn.getAttribute("data-demo") === "1" ||
+        btn.classList.contains("wall-heart--demo") ||
+        btn.tagName === "SPAN"
+      ) {
         return;
       }
+      e.preventDefault();
       const w = findWishById(btn.getAttribute("data-wish-id"));
       if (w) openWishReveal(w, btn);
     });
@@ -1757,14 +1765,14 @@
     if (!stage || !fly || document.hidden) return;
 
     const all = loadWishes();
-    if (!all.length) {
-      /* keep demo hearts flying — no swap needed */
-      return;
-    }
+    if (!all.length) return;
 
-    const hearts = Array.from(fly.querySelectorAll(".wall-heart:not(.is-leaving)"));
+    const hearts = Array.from(
+      fly.querySelectorAll(".wall-heart:not(.is-leaving):not(.wall-heart--demo)")
+    );
     if (!hearts.length) {
-      renderWishWall(true);
+      /* only fillers on stage — rebuild when real wishes exist */
+      if (all.length) renderWishWall(true);
       return;
     }
 
@@ -1843,16 +1851,18 @@
     updateWallLetterLabels();
     setupWallFullscreen();
     const all = loadWishes();
-    const demos = !all.length ? makeDemoWallWishes() : null;
-    const picks = demos
-      ? demos
-      : shuffle(all).slice(0, Math.min(cfg.guestbook.wallCount || 12, all.length));
+    const picks = pickWallHearts(all);
+    const realCount = picks.filter((w) => !w.isDemo).length;
+    const fillCount = picks.length - realCount;
     const count = picks.length;
-    const sig = picks.map((w) => w.id).join("|") + (demos ? "|demo" : "");
+    const sig =
+      picks
+        .filter((w) => !w.isDemo)
+        .map((w) => w.id)
+        .join("|") + `|fill:${fillCount}|n:${count}`;
 
     if (center) center.hidden = false;
     if (emptyEl) {
-      /* empty text only if somehow no demos either */
       emptyEl.hidden = true;
       emptyEl.textContent = t(cfg.guestbook.wallEmpty);
     }
@@ -1861,7 +1871,7 @@
     if (!forceFull && existing === count && existing > 0 && wallLetterSig === sig) {
       startWallLetterFx(stage);
       if (!wallFlyRunning) startWallHeartFlight(stage);
-      if (!demos) startWallTimer();
+      if (realCount > 0) startWallTimer();
       bindWallLetterClicks(stage);
       wall?.removeAttribute("hidden");
       return;
@@ -1891,13 +1901,10 @@
     bindWallLetterClicks(stage);
     startWallLetterFx(stage);
     startWallHeartFlight(stage);
-    if (demos) {
-      if (wallTimer) {
-        clearInterval(wallTimer);
-        wallTimer = null;
-      }
-    } else {
-      startWallTimer();
+    if (realCount > 0) startWallTimer();
+    else if (wallTimer) {
+      clearInterval(wallTimer);
+      wallTimer = null;
     }
     wall?.removeAttribute("hidden");
   }
