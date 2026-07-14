@@ -542,10 +542,21 @@
   }
 
   function drawStickers() {
+    const tNow = performance.now() * 0.001;
     state.stickers.forEach((s, i) => {
+      /* soft live motion: ±3° wobble + tiny scale (paused while dragging/export) */
+      const live =
+        !freezeMotion &&
+        !drag &&
+        !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const wobble = live ? Math.sin(tNow * 1.1 + i * 0.7) * 2.4 : 0;
+      const bob = live ? Math.sin(tNow * 0.9 + i) * 1.6 : 0;
+      const pulse = live ? 1 + Math.sin(tNow * 1.3 + i * 0.5) * 0.018 : 1;
+
       ctx.save();
-      ctx.translate(s.x, s.y);
-      ctx.rotate(((s.rot || 0) * Math.PI) / 180);
+      ctx.translate(s.x, s.y + bob);
+      ctx.rotate((((s.rot || 0) + wobble) * Math.PI) / 180);
+      ctx.scale(pulse, pulse);
 
       if (s.type === "image" && s.img && s.img.complete) {
         const w = s.size || 100;
@@ -553,7 +564,6 @@
           w *
           ((s.img.naturalHeight || s.img.height || 1) /
             (s.img.naturalWidth || s.img.width || 1));
-        /* soft polaroid-ish edge */
         ctx.fillStyle = "rgba(255,255,255,0.95)";
         ctx.shadowColor = "rgba(0,0,0,0.18)";
         ctx.shadowBlur = 8;
@@ -793,7 +803,11 @@
   function loop() {
     stepParticles();
     render();
-    if (activeEffectIds().length && !freezeMotion) {
+    /* keep loop if particles OR stickers need soft live motion */
+    const needLoop =
+      !freezeMotion &&
+      (activeEffectIds().length > 0 || state.stickers.length > 0);
+    if (needLoop) {
       animId = requestAnimationFrame(loop);
     } else {
       animId = 0;
@@ -801,10 +815,11 @@
   }
 
   function ensureAnim() {
-    if (activeEffectIds().length && !animId && !freezeMotion) {
+    if (freezeMotion) return;
+    if (!animId && (activeEffectIds().length || state.stickers.length)) {
       animId = requestAnimationFrame(loop);
     }
-    if (!activeEffectIds().length) {
+    if (!activeEffectIds().length && !state.stickers.length) {
       if (animId) cancelAnimationFrame(animId);
       animId = 0;
       particles = [];
@@ -1008,6 +1023,7 @@
     });
     state.selected = state.stickers.length - 1;
     render();
+    ensureAnim();
   }
 
   function photoStickerCount() {

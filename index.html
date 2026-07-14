@@ -85,14 +85,18 @@
     <main>
       <!-- HERO -->
       <section class="hero" id="hero">
-        <div class="hero__bg" id="hero-bg"></div>
+        <div class="hero__ambient" aria-hidden="true"></div>
+        <div class="hero__parallax" data-depth="0.03">
+          <div class="hero__bg" id="hero-bg"></div>
+        </div>
         <div class="hero__overlay" id="hero-overlay"></div>
-        <div class="hero__content">
+        <div class="hero__glow" aria-hidden="true"></div>
+        <div class="hero__content" data-depth="0.08">
           <p class="hero__eyebrow fade-up" data-i18n="hero.tagline">
             Chúc mừng đến với lễ thành hôn
           </p>
           <h1 class="hero__names fade-up delay-1">
-            <span class="font-script" data-bind="coupleNames">Nguyễn Thị A & Trần Văn B</span>
+            <span class="font-script soft-float" data-bind="coupleNames">Nguyễn Thị A & Trần Văn B</span>
           </h1>
           <div class="hero__divider fade-up delay-2">
             <span class="ornament">❧</span>

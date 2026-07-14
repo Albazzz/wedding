@@ -191,6 +191,9 @@
     const ended = $("#countdown-ended");
     if (!root) return;
 
+    /* soft float after entrance animation settles */
+    setTimeout(() => root.classList.add("soft-float-ready"), 1600);
+
     const target = new Date(cfg.wedding?.datetime || Date.now()).getTime();
 
     function tick() {
@@ -1035,14 +1038,16 @@
   }
 
 
-  /* ---------- Petals ---------- */
+  /* ---------- Multi-layer particles (petal + sparkle + bokeh) ---------- */
   function setupPetals() {
     const canvas = $("#petals-canvas");
     if (!canvas || !cfg.effects?.petals) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     const ctx = canvas.getContext("2d");
-    let w, h, petals, raf;
+    let w, h, layers, raf;
+    let mouseX = 0.5;
+    let mouseY = 0.5;
 
     function resize() {
       w = canvas.width = window.innerWidth;
@@ -1051,41 +1056,112 @@
 
     function makePetal() {
       return {
+        kind: "petal",
         x: Math.random() * w,
         y: Math.random() * h - h,
-        r: 4 + Math.random() * 7,
-        vy: 0.6 + Math.random() * 1.4,
-        vx: -0.4 + Math.random() * 0.8,
+        r: 5 + Math.random() * 8,
+        vy: 0.45 + Math.random() * 1.1,
+        vx: -0.35 + Math.random() * 0.7,
         rot: Math.random() * Math.PI * 2,
-        vr: -0.02 + Math.random() * 0.04,
-        alpha: 0.35 + Math.random() * 0.45,
-        color: Math.random() > 0.5 ? "200,140,140" : "220,180,160",
+        vr: -0.015 + Math.random() * 0.03,
+        alpha: 0.28 + Math.random() * 0.4,
+        color: Math.random() > 0.5 ? "210,150,150" : "230,190,170",
+        depth: 0.4 + Math.random() * 0.6,
+      };
+    }
+
+    function makeSparkle() {
+      return {
+        kind: "sparkle",
+        x: Math.random() * w,
+        y: Math.random() * h,
+        r: 1 + Math.random() * 2.2,
+        vy: -0.15 - Math.random() * 0.35,
+        vx: -0.2 + Math.random() * 0.4,
+        phase: Math.random() * Math.PI * 2,
+        alpha: 0.2 + Math.random() * 0.55,
+        depth: 0.8 + Math.random() * 0.4,
+      };
+    }
+
+    function makeBokeh() {
+      return {
+        kind: "bokeh",
+        x: Math.random() * w,
+        y: Math.random() * h,
+        r: 12 + Math.random() * 28,
+        vy: -0.05 - Math.random() * 0.12,
+        vx: -0.08 + Math.random() * 0.16,
+        alpha: 0.04 + Math.random() * 0.08,
+        depth: 0.15 + Math.random() * 0.25,
       };
     }
 
     function init() {
       resize();
-      const n = cfg.effects.petalCount || 24;
-      petals = Array.from({ length: n }, makePetal);
+      const n = cfg.effects.petalCount || 22;
+      layers = [
+        ...Array.from({ length: Math.max(8, Math.floor(n * 0.35)) }, makeBokeh),
+        ...Array.from({ length: n }, makePetal),
+        ...Array.from({ length: Math.max(14, Math.floor(n * 0.7)) }, makeSparkle),
+      ];
     }
 
     function draw() {
       ctx.clearRect(0, 0, w, h);
-      petals.forEach((p) => {
-        p.y += p.vy;
-        p.x += p.vx + Math.sin(p.y * 0.01) * 0.3;
-        p.rot += p.vr;
-        if (p.y > h + 20) {
-          p.y = -20;
+      const px = (mouseX - 0.5) * 18;
+      const py = (mouseY - 0.5) * 12;
+
+      layers.forEach((p) => {
+        const parallax = p.depth || 0.5;
+        p.y += p.vy * (0.7 + parallax * 0.5);
+        p.x += p.vx + Math.sin((p.y || 0) * 0.008 + (p.phase || 0)) * 0.25;
+
+        if (p.kind === "sparkle") {
+          p.phase = (p.phase || 0) + 0.04;
+          p.alpha = 0.15 + Math.abs(Math.sin(p.phase)) * 0.55;
+        }
+
+        if (p.y > h + 40 || p.x < -40 || p.x > w + 40) {
+          p.y = p.kind === "sparkle" || p.kind === "bokeh" ? Math.random() * h : -20;
           p.x = Math.random() * w;
         }
+
+        const dx = p.x + px * parallax;
+        const dy = p.y + py * parallax * 0.6;
+
         ctx.save();
-        ctx.translate(p.x, p.y);
-        ctx.rotate(p.rot);
-        ctx.beginPath();
-        ctx.ellipse(0, 0, p.r, p.r * 0.6, 0, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(${p.color},${p.alpha})`;
-        ctx.fill();
+        if (p.kind === "bokeh") {
+          const g = ctx.createRadialGradient(dx, dy, 0, dx, dy, p.r);
+          g.addColorStop(0, `rgba(255,220,200,${p.alpha})`);
+          g.addColorStop(1, "rgba(255,200,180,0)");
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.arc(dx, dy, p.r, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (p.kind === "sparkle") {
+          ctx.globalAlpha = p.alpha;
+          ctx.fillStyle = "rgba(255,245,230,0.95)";
+          ctx.beginPath();
+          ctx.arc(dx, dy, p.r, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = "rgba(255,230,200,0.5)";
+          ctx.lineWidth = 0.6;
+          ctx.beginPath();
+          ctx.moveTo(dx - p.r * 2.2, dy);
+          ctx.lineTo(dx + p.r * 2.2, dy);
+          ctx.moveTo(dx, dy - p.r * 2.2);
+          ctx.lineTo(dx, dy + p.r * 2.2);
+          ctx.stroke();
+        } else {
+          p.rot = (p.rot || 0) + (p.vr || 0);
+          ctx.translate(dx, dy);
+          ctx.rotate(p.rot);
+          ctx.beginPath();
+          ctx.ellipse(0, 0, p.r, p.r * 0.55, 0, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(${p.color},${p.alpha})`;
+          ctx.fill();
+        }
         ctx.restore();
       });
       raf = requestAnimationFrame(draw);
@@ -1094,18 +1170,72 @@
     init();
     draw();
     window.addEventListener("resize", resize);
+    window.addEventListener(
+      "pointermove",
+      (e) => {
+        mouseX = e.clientX / (window.innerWidth || 1);
+        mouseY = e.clientY / (window.innerHeight || 1);
+      },
+      { passive: true }
+    );
     document.addEventListener("visibilitychange", () => {
       if (document.hidden) cancelAnimationFrame(raf);
       else draw();
     });
   }
 
+  /* ---------- Soft mouse parallax (hero layers) ---------- */
+  function setupParallax() {
+    const hero = $("#hero");
+    if (!hero) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (window.matchMedia("(hover: none)").matches) return;
+
+    let mx = 0;
+    let my = 0;
+    let cx = 0;
+    let cy = 0;
+    let raf = 0;
+
+    function tick() {
+      cx += (mx - cx) * 0.06;
+      cy += (my - cy) * 0.06;
+      hero.querySelectorAll("[data-depth]").forEach((el) => {
+        const d = parseFloat(el.getAttribute("data-depth") || "0.04");
+        el.style.transform = `translate3d(${(-cx * d * 40).toFixed(2)}px, ${(-cy * d * 28).toFixed(2)}px, 0)`;
+      });
+      raf = requestAnimationFrame(tick);
+    }
+
+    hero.addEventListener(
+      "pointermove",
+      (e) => {
+        const r = hero.getBoundingClientRect();
+        mx = (e.clientX - r.left) / r.width - 0.5;
+        my = (e.clientY - r.top) / r.height - 0.5;
+      },
+      { passive: true }
+    );
+    hero.addEventListener(
+      "pointerleave",
+      () => {
+        mx = 0;
+        my = 0;
+      },
+      { passive: true }
+    );
+    tick();
+  }
+
   /* ---------- Scroll reveal ---------- */
   function observeReveal() {
     /* timeline items use setupTimelineScroll — skip them */
     const els = $$(".reveal").filter((el) => !el.classList.contains("timeline__item"));
+    const headers = $$(".section__header");
+
     if (!("IntersectionObserver" in window)) {
       els.forEach((el) => el.classList.add("is-visible"));
+      headers.forEach((el) => el.classList.add("is-in"));
       return;
     }
     const io = new IntersectionObserver(
@@ -1120,6 +1250,19 @@
       { threshold: 0.12, rootMargin: "0px 0px -40px 0px" }
     );
     els.forEach((el) => io.observe(el));
+
+    const ho = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            e.target.classList.add("is-in");
+            ho.unobserve(e.target);
+          }
+        });
+      },
+      { threshold: 0.2 }
+    );
+    headers.forEach((el) => ho.observe(el));
   }
 
   /* ---------- Intro: cuộn thư mở + typewriter ---------- */
@@ -1285,6 +1428,7 @@
     setupMusic();
     setupNav();
     setupPetals();
+    setupParallax();
     observeReveal();
     setupIntro();
   }
