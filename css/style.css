@@ -2476,20 +2476,20 @@ body.is-low-power .wishes-wall__stage {
   z-index: 5;
   left: 50%;
   top: 50%;
-  width: min(94vw, 420px);
-  max-height: min(90svh, 820px);
+  width: min(94vw, 480px);
+  max-height: min(90svh, 860px);
   margin: 0;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
   /* translate only — scale() causes GPU blur on photos */
-  transform: translate3d(-50%, calc(-50% + 18px), 0);
+  transform: translate3d(-50%, calc(-50% + 14px), 0);
   filter: none !important;
   transition:
-    opacity 0.55s var(--ease-expo),
-    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1),
-    visibility 0.55s;
-  will-change: opacity, transform;
+    opacity 0.45s ease,
+    transform 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    visibility 0.45s;
+  /* no will-change — some GPUs leave a soft composite layer */
 }
 
 .letter-reveal.is-reading .letter-full {
@@ -2497,6 +2497,8 @@ body.is-low-power .wishes-wall__stage {
   visibility: visible;
   pointer-events: auto;
   transform: translate3d(-50%, -50%, 0);
+  will-change: auto;
+  filter: none !important;
 }
 
 .letter-full__frame {
@@ -2549,28 +2551,38 @@ body.is-low-power .wishes-wall__stage {
 }
 
 /*
-  Card image — display near native 2× export (720px):
-  avoid stretching 360px JPEG to 520px (looked soft).
+  Card image — JS sets exact width from natural size (no soft stretch).
+  Tiny contrast helps soft legacy JPEGs without looking processed.
 */
 .letter-full__img {
   display: block;
   width: auto;
-  max-width: min(92vw, 400px);
-  max-height: min(86svh, 780px);
+  max-width: min(92vw, 480px);
+  max-height: min(86svh, 860px);
   height: auto;
   object-fit: contain;
   object-position: center;
   margin: 0 auto;
-  border-radius: 8px;
+  border-radius: 6px;
   background: #f5e6e0;
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.28),
     0 24px 56px rgba(0, 0, 0, 0.48);
-  filter: none !important;
   image-rendering: auto;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
   transform: translateZ(0);
+  /* micro clarity — avoid blur filters */
+  filter: contrast(1.04) saturate(1.02);
+}
+
+.letter-full.is-hires .letter-full__img {
+  filter: contrast(1.02) saturate(1.01);
+}
+
+.letter-full.is-lores .letter-full__img {
+  /* legacy small cards: keep small, slightly clearer */
+  filter: contrast(1.06) saturate(1.03);
 }
 
 .letter-full__img[hidden] {

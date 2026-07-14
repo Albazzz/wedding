@@ -939,6 +939,63 @@
     }
   }
 
+  /**
+   * Full letter image: size by natural resolution.
+   * - Hi-res (≥700px): fit viewport, no soft stretch past ~1×
+   * - Old soft cards: barely upscale (≤1.1×) so less blurry
+   */
+  function setLetterFullImage(src) {
+    const el = $("#letter-full-img");
+    const full = $("#letter-full");
+    if (!el) return;
+
+    const clearSize = () => {
+      el.style.width = "";
+      el.style.height = "";
+      el.style.maxWidth = "";
+      el.style.maxHeight = "";
+    };
+
+    if (!src) {
+      el.removeAttribute("src");
+      el.hidden = true;
+      clearSize();
+      full?.classList.remove("has-image", "is-hires", "is-lores");
+      return;
+    }
+
+    el.hidden = false;
+    full?.classList.add("has-image");
+
+    const applySize = () => {
+      const nw = el.naturalWidth || 0;
+      const nh = el.naturalHeight || 0;
+      if (!nw || !nh) return;
+
+      const maxW = Math.min(window.innerWidth * 0.9, nw >= 900 ? 480 : 400);
+      const maxH = Math.min(window.innerHeight * 0.86, 860);
+      /* Never upscale soft legacy cards much; hi-res can fill screen */
+      const maxUpscale = nw >= 900 ? 1 : nw >= 640 ? 1.05 : 1.08;
+      const scale = Math.min(maxW / nw, maxH / nh, maxUpscale);
+      const w = Math.max(1, Math.round(nw * scale));
+
+      el.style.width = w + "px";
+      el.style.height = "auto";
+      el.style.maxWidth = "none";
+      el.style.maxHeight = maxH + "px";
+      full?.classList.toggle("is-hires", nw >= 640);
+      full?.classList.toggle("is-lores", nw > 0 && nw < 640);
+    };
+
+    el.onload = applySize;
+    if (el.getAttribute("src") === src && el.complete && el.naturalWidth) {
+      applySize();
+    } else {
+      clearSize();
+      el.src = src;
+    }
+  }
+
   function fillLetterCard(w) {
     const name = w.name || "Khách mời";
     const relation = w.relation || "";
@@ -957,8 +1014,7 @@
     if (msg) msg.textContent = message;
     setLetterImg($("#letter-card-img"), src);
 
-    /* Full readable letter — large card image; text only if no image */
-    const full = $("#letter-full");
+    /* Full readable letter — sized for sharpness */
     const fWho = $("#letter-full-who");
     const fRel = $("#letter-full-rel");
     const fMsg = $("#letter-full-msg");
@@ -968,8 +1024,7 @@
       fRel.hidden = !relation;
     }
     if (fMsg) fMsg.textContent = message;
-    setLetterImg($("#letter-full-img"), src);
-    if (full) full.classList.toggle("has-image", !!src);
+    setLetterFullImage(src);
   }
 
   function resetEnvelope() {

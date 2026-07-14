@@ -1509,12 +1509,12 @@
   /* ========== Export ========== */
   /**
    * Render thiệp ở độ phân giải cao (không phóng to ảnh 360px).
-   * scale=2 → 720×1040, chữ/nét rõ khi mở full letter.
+   * scale=3 → 1080×1560 — nét khi mở full letter / retina.
    */
   function exportDataURL(type, quality, pixelScale) {
     if (!canvas || !ctx) return "";
     const prev = state.selected;
-    const scale = Math.max(1, pixelScale || 2);
+    const scale = Math.max(1, pixelScale || 3);
     state.selected = -1;
     freezeMotion = true;
     if (animId) {
@@ -1553,7 +1553,7 @@
   }
 
   function download() {
-    const url = exportDataURL("image/png", 1, 2);
+    const url = exportDataURL("image/png", 1, 3);
     const a = document.createElement("a");
     a.href = url;
     a.download = `thiep-chuc-mung-${Date.now()}.png`;
@@ -1576,8 +1576,8 @@
       return;
     }
 
-    /* Ảnh thiệp 2× nét (720×1040 jpeg) — Firestore data URL, không cần Storage */
-    const image = exportDataURL("image/jpeg", 0.88, 2);
+    /* Ảnh thiệp 3× (1080×1560) jpeg cao — nét khi mở full; Firestore data URL */
+    const image = exportDataURL("image/jpeg", 0.92, 3);
     const id = "wish_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8);
     const relation = relationLabel();
     const useCloud = !!(
