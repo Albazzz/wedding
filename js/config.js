@@ -164,6 +164,22 @@ window.WEDDING_CONFIG = {
       vi: "Chưa có thư — hãy gửi lời chúc đầu tiên!",
       en: "No letters yet — send the first wish!",
     },
+    /** Toast khi chạm tim trang trí (chưa có thư thật) */
+    wallDemoTap: {
+      vi: "Hãy gửi lời chúc đầu tiên nhé 💕",
+      en: "Send the first wish 💕",
+    },
+    /**
+     * Tim có cánh bay sẵn khi chưa ai gửi thư (tránh tường trống).
+     * Chỉ trang trí — click sẽ gợi gửi lời chúc.
+     */
+    wallDemoHearts: [
+      { name: { vi: "Bạn bè", en: "Friends" } },
+      { name: { vi: "Người thân", en: "Family" } },
+      { name: { vi: "Đồng nghiệp", en: "Colleagues" } },
+      { name: { vi: "Khách mời", en: "Guest" } },
+      { name: { vi: "Yêu thương", en: "With love" } },
+    ],
     filterLabel: { vi: "Lọc theo mối quan hệ", en: "Filter by relation" },
     filterAll: { vi: "Tất cả", en: "All" },
     filterEmpty: {

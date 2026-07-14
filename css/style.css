@@ -3359,22 +3359,6 @@ input[type="range"] {
   margin-bottom: 1.25rem;
 }
 
-.wishes-wall__actions {
-  margin-top: 0.85rem;
-  display: flex;
-  justify-content: center;
-  gap: 0.65rem;
-  flex-wrap: wrap;
-}
-
-.wishes-wall__fx-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.78rem;
-  padding: 0.55rem 1.1rem;
-}
-
 /* ---------- Galaxy heart fireworks show ---------- */
 .galaxy-show {
   position: fixed;
@@ -3755,6 +3739,19 @@ body.wall-fs-lock {
   transform: translate3d(0, 0, 0);
   transition: opacity 0.55s var(--ease) var(--enter-delay);
   z-index: 6;
+}
+
+/* Demo hearts (no real wish yet) — slightly softer */
+.wall-heart--demo {
+  opacity: 0;
+}
+
+.wall-heart--demo.is-in {
+  opacity: 0.92;
+}
+
+.wall-heart--demo .wall-heart__name {
+  opacity: 0.88;
 }
 
 .wall-heart.is-in {

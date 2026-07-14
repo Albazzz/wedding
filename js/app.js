@@ -1423,18 +1423,44 @@
     wallLetterFxRaf = requestAnimationFrame(tick);
   }
 
+  /** Decorative winged hearts when guestbook is still empty */
+  function makeDemoWallWishes() {
+    const list = cfg.guestbook?.wallDemoHearts;
+    const defaults = [
+      { name: { vi: "Bạn bè", en: "Friends" } },
+      { name: { vi: "Người thân", en: "Family" } },
+      { name: { vi: "Đồng nghiệp", en: "Colleagues" } },
+      { name: { vi: "Khách mời", en: "Guest" } },
+      { name: { vi: "Yêu thương", en: "With love" } },
+    ];
+    const src = Array.isArray(list) && list.length ? list : defaults;
+    return src.slice(0, 5).map((item, i) => ({
+      id: "demo_wall_" + i,
+      name: typeof item.name === "string" ? item.name : t(item.name) || "♥",
+      relation: "",
+      message: "",
+      isDemo: true,
+    }));
+  }
+
   function wallHeartMarkup(w, i) {
     const wid = escapeHtml(w.id || "");
     const rawName = String(w.name || "Guest");
     const short = escapeHtml(rawName.length > 14 ? rawName.slice(0, 13) + "…" : rawName);
-    const label = w.name ? `Thư từ ${escapeHtml(w.name)}` : "Mở lá thư lời chúc";
+    const isDemo = !!w.isDemo;
+    const label = isDemo
+      ? t(cfg.guestbook?.wallDemoTap) || "Hãy gửi lời chúc đầu tiên"
+      : w.name
+        ? `Thư từ ${escapeHtml(w.name)}`
+        : "Mở lá thư lời chúc";
     /* nhịp vỗ chim thật: ~0.38–0.55s, lệch pha */
     const flap = (0.38 + Math.random() * 0.16).toFixed(2);
     const flapDelay = (-Math.random() * 0.4).toFixed(2);
     return `
-      <button type="button" class="wall-heart" data-wish-id="${wid}"
+      <button type="button" class="wall-heart${isDemo ? " wall-heart--demo" : ""}" data-wish-id="${wid}"
+        data-demo="${isDemo ? "1" : "0"}"
         style="--enter-delay:${(i * 0.07).toFixed(2)}s;--flap:${flap}s;--flap-delay:${flapDelay}s"
-        aria-label="${label}">
+        aria-label="${escapeHtml(label)}">
         <span class="wall-heart__body">
           <span class="wall-heart__wing wall-heart__wing--left" aria-hidden="true"></span>
           <span class="wall-heart__wing wall-heart__wing--right" aria-hidden="true"></span>
@@ -1721,6 +1747,11 @@
       const btn = e.target.closest(".wall-heart[data-wish-id]");
       if (!btn || !stage.contains(btn)) return;
       e.preventDefault();
+      /* Decorative demo hearts (empty guestbook) */
+      if (btn.getAttribute("data-demo") === "1" || btn.classList.contains("wall-heart--demo")) {
+        showToast(t(cfg.guestbook?.wallDemoTap) || "Hãy gửi lời chúc đầu tiên 💕");
+        return;
+      }
       const w = findWishById(btn.getAttribute("data-wish-id"));
       if (w) openWishReveal(w, btn);
     });
@@ -1734,7 +1765,7 @@
 
     const all = loadWishes();
     if (!all.length) {
-      renderWishWall(true);
+      /* keep demo hearts flying — no swap needed */
       return;
     }
 
@@ -1819,37 +1850,25 @@
     updateWallLetterLabels();
     setupWallFullscreen();
     const all = loadWishes();
-
-    if (!all.length) {
-      stopWallLetterFx();
-      stopWallHeartFlight();
-      if (wallTimer) {
-        clearInterval(wallTimer);
-        wallTimer = null;
-      }
-      wallLetterSig = "";
-      if (orbits) orbits.innerHTML = "";
-      if (center) center.hidden = true;
-      if (emptyEl) {
-        emptyEl.hidden = false;
-        emptyEl.textContent = t(cfg.guestbook.wallEmpty);
-      }
-      wall?.removeAttribute("hidden");
-      return;
-    }
+    const demos = !all.length ? makeDemoWallWishes() : null;
+    const picks = demos
+      ? demos
+      : shuffle(all).slice(0, Math.min(cfg.guestbook.wallCount || 12, all.length));
+    const count = picks.length;
+    const sig = picks.map((w) => w.id).join("|") + (demos ? "|demo" : "");
 
     if (center) center.hidden = false;
-    if (emptyEl) emptyEl.hidden = true;
-
-    const count = Math.min(cfg.guestbook.wallCount || 12, all.length);
-    const picks = shuffle(all).slice(0, count);
-    const sig = picks.map((w) => w.id).join("|");
+    if (emptyEl) {
+      /* empty text only if somehow no demos either */
+      emptyEl.hidden = true;
+      emptyEl.textContent = t(cfg.guestbook.wallEmpty);
+    }
 
     const existing = orbits ? orbits.querySelectorAll(".wall-heart").length : 0;
-    if (!forceFull && existing === count && existing > 0 && wallLetterSig) {
+    if (!forceFull && existing === count && existing > 0 && wallLetterSig === sig) {
       startWallLetterFx(stage);
       if (!wallFlyRunning) startWallHeartFlight(stage);
-      startWallTimer();
+      if (!demos) startWallTimer();
       bindWallLetterClicks(stage);
       wall?.removeAttribute("hidden");
       return;
@@ -1866,15 +1885,27 @@
           <p class="wall-letter__hint" id="wall-letter-hint"></p>
         </div>
         <div class="wall-letter__orbits" id="wall-letter-orbits"></div>
-        <p class="wishes-wall__empty" id="wall-letter-empty" hidden></p>`;
+        <p class="wishes-wall__empty" id="wall-letter-empty" hidden></p>
+        <button type="button" class="wall-letter__fs" id="wall-letter-fs" aria-pressed="false" title="Toàn màn hình">
+          <span class="wall-letter__fs-icon" aria-hidden="true">⛶</span>
+          <span class="wall-letter__fs-label" id="wall-letter-fs-label">Toàn màn hình</span>
+        </button>`;
       updateWallLetterLabels();
+      setupWallFullscreen();
       renderWallHearts(picks);
     }
 
     bindWallLetterClicks(stage);
     startWallLetterFx(stage);
     startWallHeartFlight(stage);
-    startWallTimer();
+    if (demos) {
+      if (wallTimer) {
+        clearInterval(wallTimer);
+        wallTimer = null;
+      }
+    } else {
+      startWallTimer();
+    }
     wall?.removeAttribute("hidden");
   }
 
