@@ -1224,10 +1224,8 @@
   }
 
   function renderWishes() {
-    const root = $("#wishes-list");
-    if (!root) return;
     if (!cfg.guestbook?.enabled) {
-      root.closest("section")?.setAttribute("hidden", "");
+      $("#guestbook")?.setAttribute("hidden", "");
       return;
     }
     wishes = loadWishes();
@@ -1235,15 +1233,10 @@
     /* labels */
     const wallTitle = $("#wishes-wall-title");
     const wallSub = $("#wishes-wall-subtitle");
-    const filterLbl = $("#wishes-filter-label");
-    const galTitle = $("#wishes-gallery-title");
     if (wallTitle) wallTitle.textContent = t(cfg.guestbook.wallTitle);
     if (wallSub) wallSub.textContent = t(cfg.guestbook.wallSubtitle);
-    if (filterLbl) filterLbl.textContent = t(cfg.guestbook.filterLabel);
-    if (galTitle) galTitle.textContent = t(cfg.guestbook.galleryTitle);
 
-    buildWishFilters();
-    renderWishesListOnly();
+    /* Gallery list removed — only wall letter + cloud/local data */
     renderWishWall();
   }
 
@@ -1955,7 +1948,7 @@
           localStorage.setItem("wedding_wishes", JSON.stringify(wishes));
           renderWishes();
         }
-        $("#wishes-list")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        $("#wishes-wall")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
       },
     });
   }
