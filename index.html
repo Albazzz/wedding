@@ -210,88 +210,6 @@
               </div>
 
               <div class="card-panel">
-                <h3 class="card-panel__title" id="card-lbl-photos">Ảnh trang trí</h3>
-                <p class="card-panel__hint" id="card-photos-hint">
-                  Chụp hoặc chọn ảnh để gắn lên thiệp (kéo · đúp để xóa)
-                </p>
-                <div class="media-actions">
-                  <label class="btn btn--outline btn--sm media-upload">
-                    <span id="card-lbl-camera">Chụp ảnh</span>
-                    <input
-                      type="file"
-                      id="card-photo-camera"
-                      accept="image/*"
-                      capture="environment"
-                      hidden
-                    />
-                  </label>
-                  <label class="btn btn--outline btn--sm media-upload">
-                    <span id="card-lbl-gallery">Chọn ảnh</span>
-                    <input type="file" id="card-photo-file" accept="image/*" hidden />
-                  </label>
-                </div>
-              </div>
-
-              <div class="card-panel">
-                <h3 class="card-panel__title" id="card-lbl-audio">Lời chúc bằng giọng nói</h3>
-                <p class="card-panel__hint" id="card-audio-hint">
-                  Ghi âm tối đa 20 giây — gửi kèm thiệp
-                </p>
-                <div class="audio-recorder" id="audio-recorder">
-                  <button type="button" class="btn btn--primary btn--sm" id="card-audio-record">
-                    Ghi âm
-                  </button>
-                  <button type="button" class="btn btn--outline btn--sm" id="card-audio-play" hidden>
-                    Nghe lại
-                  </button>
-                  <button type="button" class="btn btn--ghost btn--sm" id="card-audio-delete" hidden>
-                    Xóa
-                  </button>
-                  <span class="audio-timer" id="card-audio-timer" aria-live="polite"></span>
-                </div>
-                <audio id="card-audio-preview" preload="metadata" hidden></audio>
-              </div>
-
-              <div class="card-panel">
-                <h3 class="card-panel__title" id="card-lbl-video">Video lời chúc</h3>
-                <p class="card-panel__hint" id="card-video-hint">
-                  Quay hoặc chọn video ngắn tối đa 5 phút — gửi kèm thiệp
-                </p>
-                <div class="media-actions">
-                  <label class="btn btn--outline btn--sm media-upload">
-                    <span id="card-lbl-video-cam">Quay video</span>
-                    <input
-                      type="file"
-                      id="card-video-camera"
-                      accept="video/*"
-                      capture="environment"
-                      hidden
-                    />
-                  </label>
-                  <label class="btn btn--outline btn--sm media-upload">
-                    <span id="card-lbl-video-pick">Chọn video</span>
-                    <input type="file" id="card-video-file" accept="video/*" hidden />
-                  </label>
-                </div>
-                <div class="video-recorder" id="video-recorder">
-                  <button type="button" class="btn btn--primary btn--sm" id="card-video-record">
-                    Ghi màn hình camera
-                  </button>
-                  <button type="button" class="btn btn--ghost btn--sm" id="card-video-delete" hidden>
-                    Xóa video
-                  </button>
-                  <span class="audio-timer" id="card-video-timer" aria-live="polite"></span>
-                </div>
-                <video
-                  id="card-video-preview"
-                  class="card-video-preview"
-                  controls
-                  playsinline
-                  hidden
-                ></video>
-              </div>
-
-              <div class="card-panel">
                 <h3 class="card-panel__title" id="card-lbl-stickers">Sticker trang trí</h3>
                 <div class="sticker-cats" id="sticker-cats" role="tablist"></div>
                 <div class="sticker-picker" id="sticker-picker"></div>
@@ -405,13 +323,11 @@
     <!-- Toast -->
     <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
-    <!-- Firebase (sổ lời chúc dùng chung) — chỉ cần khi firebase.enabled = true -->
+    <!-- Firebase Firestore only (không cần Storage / gói Blaze) -->
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
 
     <script src="js/config.js"></script>
-    <script src="js/media-db.js"></script>
     <script src="js/firebase-wishes.js"></script>
     <script src="js/card-editor.js"></script>
     <script src="js/app.js"></script>

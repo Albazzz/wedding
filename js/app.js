@@ -572,7 +572,7 @@
     });
   }
 
-  function renderWishCardHtml(w, idx) {
+  function renderWishCardHtml(w) {
     const time = new Date(w.at).toLocaleString(lang === "vi" ? "vi-VN" : "en-US", {
       dateStyle: "medium",
       timeStyle: "short",
@@ -583,34 +583,6 @@
       (String(src).startsWith("data:image") ||
         String(src).startsWith("http://") ||
         String(src).startsWith("https://"));
-    const voiceLbl = t(cfg.guestbook?.labels?.voiceLabel) || "Play";
-    const videoLbl = t(cfg.guestbook?.labels?.videoLabel) || "Video";
-    const mediaSlot = `data-wish-id="${escapeHtml(w.id || "")}" data-wish-idx="${idx}"`;
-    const cloudAudio = w.audioUrl || (w.audio && String(w.audio).startsWith("http") ? w.audio : "");
-    const cloudVideo = w.videoUrl || "";
-    const localAudio =
-      w.audio && String(w.audio).startsWith("data:audio") ? w.audio : "";
-    const audioFallback = cloudAudio
-      ? `<div class="wish-card__audio">
-           <span class="wish-card__audio-label">${escapeHtml(voiceLbl)}</span>
-           <audio controls preload="metadata" src="${escapeHtml(cloudAudio)}"></audio>
-         </div>`
-      : localAudio
-        ? `<div class="wish-card__audio">
-             <span class="wish-card__audio-label">${escapeHtml(voiceLbl)}</span>
-             <audio controls preload="metadata" src="${localAudio}"></audio>
-           </div>`
-        : "";
-    const videoHtml = cloudVideo
-      ? `<div class="wish-card__video">
-           <span class="wish-card__audio-label">${escapeHtml(videoLbl)}</span>
-           <video controls playsinline preload="metadata" src="${escapeHtml(cloudVideo)}"></video>
-         </div>`
-      : "";
-    const mediaMount =
-      w.id && !cloudVideo && !cloudAudio
-        ? `<div class="wish-card__media" ${mediaSlot}></div>`
-        : `${videoHtml}${audioFallback}`;
     if (imgOk) {
       return `
         <article class="wish-card wish-card--image reveal">
@@ -619,7 +591,6 @@
             <h3 class="wish-card__name">${escapeHtml(w.name || "")}</h3>
             ${w.relation ? `<p class="wish-card__relation">${escapeHtml(w.relation)}</p>` : ""}
             ${w.message ? `<p class="wish-card__msg">${escapeHtml(w.message)}</p>` : ""}
-            ${mediaMount}
             <p class="wish-card__time">${escapeHtml(time)}</p>
           </div>
         </article>`;
@@ -629,7 +600,6 @@
         <h3 class="wish-card__name">${escapeHtml(w.name || "")}</h3>
         ${w.relation ? `<p class="wish-card__relation">${escapeHtml(w.relation)}</p>` : ""}
         ${w.message ? `<p class="wish-card__msg">${escapeHtml(w.message)}</p>` : ""}
-        ${mediaMount}
         <p class="wish-card__time">${escapeHtml(time)}</p>
       </article>`;
   }
@@ -646,9 +616,8 @@
       root.innerHTML = `<p class="wishes__empty">${escapeHtml(empty)}</p>`;
       return;
     }
-    root.innerHTML = list.map((w, idx) => renderWishCardHtml(w, idx)).join("");
+    root.innerHTML = list.map((w) => renderWishCardHtml(w)).join("");
     observeReveal();
-    hydrateWishMedia(root, list);
   }
 
   function renderWishes() {
@@ -729,11 +698,7 @@
             String(src).startsWith("https://"));
         const msg = w.message
           ? escapeHtml(w.message.length > 90 ? w.message.slice(0, 90) + "…" : w.message)
-          : w.hasVideo || w.videoUrl
-            ? "🎬"
-            : w.hasAudio || w.audio || w.audioUrl
-              ? "🎙️"
-              : "💕";
+          : "💕";
         return `
           <article class="wall-card" style="--wx:${x.toFixed(1)}%;--wy:${y.toFixed(1)}%;--wrot:${rot.toFixed(1)}deg;--wscale:${scale};--wdelay:${delay}s">
             ${imgOk ? `<img class="wall-card__img" src="${src}" alt="" loading="lazy" />` : `<div class="wall-card__placeholder" aria-hidden="true">❧</div>`}
@@ -765,52 +730,6 @@
     }, ms);
 
     wall?.removeAttribute("hidden");
-  }
-
-  /** Attach audio/video from IndexedDB into gallery cards */
-  async function hydrateWishMedia(root, list) {
-    if (!window.WishMediaDB || !root) return;
-    const voiceLbl = t(cfg.guestbook?.labels?.voiceLabel) || "Play";
-    const videoLbl = t(cfg.guestbook?.labels?.videoLabel) || "Video";
-
-    for (const w of list) {
-      if (!w.id) continue;
-      const mount = root.querySelector(`.wish-card__media[data-wish-id="${w.id}"]`);
-      if (!mount) continue;
-      try {
-        const media = await window.WishMediaDB.getMedia(w.id);
-        if (!media) {
-          if (w.audio && String(w.audio).startsWith("data:audio")) {
-            mount.innerHTML = `<span class="wish-card__audio-label">${escapeHtml(voiceLbl)}</span>
-              <audio controls preload="metadata" src="${w.audio}"></audio>`;
-          }
-          continue;
-        }
-        let html = "";
-        if (media.video) {
-          const vUrl = URL.createObjectURL(media.video);
-          html += `<div class="wish-card__video">
-            <span class="wish-card__audio-label">${escapeHtml(videoLbl)}</span>
-            <video controls playsinline preload="metadata" src="${vUrl}"></video>
-          </div>`;
-        }
-        if (media.audio) {
-          const aUrl = URL.createObjectURL(media.audio);
-          html += `<div class="wish-card__audio">
-            <span class="wish-card__audio-label">${escapeHtml(voiceLbl)}</span>
-            <audio controls preload="metadata" src="${aUrl}"></audio>
-          </div>`;
-        } else if (w.audio && String(w.audio).startsWith("data:audio")) {
-          html += `<div class="wish-card__audio">
-            <span class="wish-card__audio-label">${escapeHtml(voiceLbl)}</span>
-            <audio controls preload="metadata" src="${w.audio}"></audio>
-          </div>`;
-        }
-        mount.innerHTML = html;
-      } catch (err) {
-        console.warn("hydrate media", err);
-      }
-    }
   }
 
   function setupGuestbook() {

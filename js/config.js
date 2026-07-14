@@ -135,8 +135,8 @@ window.WEDDING_CONFIG = {
     enabled: true,
     title: { vi: "Sổ lời chúc", en: "Guestbook" },
     subtitle: {
-      vi: "Trang trí thiệp, gửi lời chúc — mọi khách đều xem được trên sổ dùng chung (khi bật Firebase)",
-      en: "Decorate a card and send a wish — everyone can see the shared book (when Firebase is on)",
+      vi: "Trang trí thiệp emoji, viết lời chúc — mọi khách xem được (Firestore, không cần Storage)",
+      en: "Decorate with stickers, write a wish — everyone can view (Firestore only, no Storage)",
     },
     /**
      * true = chỉ localStorage (mỗi máy tự thấy).
@@ -171,41 +171,12 @@ window.WEDDING_CONFIG = {
     /* ----- Editor labels (đổi chữ UI) ----- */
     labels: {
       templates: { vi: "Nền & phong cách", en: "Background & style" },
-      photos: { vi: "Ảnh trang trí", en: "Photo decor" },
-      photosHint: {
-        vi: "Chụp hoặc chọn ảnh để gắn lên thiệp · kéo di chuyển · đúp để xóa",
-        en: "Take or pick a photo as decor · drag to move · double-tap to remove",
-      },
-      camera: { vi: "Chụp ảnh", en: "Take photo" },
-      pickPhoto: { vi: "Chọn ảnh", en: "Choose photo" },
-      photoAdded: { vi: "Đã thêm ảnh lên thiệp 📷", en: "Photo added to card 📷" },
-      photoError: { vi: "Không đọc được ảnh", en: "Couldn't load photo" },
-      photoLimit: { vi: "Tối đa 6 ảnh decor", en: "Max 6 photo stickers" },
-      audio: { vi: "Lời chúc bằng giọng nói", en: "Voice wish" },
-      audioHint: {
-        vi: "Ghi âm tối đa 20 giây — gửi kèm thiệp (có thể thay cho chữ)",
-        en: "Record up to 20s — attach to your card (can replace text)",
-      },
-      record: { vi: "Ghi âm", en: "Record" },
-      recording: { vi: "Đang ghi… bấm để dừng", en: "Recording… tap to stop" },
-      playAudio: { vi: "Nghe lại", en: "Play" },
-      stopAudio: { vi: "Dừng", en: "Stop" },
-      deleteAudio: { vi: "Xóa", en: "Delete" },
-      audioReady: { vi: "Đã lưu lời chúc thoại 🎙️", en: "Voice wish saved 🎙️" },
-      audioDenied: {
-        vi: "Cần quyền micro để ghi âm",
-        en: "Microphone permission required",
-      },
-      audioUnsupported: {
-        vi: "Trình duyệt không hỗ trợ ghi âm",
-        en: "Recording not supported in this browser",
-      },
       stickers: { vi: "Sticker trang trí", en: "Stickers" },
       frames: { vi: "Khung & viền", en: "Frames & borders" },
       effects: { vi: "Hiệu ứng chuyển động", en: "Motion effects" },
       stickersHint: {
-        vi: "Sticker · ảnh · ghi âm · video (tối đa 5 phút) · kéo · đúp xóa",
-        en: "Stickers · photo · audio · video (max 5 min) · drag · double-tap remove",
+        vi: "Chọn nhóm → bấm sticker · kéo di chuyển · đúp để xóa",
+        en: "Pick a category → tap sticker · drag to move · double-tap to remove",
       },
       yourName: { vi: "Tên của bạn", en: "Your name" },
       relation: { vi: "Mối quan hệ với cô dâu chú rể", en: "Relation to the couple" },
@@ -214,11 +185,11 @@ window.WEDDING_CONFIG = {
         vi: "VD: Bạn học cùng chú rể…",
         en: "e.g. College friend of the groom…",
       },
-      yourMessage: { vi: "Lời chúc (chữ)", en: "Written wish" },
+      yourMessage: { vi: "Lời chúc", en: "Your message" },
       namePlaceholder: { vi: "Nguyễn Văn C", en: "Your name" },
       messagePlaceholder: {
-        vi: "Chúc hai bạn trăm năm hạnh phúc… (hoặc ghi âm / video)",
-        en: "Wishing you happiness… (or audio / video)",
+        vi: "Chúc hai bạn trăm năm hạnh phúc…",
+        en: "Wishing you a lifetime of happiness…",
       },
       font: { vi: "Font chữ", en: "Font" },
       textColor: { vi: "Màu chữ", en: "Text color" },
@@ -229,46 +200,13 @@ window.WEDDING_CONFIG = {
       submit: { vi: "Gửi lời chúc", en: "Send wish" },
       needName: { vi: "Bạn ơi, điền tên nhé", en: "Please enter your name" },
       needMessage: {
-        vi: "Hãy viết lời chúc, ghi âm hoặc gửi video nhé",
-        en: "Write a wish, record audio, or add a video",
+        vi: "Hãy viết một lời chúc nhé",
+        en: "Please write a wish",
       },
       sent: { vi: "Đã gửi thiệp chúc mừng 💕", en: "Wish card sent 💕" },
       downloaded: { vi: "Đã tải thiệp về máy", en: "Card downloaded" },
       frameNone: { vi: "Không khung", en: "No frame" },
-      voiceLabel: { vi: "Nghe lời chúc", en: "Play voice wish" },
-      video: { vi: "Video lời chúc", en: "Video wish" },
-      videoHint: {
-        vi: "Quay hoặc chọn video ngắn tối đa 5 phút — lưu trên máy (IndexedDB)",
-        en: "Record or pick a short video up to 5 minutes — stored locally",
-      },
-      videoCam: { vi: "Quay video", en: "Record video" },
-      videoPick: { vi: "Chọn video", en: "Choose video" },
-      videoRecord: { vi: "Ghi bằng camera", en: "Record with camera" },
-      videoRecording: { vi: "Đang quay… bấm dừng", en: "Recording… tap to stop" },
-      videoDelete: { vi: "Xóa video", en: "Remove video" },
-      videoReady: { vi: "Đã gắn video lời chúc 🎬", en: "Video wish attached 🎬" },
-      videoTooLong: {
-        vi: "Video dài quá 5 phút — chọn clip ngắn hơn nhé",
-        en: "Video is over 5 minutes — please pick a shorter clip",
-      },
-      videoTooBig: {
-        vi: "File video quá lớn (tối đa ~80MB)",
-        en: "Video file too large (max ~80MB)",
-      },
-      videoError: { vi: "Không đọc được video", en: "Couldn't load video" },
-      videoDenied: {
-        vi: "Cần quyền camera/micro để quay video",
-        en: "Camera/mic permission required",
-      },
-      videoLabel: { vi: "Xem video lời chúc", en: "Watch video wish" },
     },
-    /** Giới hạn media */
-    maxPhotoStickers: 6,
-    photoMaxSide: 280,
-    audioMaxSeconds: 20,
-    /** 5 phút */
-    videoMaxSeconds: 300,
-    videoMaxBytes: 80 * 1024 * 1024,
 
     /**
      * Mối quan hệ — id "other" hiện ô nhập tự do

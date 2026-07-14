@@ -1,17 +1,16 @@
 /**
- * Shared guestbook via Firebase (Firestore + Storage)
- * → mọi khách mở trang đều thấy cùng danh sách thiệp
- *
- * Bật: điền firebase config trong js/config.js và set firebase.enabled = true
+ * Shared guestbook via Firestore only (no Storage — free Spark OK)
+ * Lưu: name, relation, message, image (data URL thiệp canvas)
  */
 (function () {
   "use strict";
 
-  let app = null;
   let db = null;
-  let storage = null;
   let unsub = null;
   let ready = false;
+
+  /** Firestore doc limit 1MB — chừa chỗ field khác */
+  const MAX_IMAGE_CHARS = 700000;
 
   function cfg() {
     return window.WEDDING_CONFIG?.firebase || {};
@@ -47,21 +46,20 @@
     try {
       const c = cfg();
       if (!firebase.apps.length) {
-        app = firebase.initializeApp({
+        firebase.initializeApp({
           apiKey: c.apiKey,
           authDomain: c.authDomain,
           projectId: c.projectId,
-          storageBucket: c.storageBucket,
+          storageBucket: c.storageBucket || undefined,
           messagingSenderId: c.messagingSenderId,
           appId: c.appId,
         });
-      } else {
-        app = firebase.app();
       }
       db = firebase.firestore();
-      storage = firebase.storage();
       ready = true;
-      console.info("[WishCloud] Firebase ready — sổ lời chúc dùng chung");
+      console.info(
+        "[WishCloud] Firestore ready — sổ lời chúc dùng chung (không cần Storage)"
+      );
       return true;
     } catch (err) {
       console.error("[WishCloud] init failed", err);
@@ -74,60 +72,27 @@
     return cfg().collection || "wishes";
   }
 
-  function extFromMime(mime, fallback) {
-    if (!mime) return fallback;
-    if (mime.includes("png")) return "png";
-    if (mime.includes("jpeg") || mime.includes("jpg")) return "jpg";
-    if (mime.includes("webm")) return "webm";
-    if (mime.includes("mp4")) return "mp4";
-    if (mime.includes("ogg")) return "ogg";
-    if (mime.includes("mpeg") || mime.includes("mp3")) return "mp3";
-    return fallback;
-  }
-
-  async function uploadBlob(path, blob, contentType) {
-    const ref = storage.ref().child(path);
-    const snap = await ref.put(blob, {
-      contentType: contentType || blob.type || "application/octet-stream",
-    });
-    return snap.ref.getDownloadURL();
-  }
-
   /**
-   * @param {object} meta - name, message, relation, …
-   * @param {{ imageBlob?: Blob, audioBlob?: Blob|null, videoBlob?: Blob|null }} files
+   * @param {object} meta
+   * @param {{ imageDataUrl?: string }} [files]
    */
   async function saveWish(meta, files) {
     if (!isReady()) throw new Error("firebase-not-ready");
     const id = meta.id || "wish_" + Date.now();
-    const base = `wishes/${id}`;
-    let imageUrl = meta.imageUrl || "";
-    let audioUrl = meta.audioUrl || "";
-    let videoUrl = meta.videoUrl || "";
 
-    if (files?.imageBlob) {
-      const ext = extFromMime(files.imageBlob.type, "jpg");
-      imageUrl = await uploadBlob(
-        `${base}/card.${ext}`,
-        files.imageBlob,
-        files.imageBlob.type || "image/jpeg"
-      );
-    }
-    if (files?.audioBlob) {
-      const ext = extFromMime(files.audioBlob.type, "webm");
-      audioUrl = await uploadBlob(
-        `${base}/voice.${ext}`,
-        files.audioBlob,
-        files.audioBlob.type || "audio/webm"
-      );
-    }
-    if (files?.videoBlob) {
-      const ext = extFromMime(files.videoBlob.type, "webm");
-      videoUrl = await uploadBlob(
-        `${base}/clip.${ext}`,
-        files.videoBlob,
-        files.videoBlob.type || "video/webm"
-      );
+    let image = "";
+    const raw = files?.imageDataUrl || meta.image || meta.imageUrl || "";
+    if (raw && String(raw).startsWith("data:image")) {
+      if (raw.length > MAX_IMAGE_CHARS) {
+        /* nén lại nhẹ hơn nếu quá to */
+        image = await recompressDataUrl(raw, 0.55) || raw.slice(0, MAX_IMAGE_CHARS);
+        if (image.length > MAX_IMAGE_CHARS) {
+          image = ""; /* bỏ ảnh, vẫn lưu chữ */
+          console.warn("[WishCloud] card image too large, saved text only");
+        }
+      } else {
+        image = raw;
+      }
     }
 
     const doc = {
@@ -136,36 +101,60 @@
       relation: String(meta.relation || "").slice(0, 80),
       relationId: String(meta.relationId || "").slice(0, 40),
       message: String(meta.message || "").slice(0, 500),
-      imageUrl,
-      audioUrl,
-      videoUrl,
-      hasAudio: !!audioUrl,
-      hasVideo: !!videoUrl,
+      image,
       at: meta.at || Date.now(),
       templateId: meta.templateId || "",
       frameId: meta.frameId || "",
     };
 
     await db.collection(collectionName()).doc(id).set(doc);
-    return doc;
+    return {
+      ...doc,
+      imageUrl: "",
+      audioUrl: "",
+      videoUrl: "",
+      hasAudio: false,
+      hasVideo: false,
+    };
+  }
+
+  function recompressDataUrl(dataUrl, quality) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const c = document.createElement("canvas");
+          const maxW = 320;
+          const scale = Math.min(1, maxW / img.width);
+          c.width = Math.round(img.width * scale);
+          c.height = Math.round(img.height * scale);
+          c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+          resolve(c.toDataURL("image/jpeg", quality));
+        } catch {
+          resolve("");
+        }
+      };
+      img.onerror = () => resolve("");
+      img.src = dataUrl;
+    });
   }
 
   function mapDoc(d) {
     const x = d.data ? d.data() : d;
+    const image = x.image || x.imageUrl || "";
     return {
       id: x.id || d.id,
       name: x.name || "",
       relation: x.relation || "",
       relationId: x.relationId || "",
       message: x.message || "",
-      /* app.js dùng image hoặc imageUrl */
-      image: x.imageUrl || x.image || "",
+      image,
       imageUrl: x.imageUrl || "",
-      audio: x.audioUrl || x.audio || "",
-      audioUrl: x.audioUrl || "",
-      videoUrl: x.videoUrl || "",
-      hasAudio: !!(x.hasAudio || x.audioUrl),
-      hasVideo: !!(x.hasVideo || x.videoUrl),
+      audio: "",
+      audioUrl: "",
+      videoUrl: "",
+      hasAudio: false,
+      hasVideo: false,
       at: x.at || 0,
       templateId: x.templateId || "",
       frameId: x.frameId || "",
@@ -182,10 +171,6 @@
     return snap.docs.map(mapDoc);
   }
 
-  /**
-   * Realtime: mọi tab/khách thấy thiệp mới ngay
-   * @param {(list: object[]) => void} cb
-   */
   function subscribe(cb) {
     if (!isReady()) return () => {};
     if (unsub) unsub();
@@ -194,12 +179,8 @@
       .orderBy("at", "desc")
       .limit(cfg().maxWishes || 150)
       .onSnapshot(
-        (snap) => {
-          cb(snap.docs.map(mapDoc));
-        },
-        (err) => {
-          console.error("[WishCloud] snapshot error", err);
-        }
+        (snap) => cb(snap.docs.map(mapDoc)),
+        (err) => console.error("[WishCloud] snapshot error", err)
       );
     return () => {
       if (unsub) unsub();

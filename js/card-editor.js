@@ -32,33 +32,10 @@
     textColor: "#3d2c24",
     textSize: 28,
     selected: -1,
-    /** base64 data URL for voice wish (small) */
-    audioDataUrl: "",
-    audioMime: "",
-    /** video Blob held in memory until submit → IndexedDB */
-    videoBlob: null,
-    videoMime: "",
-    videoObjectUrl: "",
   };
 
   let drag = null;
   let lastTap = { t: 0, i: -1 };
-
-  /* Audio recorder runtime */
-  let mediaRecorder = null;
-  let mediaStream = null;
-  let audioChunks = [];
-  let recordTimer = null;
-  let recordStartedAt = 0;
-  let isRecording = false;
-
-  /* Video recorder runtime */
-  let videoRecorder = null;
-  let videoStream = null;
-  let videoChunks = [];
-  let videoTimer = null;
-  let videoStartedAt = 0;
-  let isVideoRecording = false;
 
   function cfg() {
     return window.WEDDING_CONFIG?.guestbook || {};
@@ -1545,18 +1522,15 @@
       $("card-name")?.focus();
       return;
     }
-    if (!message && !state.audioDataUrl && !state.videoBlob) {
+    if (!message) {
       opts.onToast?.(t(L.needMessage));
       $("card-message")?.focus();
       return;
     }
-    if (isRecording) stopRecording();
-    if (isVideoRecording) stopVideoRecording();
 
-    const image = exportDataURL("image/jpeg", 0.8);
+    /* Ảnh thiệp canvas (nhẹ) — lưu Firestore data URL, không cần Storage */
+    const image = exportDataURL("image/jpeg", 0.72);
     const id = "wish_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8);
-    const audioBlob = state.audioDataUrl ? dataUrlToBlob(state.audioDataUrl) : null;
-    const imageBlob = dataUrlToBlob(image);
     const relation = relationLabel();
     const useCloud = !!(
       window.WishCloud &&
@@ -1571,13 +1545,6 @@
       relationId: state.relationId || "",
       message,
       image,
-      imageUrl: "",
-      audio: state.videoBlob ? "" : state.audioDataUrl || "",
-      audioUrl: "",
-      videoUrl: "",
-      audioMime: state.audioMime || "",
-      hasAudio: !!(state.audioDataUrl || audioBlob),
-      hasVideo: !!state.videoBlob,
       at: Date.now(),
       templateId: state.templateId,
       frameId: state.frameId,
@@ -1586,49 +1553,20 @@
     if (useCloud) {
       try {
         opts.onToast?.(
-          lang === "vi" ? "Đang gửi thiệp lên mây…" : "Uploading wish…"
+          lang === "vi" ? "Đang gửi lời chúc…" : "Sending wish…"
         );
         const saved = await window.WishCloud.saveWish(wish, {
-          imageBlob,
-          audioBlob,
-          videoBlob: state.videoBlob || null,
+          imageDataUrl: image,
         });
-        wish = {
-          ...wish,
-          ...saved,
-          image: saved.imageUrl || wish.image,
-          audio: saved.audioUrl || wish.audio,
-        };
+        wish = { ...wish, ...saved, image: saved.image || image };
       } catch (err) {
         console.error("WishCloud save failed", err);
         opts.onToast?.(
           lang === "vi"
-            ? "Gửi cloud lỗi — kiểm tra Firebase (FIREBASE.md)"
-            : "Cloud save failed — check Firebase setup"
+            ? "Gửi cloud lỗi — bật Firestore + Rules (FIREBASE.md)"
+            : "Cloud save failed — enable Firestore + Rules"
         );
         return;
-      }
-    } else {
-      /* Offline / demo: IndexedDB + localStorage */
-      if (window.WishMediaDB && (state.videoBlob || audioBlob)) {
-        try {
-          await window.WishMediaDB.putMedia(id, {
-            video: state.videoBlob || null,
-            videoMime: state.videoMime || "",
-            audio: audioBlob,
-            audioMime: state.audioMime || (audioBlob && audioBlob.type) || "",
-          });
-        } catch (err) {
-          console.warn("WishMediaDB put failed", err);
-          if (state.videoBlob) {
-            opts.onToast?.(
-              lang === "vi"
-                ? "Không lưu được video (bộ nhớ đầy?)"
-                : "Couldn't save video (storage full?)"
-            );
-            return;
-          }
-        }
       }
     }
 
@@ -1640,9 +1578,6 @@
     state.relationCustom = "";
     state.stickers = [];
     state.selected = -1;
-    state.audioDataUrl = "";
-    state.audioMime = "";
-    clearVideo();
     const msgEl = $("card-message");
     if (msgEl) msgEl.value = "";
     const relSel = $("card-relation");
@@ -1651,12 +1586,6 @@
     if (relCustom) relCustom.value = "";
     const customWrap = $("card-relation-custom-wrap");
     if (customWrap) customWrap.hidden = true;
-    const preview = $("card-audio-preview");
-    if (preview) {
-      preview.pause();
-      preview.removeAttribute("src");
-    }
-    updateAudioUI();
     render();
   }
 
@@ -1683,16 +1612,6 @@
   function applyLabels() {
     const L = cfg().labels || {};
     setText("card-lbl-templates", t(L.templates));
-    setText("card-lbl-photos", t(L.photos));
-    setText("card-photos-hint", t(L.photosHint));
-    setText("card-lbl-camera", t(L.camera));
-    setText("card-lbl-gallery", t(L.pickPhoto));
-    setText("card-lbl-audio", t(L.audio));
-    setText("card-audio-hint", t(L.audioHint));
-    setText("card-lbl-video", t(L.video));
-    setText("card-video-hint", t(L.videoHint));
-    setText("card-lbl-video-cam", t(L.videoCam));
-    setText("card-lbl-video-pick", t(L.videoPick));
     setText("card-lbl-stickers", t(L.stickers));
     setText("card-lbl-frames", t(L.frames));
     setText("card-lbl-effects", t(L.effects));
@@ -1710,8 +1629,6 @@
     setText("card-submit", t(L.submit));
     setText("wishes-gallery-title", t(cfg().galleryTitle));
     buildRelations();
-    updateAudioUI();
-    updateVideoUI();
 
     const name = $("card-name");
     const msg = $("card-message");
@@ -1812,11 +1729,6 @@
     state.textColor = g.defaultTextColor || "#3d2c24";
     state.textSize = g.defaultTextSize || 28;
     state.effects = {};
-    state.audioDataUrl = "";
-    state.audioMime = "";
-    state.videoBlob = null;
-    state.videoMime = "";
-    state.videoObjectUrl = "";
 
     buildTemplates();
     buildCategories();
@@ -1825,9 +1737,6 @@
     buildEffects();
     buildFonts();
     buildColors();
-    setupPhotoInputs();
-    setupAudio();
-    setupVideo();
     applyLabels();
 
     const sizeEl = $("card-size");
@@ -1896,7 +1805,5 @@
     exportDataURL,
     render,
     STORAGE_KEY,
-    getMedia: (id) =>
-      window.WishMediaDB ? window.WishMediaDB.getMedia(id) : Promise.resolve(null),
   };
 })();

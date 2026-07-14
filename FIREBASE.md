@@ -1,42 +1,35 @@
-# Sổ lời chúc dùng chung (Firebase)
+# Sổ lời chúc dùng chung — **chỉ Firestore** (free Spark)
 
-Để **mọi khách** mở trang đều thấy thiệp đã gửi, bật Firebase.
+**Không cần Cloud Storage / gói Blaze.**
 
-## 1. Tạo project Firebase
+Lưu mỗi thiệp: `name`, `relation`, `message`, `image` (ảnh canvas dạng data URL nhỏ), `at`.
 
-1. Vào [Firebase Console](https://console.firebase.google.com/) → **Add project**
-2. Bật **Firestore Database** (production mode → sửa rules bên dưới)
-3. Bật **Storage**
-4. **Project settings** → Your apps → Web (`</>`) → copy config
+## 1. Firebase Console
 
-## 2. Dán config vào `js/config.js`
+1. Project **wedding-fa939** (hoặc project của bạn)
+2. **Firestore Database** → Create (nếu chưa)
+3. **Không cần** bật Storage
+
+## 2. Config (`js/config.js`)
 
 ```js
 firebase: {
   enabled: true,
-  apiKey: "AIza...",
-  authDomain: "xxx.firebaseapp.com",
-  projectId: "xxx",
-  storageBucket: "xxx.appspot.com",
-  messagingSenderId: "123...",
-  appId: "1:123:web:abc",
+  apiKey: "...",
+  authDomain: "...",
+  projectId: "...",
+  // storageBucket không bắt buộc
+  messagingSenderId: "...",
+  appId: "...",
   collection: "wishes",
   maxWishes: 150,
 },
-```
-
-Và guestbook:
-
-```js
 guestbook: {
-  localOnly: false,  // false = ưu tiên Firebase
-  ...
-}
+  localOnly: false,
+},
 ```
 
-## 3. Rules (Firestore)
-
-Firestore → Rules:
+## 3. Firestore Rules
 
 ```
 rules_version = '2';
@@ -55,51 +48,13 @@ service cloud.firestore {
 }
 ```
 
-## 4. Rules (Storage)
+## 4. Kiểm tra
 
-Storage → Rules:
+- Console: `[WishCloud] Firestore ready — sổ lời chúc dùng chung (không cần Storage)`
+- Gửi thiệp → ẩn danh vẫn thấy
+- Nếu lỗi index `orderBy at` → bấm link tạo index trên Firebase
 
-```
-rules_version = '2';
-service firebase.storage {
-  match /b/{bucket}/o {
-    match /wishes/{wishId}/{fileName} {
-      allow read: if true;
-      allow write: if request.resource.size < 80 * 1024 * 1024
-        && (
-          request.resource.contentType.matches('image/.*')
-          || request.resource.contentType.matches('audio/.*')
-          || request.resource.contentType.matches('video/.*')
-        );
-    }
-  }
-}
-```
+## 5. Lưu ý dung lượng
 
-> Lưu ý: rules mở read/write cho guest là **tạm ổn cho thiệp cưới**, không dùng cho app production lâu dài. Có thể tắt write sau đám cưới.
-
-## 5. Index
-
-Lần đầu `orderBy('at')` có thể hiện link tạo index — bấm link Firebase tạo composite/single field index.
-
-## 6. Deploy lại site
-
-Push lên GitHub Pages như bình thường. Không cần server riêng.
-
-## Khi chưa bật Firebase
-
-- Thiệp chỉ lưu trên **máy từng khách** (localStorage / IndexedDB)
-- Console log: `Firebase chưa bật`
-
-## Free tier (Spark) ~100 khách
-
-| Nội dung | Gợi ý |
-|----------|--------|
-| Ảnh thiệp + chữ + quan hệ | Ổn |
-| Audio ngắn | Ổn |
-| Video nhiều × 5 phút | Dễ đầy Storage → nên giảm thời lượng |
-
-## Kiểm tra
-
-1. Mở site trên Chrome → gửi 1 thiệp  
-2. Mở **cửa sổ ẩn danh** / máy khác → thấy thiệp đó trong gallery + tường  
+- Ảnh thiệp canvas JPEG nén nhẹ, nằm trong document Firestore (giới hạn ~1MB/doc)
+- ~100 thiệp chữ + ảnh nhỏ → gói Spark thường đủ
