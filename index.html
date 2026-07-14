@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#8b6b5a" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>Wedding</title>
+    <meta name="description" content="" />
+    <meta property="og:title" content="" />
+    <meta property="og:description" content="" />
+    <meta property="og:image" content="" />
+    <meta property="og:type" content="website" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Great+Vibes&family=Outfit:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body class="intro-lock">
+    <!-- Petals canvas -->
+    <canvas id="petals-canvas" aria-hidden="true"></canvas>
+
+    <!-- Intro: cuộn thư mở từ giữa -->
+    <div id="intro" class="intro" aria-hidden="false">
+      <div class="intro__bg" aria-hidden="true"></div>
+      <div class="scroll-letter" id="scroll-letter">
+        <div class="scroll-letter__roll scroll-letter__roll--left" aria-hidden="true"></div>
+        <div class="scroll-letter__panel">
+          <div class="scroll-letter__inner">
+            <p class="scroll-letter__ornament" aria-hidden="true">❧</p>
+            <p class="scroll-letter__eyebrow" id="intro-eyebrow"></p>
+            <h1 class="scroll-letter__message" id="intro-message" aria-live="polite"></h1>
+            <p class="scroll-letter__names font-script" id="intro-names"></p>
+            <p class="scroll-letter__date" id="intro-date"></p>
+            <p class="scroll-letter__ornament scroll-letter__ornament--bottom" aria-hidden="true">❧</p>
+            <button type="button" class="btn btn--primary intro__enter" id="intro-enter" hidden>
+              Mở thiệp
+            </button>
+          </div>
+        </div>
+        <div class="scroll-letter__roll scroll-letter__roll--right" aria-hidden="true"></div>
+      </div>
+      <button type="button" class="intro__skip" id="intro-skip">Bỏ qua</button>
+    </div>
+
+    <!-- Header / Nav -->
+    <header class="header" id="header">
+      <a href="#hero" class="header__logo font-script" data-bind="monogram">A & B</a>
+      <nav class="nav" id="nav" aria-label="Main">
+        <a href="#hero" data-i18n="nav.home">Trang chủ</a>
+        <a href="#story" data-i18n="nav.story">Câu chuyện</a>
+        <a href="#gallery" data-i18n="nav.gallery">Album</a>
+        <a href="#guestbook" data-i18n="nav.guestbook">Lời chúc</a>
+      </nav>
+      <div class="header__actions">
+        <button type="button" class="lang-toggle" id="lang-toggle" aria-label="Language">
+          EN
+        </button>
+        <button
+          type="button"
+          class="music-toggle"
+          id="music-toggle"
+          aria-label="Music"
+          hidden
+        >
+          <span class="music-toggle__icon" aria-hidden="true">♪</span>
+        </button>
+        <button
+          type="button"
+          class="nav-toggle"
+          id="nav-toggle"
+          aria-label="Menu"
+          aria-expanded="false"
+        >
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </header>
+
+    <main>
+      <!-- HERO -->
+      <section class="hero" id="hero">
+        <div class="hero__bg" id="hero-bg"></div>
+        <div class="hero__overlay" id="hero-overlay"></div>
+        <div class="hero__content">
+          <p class="hero__eyebrow fade-up" data-i18n="hero.tagline">
+            Chúng mình sắp thành vợ chồng
+          </p>
+          <h1 class="hero__names fade-up delay-1">
+            <span class="font-script" data-bind="coupleNames">Nguyễn Thị A & Trần Văn B</span>
+          </h1>
+          <div class="hero__divider fade-up delay-2">
+            <span class="ornament">❧</span>
+          </div>
+          <p class="hero__date fade-up delay-2" data-bind="dateDisplay">
+            Chủ Nhật, 20 Tháng 12, 2026
+          </p>
+          <p class="hero__time fade-up delay-3" data-bind="timeDisplay">10:00 sáng</p>
+
+          <div class="countdown fade-up delay-3" id="countdown" aria-live="polite">
+            <div class="countdown__item">
+              <span class="countdown__num" data-unit="days">00</span>
+              <span class="countdown__label" data-i18n="countdown.days">Ngày</span>
+            </div>
+            <div class="countdown__item">
+              <span class="countdown__num" data-unit="hours">00</span>
+              <span class="countdown__label" data-i18n="countdown.hours">Giờ</span>
+            </div>
+            <div class="countdown__item">
+              <span class="countdown__num" data-unit="minutes">00</span>
+              <span class="countdown__label" data-i18n="countdown.minutes">Phút</span>
+            </div>
+            <div class="countdown__item">
+              <span class="countdown__num" data-unit="seconds">00</span>
+              <span class="countdown__label" data-i18n="countdown.seconds">Giây</span>
+            </div>
+          </div>
+          <p class="countdown__ended" id="countdown-ended" hidden></p>
+
+          <a href="#story" class="scroll-hint fade-up delay-4">
+            <span data-i18n="scrollDown">Vuốt xuống</span>
+            <span class="scroll-hint__arrow" aria-hidden="true">↓</span>
+          </a>
+        </div>
+      </section>
+
+      <!-- STORY -->
+      <section class="section story" id="story">
+        <div class="container">
+          <header class="section__header">
+            <p class="section__eyebrow font-script">Love Story</p>
+            <h2 class="section__title" data-i18n="story.title">Câu chuyện của chúng mình</h2>
+            <p class="section__subtitle" data-i18n="story.subtitle"></p>
+          </header>
+          <!-- Articles rendered by app.js; Apple-style scroll FX in CSS + setupTimelineScroll -->
+          <div class="timeline" id="story-timeline"></div>
+        </div>
+      </section>
+
+      <!-- GALLERY -->
+      <section class="section gallery section--alt" id="gallery">
+        <div class="container">
+          <header class="section__header">
+            <p class="section__eyebrow font-script">Gallery</p>
+            <h2 class="section__title" data-i18n="gallery.title">Khoảnh khắc đẹp</h2>
+            <p class="section__subtitle" data-i18n="gallery.subtitle"></p>
+          </header>
+          <div class="gallery__grid" id="gallery-grid"></div>
+          <div class="gallery__video" id="gallery-video" hidden>
+            <h3 class="gallery__video-title" data-i18n="gallery.youtubeTitle"></h3>
+            <div class="gallery__video-wrap">
+              <iframe
+                id="youtube-iframe"
+                src=""
+                title="Pre-wedding video"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen
+                loading="lazy"
+              ></iframe>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Lightbox -->
+      <div class="lightbox" id="lightbox" hidden>
+        <button type="button" class="lightbox__close" id="lightbox-close" aria-label="Close">
+          ×
+        </button>
+        <button type="button" class="lightbox__nav lightbox__prev" id="lightbox-prev" aria-label="Previous">
+          ‹
+        </button>
+        <img src="" alt="" id="lightbox-img" />
+        <button type="button" class="lightbox__nav lightbox__next" id="lightbox-next" aria-label="Next">
+          ›
+        </button>
+      </div>
+
+      <!-- GUESTBOOK + CARD DECORATOR -->
+      <section class="section guestbook section--alt" id="guestbook">
+        <div class="container">
+          <header class="section__header">
+            <p class="section__eyebrow font-script">Wishes</p>
+            <h2 class="section__title" data-i18n="guestbook.title">Sổ lời chúc</h2>
+            <p class="section__subtitle" data-i18n="guestbook.subtitle"></p>
+          </header>
+
+          <div class="card-studio" id="card-studio">
+            <!-- Preview -->
+            <div class="card-studio__preview">
+              <div class="card-stage-wrap">
+                <canvas id="card-canvas" width="360" height="520" aria-label="Wish card"></canvas>
+              </div>
+              <p class="card-studio__hint" id="card-stickers-hint"></p>
+            </div>
+
+            <!-- Controls -->
+            <div class="card-studio__controls">
+              <div class="card-panel">
+                <h3 class="card-panel__title" id="card-lbl-templates">Nền & phong cách</h3>
+                <div class="template-picker" id="template-picker" role="listbox"></div>
+              </div>
+
+              <div class="card-panel">
+                <h3 class="card-panel__title" id="card-lbl-photos">Ảnh trang trí</h3>
+                <p class="card-panel__hint" id="card-photos-hint">
+                  Chụp hoặc chọn ảnh để gắn lên thiệp (kéo · đúp để xóa)
+                </p>
+                <div class="media-actions">
+                  <label class="btn btn--outline btn--sm media-upload">
+                    <span id="card-lbl-camera">Chụp ảnh</span>
+                    <input
+                      type="file"
+                      id="card-photo-camera"
+                      accept="image/*"
+                      capture="environment"
+                      hidden
+                    />
+                  </label>
+                  <label class="btn btn--outline btn--sm media-upload">
+                    <span id="card-lbl-gallery">Chọn ảnh</span>
+                    <input type="file" id="card-photo-file" accept="image/*" hidden />
+                  </label>
+                </div>
+              </div>
+
+              <div class="card-panel">
+                <h3 class="card-panel__title" id="card-lbl-audio">Lời chúc bằng giọng nói</h3>
+                <p class="card-panel__hint" id="card-audio-hint">
+                  Ghi âm tối đa 20 giây — gửi kèm thiệp
+                </p>
+                <div class="audio-recorder" id="audio-recorder">
+                  <button type="button" class="btn btn--primary btn--sm" id="card-audio-record">
+                    Ghi âm
+                  </button>
+                  <button type="button" class="btn btn--outline btn--sm" id="card-audio-play" hidden>
+                    Nghe lại
+                  </button>
+                  <button type="button" class="btn btn--ghost btn--sm" id="card-audio-delete" hidden>
+                    Xóa
+                  </button>
+                  <span class="audio-timer" id="card-audio-timer" aria-live="polite"></span>
+                </div>
+                <audio id="card-audio-preview" preload="metadata" hidden></audio>
+              </div>
+
+              <div class="card-panel">
+                <h3 class="card-panel__title" id="card-lbl-video">Video lời chúc</h3>
+                <p class="card-panel__hint" id="card-video-hint">
+                  Quay hoặc chọn video ngắn tối đa 5 phút — gửi kèm thiệp
+                </p>
+                <div class="media-actions">
+                  <label class="btn btn--outline btn--sm media-upload">
+                    <span id="card-lbl-video-cam">Quay video</span>
+                    <input
+                      type="file"
+                      id="card-video-camera"
+                      accept="video/*"
+                      capture="environment"
+                      hidden
+                    />
+                  </label>
+                  <label class="btn btn--outline btn--sm media-upload">
+                    <span id="card-lbl-video-pick">Chọn video</span>
+                    <input type="file" id="card-video-file" accept="video/*" hidden />
+                  </label>
+                </div>
+                <div class="video-recorder" id="video-recorder">
+                  <button type="button" class="btn btn--primary btn--sm" id="card-video-record">
+                    Ghi màn hình camera
+                  </button>
+                  <button type="button" class="btn btn--ghost btn--sm" id="card-video-delete" hidden>
+                    Xóa video
+                  </button>
+                  <span class="audio-timer" id="card-video-timer" aria-live="polite"></span>
+                </div>
+                <video
+                  id="card-video-preview"
+                  class="card-video-preview"
+                  controls
+                  playsinline
+                  hidden
+                ></video>
+              </div>
+
+              <div class="card-panel">
+                <h3 class="card-panel__title" id="card-lbl-stickers">Sticker trang trí</h3>
+                <div class="sticker-cats" id="sticker-cats" role="tablist"></div>
+                <div class="sticker-picker" id="sticker-picker"></div>
+                <button type="button" class="btn btn--ghost btn--sm" id="card-clear-stickers">
+                  Xóa sticker
+                </button>
+              </div>
+
+              <div class="card-panel">
+                <h3 class="card-panel__title" id="card-lbl-frames">Khung & viền</h3>
+                <div class="frame-picker" id="frame-picker"></div>
+              </div>
+
+              <div class="card-panel">
+                <h3 class="card-panel__title" id="card-lbl-effects">Hiệu ứng chuyển động</h3>
+                <div class="effect-picker" id="effect-picker"></div>
+                <button type="button" class="btn btn--ghost btn--sm" id="card-clear-effects">
+                  Tắt hiệu ứng
+                </button>
+              </div>
+
+              <div class="card-panel">
+                <div class="form-field">
+                  <label for="card-name" id="card-lbl-name">Tên của bạn</label>
+                  <input type="text" id="card-name" maxlength="40" autocomplete="name" />
+                </div>
+                <div class="form-field">
+                  <label for="card-relation" id="card-lbl-relation">Mối quan hệ</label>
+                  <select id="card-relation"></select>
+                </div>
+                <div class="form-field" id="card-relation-custom-wrap" hidden>
+                  <label for="card-relation-custom" id="card-lbl-relation-custom">Ghi rõ mối quan hệ</label>
+                  <input
+                    type="text"
+                    id="card-relation-custom"
+                    maxlength="60"
+                    autocomplete="off"
+                  />
+                </div>
+                <div class="form-field">
+                  <label for="card-message" id="card-lbl-message">Lời chúc</label>
+                  <textarea id="card-message" rows="3" maxlength="220"></textarea>
+                </div>
+
+                <div class="card-style-row">
+                  <div class="form-field">
+                    <label for="card-font" id="card-lbl-font">Font</label>
+                    <select id="card-font"></select>
+                  </div>
+                  <div class="form-field">
+                    <label for="card-size" id="card-lbl-size">Cỡ chữ</label>
+                    <input type="range" id="card-size" min="18" max="40" step="1" value="28" />
+                  </div>
+                </div>
+
+                <div class="form-field">
+                  <span class="field-label" id="card-lbl-color">Màu chữ</span>
+                  <div class="color-picker" id="color-picker"></div>
+                </div>
+              </div>
+
+              <div class="card-studio__actions">
+                <button type="button" class="btn btn--outline" id="card-download">Tải thiệp về</button>
+                <button type="button" class="btn btn--primary" id="card-submit">Gửi lời chúc</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tường lời chúc ngẫu nhiên -->
+          <div class="wishes-wall" id="wishes-wall">
+            <header class="wishes-wall__header">
+              <h3 class="wishes-wall__title" id="wishes-wall-title">Tường lời chúc</h3>
+              <p class="wishes-wall__subtitle" id="wishes-wall-subtitle">
+                Những lời chúc hiện ngẫu nhiên từ khách mời
+              </p>
+            </header>
+            <div class="wishes-wall__stage" id="wishes-wall-stage" aria-live="polite"></div>
+          </div>
+
+          <div class="wishes-gallery">
+            <header class="wishes-gallery__header">
+              <h3 class="wishes-gallery__title" id="wishes-gallery-title">Thiệp đã gửi</h3>
+              <div class="wishes-filter">
+                <label class="wishes-filter__label" for="wishes-filter-relation" id="wishes-filter-label">
+                  Lọc theo mối quan hệ
+                </label>
+                <select id="wishes-filter-relation" class="wishes-filter__select"></select>
+              </div>
+            </header>
+            <div class="wishes-filter-chips" id="wishes-filter-chips" role="listbox" aria-label="Filter"></div>
+            <div class="wishes" id="wishes-list"></div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="footer" id="footer">
+      <div class="container">
+        <p class="footer__thanks font-script" data-i18n="footer.thankYou">Cảm ơn bạn</p>
+        <p class="footer__names font-script" data-bind="coupleNames">A & B</p>
+        <p class="footer__sign" data-i18n="footer.signature">Với tất cả yêu thương</p>
+        <div class="footer__ornament" aria-hidden="true">❧</div>
+      </div>
+    </footer>
+
+    <!-- Audio -->
+    <audio id="bg-music" preload="auto"></audio>
+
+    <!-- Toast -->
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+    <!-- Firebase (sổ lời chúc dùng chung) — chỉ cần khi firebase.enabled = true -->
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
+
+    <script src="js/config.js"></script>
+    <script src="js/media-db.js"></script>
+    <script src="js/firebase-wishes.js"></script>
+    <script src="js/card-editor.js"></script>
+    <script src="js/app.js"></script>
+  </body>
+</html>
