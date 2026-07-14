@@ -160,12 +160,6 @@
       if (key === "timeDisplay") el.textContent = t(cfg.wedding?.timeDisplay);
     });
 
-    const langBtn = $("#lang-toggle");
-    if (langBtn) {
-      const next = lang === "vi" ? "EN" : "VI";
-      langBtn.textContent = next;
-    }
-
     applyMeta();
   }
 
@@ -1040,23 +1034,6 @@
     spy();
   }
 
-  /* ---------- Language toggle ---------- */
-  function setupLang() {
-    $("#lang-toggle")?.addEventListener("click", () => {
-      lang = lang === "vi" ? "en" : "vi";
-      applyI18n();
-      renderStory();
-      wishFilter = "all";
-      renderWishes();
-      window.CardEditor?.setLang?.(lang);
-      observeReveal();
-      /* refresh countdown ended text if visible */
-      const ended = $("#countdown-ended");
-      if (ended && !ended.hidden) {
-        ended.textContent = t(cfg.labels?.countdown?.ended);
-      }
-    });
-  }
 
   /* ---------- Petals ---------- */
   function setupPetals() {
@@ -1307,7 +1284,6 @@
     }
     setupMusic();
     setupNav();
-    setupLang();
     setupPetals();
     observeReveal();
     setupIntro();
