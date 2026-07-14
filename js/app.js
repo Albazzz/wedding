@@ -987,6 +987,55 @@
     root?.classList.remove("is-ready", "is-reading");
   }
 
+  /** Where #wish-reveal lived before being moved into fullscreen wall */
+  let letterRevealHome = null;
+
+  function getWallFsHost() {
+    const stage = $("#wishes-wall-stage");
+    const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+    if (stage && fsEl === stage) return stage;
+    if (stage && stage.classList.contains("is-fs")) return stage;
+    return null;
+  }
+
+  /**
+   * Fullscreen only shows descendants of the fullscreen element.
+   * Move letter overlay into the wall stage so open-letter works while wall is FS.
+   */
+  function mountLetterRevealInWallFs() {
+    const root = $("#wish-reveal");
+    const host = getWallFsHost();
+    if (!root || !host) return;
+    if (root.parentElement === host) {
+      root.classList.add("letter-reveal--in-fs");
+      return;
+    }
+    letterRevealHome = {
+      parent: root.parentElement,
+      next: root.nextSibling,
+    };
+    host.appendChild(root);
+    root.classList.add("letter-reveal--in-fs");
+  }
+
+  function restoreLetterRevealHome() {
+    const root = $("#wish-reveal");
+    if (!root) return;
+    root.classList.remove("letter-reveal--in-fs");
+    if (!letterRevealHome || !letterRevealHome.parent) {
+      letterRevealHome = null;
+      return;
+    }
+    const { parent, next } = letterRevealHome;
+    try {
+      if (next && next.parentNode === parent) parent.insertBefore(root, next);
+      else parent.appendChild(root);
+    } catch (_) {
+      document.body.appendChild(root);
+    }
+    letterRevealHome = null;
+  }
+
   /**
    * Open letter: shatter → envelope open → card slides out → full letter (envelope gone).
    * @param {object} w wish
@@ -1001,6 +1050,9 @@
       clearTimeout(wishRevealTimer);
       wishRevealTimer = null;
     }
+
+    /* Must live inside fullscreen wall or overlay is invisible */
+    mountLetterRevealInWallFs();
 
     fillLetterCard(w);
     resetEnvelope();
@@ -1056,13 +1108,16 @@
     }
     resetEnvelope();
     root.classList.remove("is-open", "is-ready", "is-reading");
-    document.body.style.overflow = "";
+    if (!getWallFsHost()) document.body.style.overflow = "";
     $$(".wall-heart.is-tapped, .wish-card.is-tapped").forEach((el) =>
       el.classList.remove("is-tapped")
     );
     clearLetterFxLayers();
     setTimeout(() => {
-      if (!wishRevealOpen) root.hidden = true;
+      if (!wishRevealOpen) {
+        root.hidden = true;
+        restoreLetterRevealHome();
+      }
     }, 450);
   }
 
@@ -1099,7 +1154,11 @@
       }
     });
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && wishRevealOpen) closeWishReveal();
+      /* Esc: đóng thư trước, rồi mới thoát fullscreen tường */
+      if (e.key === "Escape" && wishRevealOpen) {
+        e.preventDefault();
+        closeWishReveal();
+      }
     });
   }
 
@@ -1403,6 +1462,8 @@
       if (!document.fullscreenElement && !document.webkitFullscreenElement) {
         stage.classList.remove("is-fs");
         document.body.classList.remove("wall-fs-lock");
+        /* Put letter back on body so fixed overlay still works after FS ends */
+        restoreLetterRevealHome();
       }
       syncWallFsButton();
       if (wallFlyRunning) {
