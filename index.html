@@ -359,6 +359,12 @@
               <p class="wishes-wall__subtitle" id="wishes-wall-subtitle">
                 Chạm trái tim mang tên khách — mở lá thư lời chúc
               </p>
+              <div class="wishes-wall__actions">
+                <button type="button" class="btn btn--outline wishes-wall__fx-btn" id="wall-fireworks-btn">
+                  <span aria-hidden="true">🎆</span>
+                  <span id="wall-fireworks-label">Pháo hoa</span>
+                </button>
+              </div>
             </header>
             <div
               class="wishes-wall__stage wall-letter"
@@ -419,6 +425,25 @@
 
     <!-- Toast -->
     <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+    <!-- Galaxy + heart particles (pháo hoa) -->
+    <div
+      class="galaxy-show"
+      id="galaxy-show"
+      hidden
+      role="dialog"
+      aria-modal="true"
+      aria-label="Pháo hoa"
+    >
+      <canvas id="galaxy-canvas" aria-hidden="true"></canvas>
+      <div class="galaxy-show__caption">
+        <p class="galaxy-show__title font-script" id="galaxy-show-title">Trăm năm hạnh phúc</p>
+        <p class="galaxy-show__names couple-names-line" id="galaxy-show-names"></p>
+      </div>
+      <button type="button" class="galaxy-show__close" id="galaxy-show-close" aria-label="Đóng">
+        Đóng
+      </button>
+    </div>
 
     <!-- Firebase Firestore only (không cần Storage / gói Blaze) -->
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>

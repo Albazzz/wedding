@@ -175,8 +175,14 @@
     /* Bind simple fields */
     $$("[data-bind]").forEach((el) => {
       const key = el.getAttribute("data-bind");
-      if (key === "monogram") el.textContent = monogram();
-      if (key === "coupleNames") el.textContent = coupleNames();
+      if (key === "monogram") {
+        el.textContent = monogram();
+        el.classList.add("couple-names-line");
+      }
+      if (key === "coupleNames") {
+        el.textContent = coupleNames();
+        el.classList.add("couple-names-line");
+      }
       if (key === "dateDisplay") el.textContent = t(cfg.wedding?.dateDisplay);
       if (key === "timeDisplay") el.textContent = t(cfg.wedding?.timeDisplay);
     });
@@ -2289,7 +2295,10 @@
     message = message.replace(/\{names\}/g, names);
 
     if (eyebrow) eyebrow.textContent = t(cfgIntro.eyebrow) || "";
-    if (namesEl) namesEl.textContent = monogramText;
+    if (namesEl) {
+      namesEl.textContent = monogramText;
+      namesEl.classList.add("couple-names-line");
+    }
     if (dateEl) dateEl.textContent = t(cfg.wedding?.dateDisplay) || "";
     if (enterBtn) {
       enterBtn.textContent = t(cfgIntro.enterLabel) || "Open";
@@ -2297,15 +2306,53 @@
     }
     if (skipBtn) skipBtn.textContent = t(cfgIntro.skipLabel) || "Skip";
 
-    /* Build typewriter chars */
+    /**
+     * Typewriter chars: group into nowrap words so inline-block .char
+     * never wraps mid-word. Couple names stay one unbreakable group.
+     */
+    function appendTypeChar(parent, ch) {
+      const span = document.createElement("span");
+      span.className = "char" + (ch === " " ? " is-space" : "");
+      span.textContent = ch === " " ? "\u00a0" : ch;
+      parent.appendChild(span);
+    }
+
+    function appendTypeWord(parent, word, extraClass) {
+      if (!word) return;
+      const wrap = document.createElement("span");
+      wrap.className = "char-word" + (extraClass ? " " + extraClass : "");
+      Array.from(word).forEach((ch) => appendTypeChar(wrap, ch));
+      parent.appendChild(wrap);
+    }
+
+    function appendTypeText(parent, text) {
+      if (!text) return;
+      const tokens = text.split(/(\s+)/);
+      tokens.forEach((tok) => {
+        if (!tok) return;
+        if (/^\s+$/.test(tok)) {
+          /* break opportunity between words only */
+          appendTypeChar(parent, " ");
+          return;
+        }
+        appendTypeWord(parent, tok);
+      });
+    }
+
     if (msgEl) {
       msgEl.innerHTML = "";
-      Array.from(message).forEach((ch) => {
-        const span = document.createElement("span");
-        span.className = "char" + (ch === " " ? " is-space" : "");
-        span.textContent = ch === " " ? "\u00a0" : ch;
-        msgEl.appendChild(span);
-      });
+      if (names && message.includes(names)) {
+        const parts = message.split(names);
+        parts.forEach((part, idx) => {
+          appendTypeText(msgEl, part);
+          if (idx < parts.length - 1) {
+            /* full couple names = single nowrap line */
+            appendTypeWord(msgEl, names, "char-word--names couple-names-line");
+          }
+        });
+      } else {
+        appendTypeText(msgEl, message);
+      }
     }
 
     let closed = false;
@@ -2395,6 +2442,283 @@
     setTimeout(openScroll, delay);
   }
 
+  /* ---------- Galaxy + heart particles (pháo hoa) ---------- */
+  let galaxyRaf = 0;
+  let galaxyRunning = false;
+
+  function heartCurve(t) {
+    /* classic parametric heart */
+    const x = 16 * Math.pow(Math.sin(t), 3);
+    const y = -(
+      13 * Math.cos(t) -
+      5 * Math.cos(2 * t) -
+      2 * Math.cos(3 * t) -
+      Math.cos(4 * t)
+    );
+    return { x, y };
+  }
+
+  function setupGalaxyShow() {
+    const root = $("#galaxy-show");
+    const canvas = $("#galaxy-canvas");
+    const btn = $("#wall-fireworks-btn");
+    const closeBtn = $("#galaxy-show-close");
+    const titleEl = $("#galaxy-show-title");
+    const namesEl = $("#galaxy-show-names");
+    const labelEl = $("#wall-fireworks-label");
+    if (!root || !canvas || !btn) return;
+
+    if (labelEl) labelEl.textContent = t(cfg.guestbook?.wallFireworks) || "Pháo hoa";
+    if (titleEl) {
+      titleEl.textContent =
+        t(cfg.guestbook?.wallFireworksTitle) ||
+        t(cfg.guestbook?.wallCenterTitle) ||
+        "Trăm năm hạnh phúc";
+    }
+    if (namesEl) {
+      namesEl.textContent = coupleNames();
+      namesEl.classList.add("couple-names-line");
+    }
+
+    const ctx = canvas.getContext("2d");
+    let w = 0;
+    let h = 0;
+    let particles = [];
+    let stars = [];
+    let sparks = [];
+    let start = 0;
+    let phase = "gather"; /* gather | hold | burst */
+
+    function resize() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      w = window.innerWidth;
+      h = window.innerHeight;
+      canvas.width = Math.floor(w * dpr);
+      canvas.height = Math.floor(h * dpr);
+      canvas.style.width = w + "px";
+      canvas.style.height = h + "px";
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function buildStars() {
+      const n = perfMode === "low" ? 80 : 160;
+      stars = Array.from({ length: n }, () => ({
+        x: Math.random() * w,
+        y: Math.random() * h,
+        r: 0.4 + Math.random() * 1.6,
+        a: 0.25 + Math.random() * 0.7,
+        tw: Math.random() * Math.PI * 2,
+        sp: 0.01 + Math.random() * 0.03,
+      }));
+    }
+
+    function buildHeartParticles() {
+      const n = perfMode === "low" ? 280 : 520;
+      const scale = Math.min(w, h) * 0.028;
+      const cx = w * 0.5;
+      const cy = h * 0.48;
+      particles = [];
+      for (let i = 0; i < n; i++) {
+        const t = (i / n) * Math.PI * 2;
+        const hp = heartCurve(t);
+        /* denser fill: jitter inside heart shell */
+        const jitter = 0.15 + Math.random() * 0.85;
+        const tx = cx + hp.x * scale * jitter + (Math.random() - 0.5) * 6;
+        const ty = cy + hp.y * scale * jitter + (Math.random() - 0.5) * 6;
+        particles.push({
+          x: Math.random() * w,
+          y: Math.random() * h,
+          tx,
+          ty,
+          size: 1.2 + Math.random() * 2.4,
+          hue: 320 + Math.random() * 40,
+          delay: Math.random() * 0.25,
+        });
+      }
+    }
+
+    function spawnFirework(x, y) {
+      const colors = ["#ff69b4", "#ff9ec8", "#e9ce94", "#c4a574", "#fff5f0", "#ff4d8d"];
+      const count = perfMode === "low" ? 24 : 42;
+      for (let i = 0; i < count; i++) {
+        const ang = (Math.PI * 2 * i) / count + Math.random() * 0.2;
+        const sp = 2 + Math.random() * 5.5;
+        sparks.push({
+          x,
+          y,
+          vx: Math.cos(ang) * sp,
+          vy: Math.sin(ang) * sp,
+          life: 1,
+          decay: 0.012 + Math.random() * 0.016,
+          color: colors[i % colors.length],
+          size: 1.5 + Math.random() * 2,
+        });
+      }
+    }
+
+    function easeOutCubic(t) {
+      return 1 - Math.pow(1 - t, 3);
+    }
+
+    function tick(now) {
+      if (!galaxyRunning) return;
+      if (!start) start = now;
+      const elapsed = (now - start) / 1000;
+
+      /* galaxy backdrop */
+      const g = ctx.createRadialGradient(w * 0.5, h * 0.35, 0, w * 0.5, h * 0.5, Math.max(w, h) * 0.75);
+      g.addColorStop(0, "#3d2458");
+      g.addColorStop(0.35, "#1a1028");
+      g.addColorStop(0.7, "#0c0814");
+      g.addColorStop(1, "#050308");
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, w, h);
+
+      /* nebula washes */
+      ctx.save();
+      ctx.globalAlpha = 0.35;
+      const n1 = ctx.createRadialGradient(w * 0.25, h * 0.3, 0, w * 0.25, h * 0.3, w * 0.35);
+      n1.addColorStop(0, "rgba(180,80,140,0.45)");
+      n1.addColorStop(1, "transparent");
+      ctx.fillStyle = n1;
+      ctx.fillRect(0, 0, w, h);
+      const n2 = ctx.createRadialGradient(w * 0.75, h * 0.55, 0, w * 0.75, h * 0.55, w * 0.4);
+      n2.addColorStop(0, "rgba(90,70,180,0.35)");
+      n2.addColorStop(1, "transparent");
+      ctx.fillStyle = n2;
+      ctx.fillRect(0, 0, w, h);
+      ctx.restore();
+
+      /* stars */
+      stars.forEach((s) => {
+        s.tw += s.sp;
+        const a = s.a * (0.55 + Math.sin(s.tw) * 0.45);
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(255,245,250,${a})`;
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      /* heart gather ~2.2s then hold, occasional fireworks */
+      let progress = Math.min(1, Math.max(0, (elapsed - 0.15) / 2.2));
+      progress = easeOutCubic(progress);
+      if (elapsed > 2.5 && phase === "gather") phase = "hold";
+      if (elapsed > 2.8 && phase === "hold") {
+        phase = "burst";
+        spawnFirework(w * 0.5, h * 0.38);
+        spawnFirework(w * 0.28, h * 0.55);
+        spawnFirework(w * 0.72, h * 0.52);
+      }
+      if (phase === "burst" && Math.random() < 0.018) {
+        spawnFirework(Math.random() * w * 0.7 + w * 0.15, Math.random() * h * 0.45 + h * 0.15);
+      }
+
+      particles.forEach((p) => {
+        const local = Math.min(1, Math.max(0, (progress - p.delay) / (1 - p.delay * 0.5)));
+        const e = easeOutCubic(local);
+        const x = p.x + (p.tx - p.x) * e;
+        const y = p.y + (p.ty - p.y) * e;
+        /* soft glow */
+        ctx.beginPath();
+        ctx.fillStyle = `hsla(${p.hue}, 85%, 68%, 0.35)`;
+        ctx.arc(x, y, p.size * 2.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.fillStyle = `hsl(${p.hue}, 90%, 72%)`;
+        ctx.arc(x, y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      /* fireworks sparks */
+      sparks = sparks.filter((s) => s.life > 0.02);
+      sparks.forEach((s) => {
+        s.x += s.vx;
+        s.y += s.vy;
+        s.vy += 0.06;
+        s.vx *= 0.99;
+        s.life -= s.decay;
+        ctx.beginPath();
+        ctx.fillStyle = s.color;
+        ctx.globalAlpha = Math.max(0, s.life);
+        ctx.arc(s.x, s.y, s.size * s.life, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      });
+
+      /* show caption after heart forms */
+      if (elapsed > 1.8) root.classList.add("is-caption");
+
+      galaxyRaf = requestAnimationFrame(tick);
+    }
+
+    function openShow() {
+      if (galaxyRunning) return;
+      /* wall fullscreen would hide body-level overlay */
+      if (typeof isWallFullscreen === "function" && isWallFullscreen()) {
+        exitWallFullscreen();
+      }
+      if (titleEl) {
+        titleEl.textContent =
+          t(cfg.guestbook?.wallFireworksTitle) ||
+          t(cfg.guestbook?.wallCenterTitle) ||
+          "Trăm năm hạnh phúc";
+      }
+      if (namesEl) {
+        namesEl.textContent = coupleNames();
+        namesEl.classList.add("couple-names-line");
+      }
+      if (labelEl) labelEl.textContent = t(cfg.guestbook?.wallFireworks) || "Pháo hoa";
+      resize();
+      buildStars();
+      buildHeartParticles();
+      sparks = [];
+      start = 0;
+      phase = "gather";
+      root.hidden = false;
+      root.classList.remove("is-caption");
+      document.body.style.overflow = "hidden";
+      galaxyRunning = true;
+      requestAnimationFrame(() => root.classList.add("is-open"));
+      galaxyRaf = requestAnimationFrame(tick);
+    }
+
+    function closeShow() {
+      galaxyRunning = false;
+      if (galaxyRaf) cancelAnimationFrame(galaxyRaf);
+      galaxyRaf = 0;
+      root.classList.remove("is-open", "is-caption");
+      document.body.style.overflow = "";
+      setTimeout(() => {
+        if (!galaxyRunning) root.hidden = true;
+      }, 400);
+    }
+
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      openShow();
+    });
+    closeBtn?.addEventListener("click", closeShow);
+    root.addEventListener("click", (e) => {
+      if (e.target === root) closeShow();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && galaxyRunning) {
+        e.preventDefault();
+        closeShow();
+      }
+    });
+    window.addEventListener(
+      "resize",
+      () => {
+        if (!galaxyRunning) return;
+        resize();
+        buildStars();
+        buildHeartParticles();
+      },
+      { passive: true }
+    );
+  }
+
   /* ---------- Boot ---------- */
   function init() {
     applyPerfMode();
@@ -2406,6 +2730,7 @@
     setupLightbox();
     setupGuestbook();
     setupWishReveal();
+    setupGalaxyShow();
     /* local list ngay; cloud sẽ refresh qua subscribe */
     if (!useWishCloud()) {
       wishes = loadWishes();
