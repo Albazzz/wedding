@@ -455,7 +455,7 @@ window.WEDDING_CONFIG = {
   music: {
     enabled: true,
     /** File mp3 trong assets, hoặc URL */
-    src: "assets/audio/background.mp3",
+    src: "assets/audio/wedding.mp3",
     /** Tự phát (trình duyệt có thể chặn — có nút bật tay) */
     autoplay: true,
     loop: true,
