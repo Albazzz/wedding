@@ -332,6 +332,116 @@
     $$(".timeline__card, .wish-card, .gallery__item, .card-panel, .coming-soon__card").forEach(
       (el) => el.classList.add("glass-shine")
     );
+    setupCardTilt();
+  }
+
+  /* ---------- 3D tilt on cards (desktop) ---------- */
+  function setupCardTilt() {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+
+    const maxDeg = 7;
+    $$(".timeline__card, .wish-card, .gallery__item, .card-panel").forEach((card) => {
+      if (card._tiltBound) return;
+      card._tiltBound = true;
+      card.classList.add("tilt-card");
+
+      card.addEventListener(
+        "pointermove",
+        (e) => {
+          const r = card.getBoundingClientRect();
+          const px = (e.clientX - r.left) / r.width - 0.5;
+          const py = (e.clientY - r.top) / r.height - 0.5;
+          const rx = (-py * maxDeg * 2).toFixed(2);
+          const ry = (px * maxDeg * 2).toFixed(2);
+          card.classList.add("is-tilting");
+          card.style.transform = `perspective(900px) rotateX(${rx}deg) rotateY(${ry}deg) translateZ(6px) scale(1.02)`;
+        },
+        { passive: true }
+      );
+
+      card.addEventListener(
+        "pointerleave",
+        () => {
+          card.classList.remove("is-tilting");
+          card.style.transform = "";
+        },
+        { passive: true }
+      );
+    });
+  }
+
+  /* ---------- Click ripple ---------- */
+  function setupClickRipple() {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    document.addEventListener(
+      "pointerdown",
+      (e) => {
+        if (e.button !== 0) return;
+        const host = e.target.closest(
+          "button, .btn, a.scroll-hint, .gallery__item, .wish-card, .wall-card, .sticker-btn, .template-swatch, .effect-chip, .frame-chip, .sticker-cat, .intro__enter"
+        );
+        if (!host) return;
+
+        const r = host.getBoundingClientRect();
+        const size = Math.max(r.width, r.height) * 2.2;
+        const x = e.clientX - r.left - size / 2;
+        const y = e.clientY - r.top - size / 2;
+
+        const style = getComputedStyle(host);
+        if (style.position === "static") host.style.position = "relative";
+        host.classList.add("ripple-host");
+
+        const ink = document.createElement("span");
+        ink.className = "ripple-ink";
+        /* dark surfaces use light ripple; light cards use darker ink */
+        const isDark =
+          host.closest(".hero, .intro, .wish-reveal, .header:not(.is-scrolled)") ||
+          host.classList.contains("btn--primary");
+        if (!isDark) ink.classList.add("is-dark");
+        ink.style.width = size + "px";
+        ink.style.height = size + "px";
+        ink.style.left = x + "px";
+        ink.style.top = y + "px";
+        host.appendChild(ink);
+        setTimeout(() => ink.remove(), 780);
+      },
+      { passive: true }
+    );
+  }
+
+  /* ---------- Section scroll fade / blur ---------- */
+  function setupSectionMotion() {
+    const sections = $$("main > section");
+    if (!sections.length) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      sections.forEach((s) => s.classList.add("is-section-in"));
+      return;
+    }
+
+    /* hero always visible */
+    $("#hero")?.classList.add("is-section-in");
+
+    if (!("IntersectionObserver" in window)) {
+      sections.forEach((s) => s.classList.add("is-section-in"));
+      return;
+    }
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting && e.intersectionRatio > 0.12) {
+            e.target.classList.add("is-section-in");
+          }
+        });
+      },
+      { threshold: [0.12, 0.25, 0.4], rootMargin: "0px 0px -8% 0px" }
+    );
+
+    sections.forEach((s) => {
+      if (s.id !== "hero") io.observe(s);
+    });
   }
 
   /* ---------- Story timeline ---------- */
@@ -1539,10 +1649,13 @@
     setupPetals();
     setupParallax();
     setupCursorFx();
+    setupClickRipple();
+    setupSectionMotion();
     observeReveal();
     enhanceGlassShine();
-    /* re-apply shine after dynamic content */
+    /* re-apply shine/tilt after dynamic content */
     setTimeout(enhanceGlassShine, 800);
+    setTimeout(setupCardTilt, 900);
     setupIntro();
   }
 
