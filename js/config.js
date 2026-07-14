@@ -54,8 +54,8 @@ window.WEDDING_CONFIG = {
   hero: {
     monogram: "A & B",
     tagline: {
-      vi: "Chúng mình sắp thành vợ chồng",
-      en: "We're getting married",
+      vi: "Chúc mừng đến với lễ thành hôn",
+      en: "Welcome to our wedding celebration",
     },
     /** Ảnh nền hero (đường dẫn local hoặc URL) */
     backgroundImage: "assets/images/hero.jpg",
