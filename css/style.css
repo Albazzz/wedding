@@ -237,17 +237,20 @@ button {
   vertical-align: baseline;
 }
 
-/* Long names: stay one line; allow slight horizontal scroll only if needed */
+/* Long names: one line, full content width, no clip */
 .hero__names {
   max-width: 100%;
-  overflow-x: auto;
-  overflow-y: hidden;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
+  width: 100%;
+  overflow: visible;
+  box-sizing: border-box;
+  padding-inline: 0.15em;
 }
 
-.hero__names::-webkit-scrollbar {
-  display: none;
+.hero__names .font-script,
+.hero__names [data-bind="coupleNames"] {
+  max-width: 100%;
+  /* slightly tighter script so long names fit */
+  letter-spacing: 0.01em;
 }
 
 .container {
@@ -938,10 +941,11 @@ body.intro-lock {
   z-index: 2;
   padding:
     calc(var(--header-offset) + 2.5rem)
-    max(1.5rem, var(--gutter))
+    max(1.25rem, var(--gutter))
     max(4rem, calc(2.5rem + var(--sab)))
-    max(1.5rem, var(--gutter));
-  max-width: 720px;
+    max(1.25rem, var(--gutter));
+  /* wider so couple names aren't clipped */
+  max-width: min(100%, 980px);
   width: 100%;
   will-change: transform;
   transition: transform 0.5s var(--ease-expo);
@@ -961,9 +965,10 @@ body.intro-lock {
 }
 
 .hero__names {
-  font-size: clamp(2.8rem, 10vw, 5rem);
+  /* ~30% smaller so long Vietnamese names fit one line */
+  font-size: clamp(1.96rem, 7vw, 3.5rem);
   font-weight: 400;
-  line-height: 1.15;
+  line-height: 1.2;
   margin-bottom: 0.75rem;
 }
 
@@ -4442,7 +4447,7 @@ body.is-low-power .wall-orbit {
   }
 
   .hero__names {
-    font-size: clamp(2.2rem, 12vw, 3rem);
+    font-size: clamp(1.55rem, 8.4vw, 2.1rem);
   }
 
   .countdown {
@@ -4596,12 +4601,12 @@ body.is-low-power .wall-orbit {
   }
 
   .hero__content {
-    max-width: 640px;
+    max-width: min(100%, 960px);
     padding-top: calc(var(--header-offset) + 3.5rem);
   }
 
   .hero__names {
-    font-size: clamp(3.4rem, 9vw, 4.6rem);
+    font-size: clamp(2.4rem, 6.3vw, 3.2rem);
   }
 
   .countdown__item {
@@ -4671,11 +4676,11 @@ body.is-low-power .wall-orbit {
   .hero__content {
     padding-top: calc(var(--header-offset) + 1.25rem);
     padding-bottom: max(2rem, calc(1.25rem + var(--sab)));
-    max-width: 700px;
+    max-width: min(100%, 920px);
   }
 
   .hero__names {
-    font-size: clamp(2.6rem, 6vw, 3.8rem);
+    font-size: clamp(1.8rem, 4.2vw, 2.65rem);
   }
 
   .hero__eyebrow {
