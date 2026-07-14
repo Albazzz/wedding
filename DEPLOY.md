@@ -87,7 +87,10 @@ Pages tự deploy lại trong vài phút.
 
 ---
 
-## Phần B — Sổ lời chúc dùng chung (Firebase, miễn phí)
+## Phần B — Sổ lời chúc dùng chung (Firestore only, free Spark)
+
+**Không cần Cloud Storage / gói Blaze.**  
+Chỉ **Firestore**: tên, quan hệ, lời chúc, ảnh thiệp canvas (data URL nhỏ).
 
 **Không bật Firebase** → mỗi máy chỉ thấy thiệp của chính mình.  
 **Bật Firebase** → ai mở link cũng thấy thiệp đã gửi.
@@ -124,30 +127,9 @@ service cloud.firestore {
 
 5. **Publish**
 
-### B3. Bật Storage
+### B3. ~~Storage~~ — **bỏ qua**
 
-1. Menu **Build** → **Storage**
-2. **Get started** → rules tạm → **Done**
-3. **Rules** → dán:
-
-```
-rules_version = '2';
-service firebase.storage {
-  match /b/{bucket}/o {
-    match /wishes/{wishId}/{fileName} {
-      allow read: if true;
-      allow write: if request.resource.size < 80 * 1024 * 1024
-        && (
-          request.resource.contentType.matches('image/.*')
-          || request.resource.contentType.matches('audio/.*')
-          || request.resource.contentType.matches('video/.*')
-        );
-    }
-  }
-}
-```
-
-4. **Publish**
+Không bật Storage (tránh bắt upgrade Blaze).
 
 ### B4. Lấy Web config
 
