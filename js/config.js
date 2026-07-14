@@ -13,13 +13,14 @@ window.WEDDING_CONFIG = {
    * false → mỗi máy chỉ thấy thiệp của chính mình
    */
   firebase: {
-    enabled: false,
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT.firebaseapp.com",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_PROJECT.appspot.com",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID",
+    enabled: true,
+    apiKey: "AIzaSyAAtg_MjzcRV4JtSCf8lamlThp-Gxht_Ao",
+    authDomain: "wedding-fa939.firebaseapp.com",
+    projectId: "wedding-fa939",
+    storageBucket: "wedding-fa939.firebasestorage.app",
+    messagingSenderId: "979542197572",
+    appId: "1:979542197572:web:06e1aed739bcf989e88311",
+    measurementId: "G-RL3Z3KMGXG",
     collection: "wishes",
     maxWishes: 150,
   },
@@ -141,7 +142,7 @@ window.WEDDING_CONFIG = {
      * true = chỉ localStorage (mỗi máy tự thấy).
      * false + firebase.enabled = lưu cloud, ai mở cũng thấy.
      */
-    localOnly: false,
+    localOnly: false, // Firebase đã bật
     emptyText: {
       vi: "Chưa có thiệp nào — hãy trang trí và gửi lời chúc đầu tiên!",
       en: "No cards yet — decorate and send the first wish!",
