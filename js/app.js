@@ -1451,14 +1451,13 @@
     /* nhịp vỗ chim thật: ~0.38–0.55s, lệch pha */
     const flap = (0.38 + Math.random() * 0.16).toFixed(2);
     const flapDelay = (-Math.random() * 0.4).toFixed(2);
-    /* demo fillers = decorative only (span, not button) */
-    const tag = isDemo ? "span" : "button";
-    const typeAttr = isDemo ? "" : ' type="button"';
-    const role = isDemo ? ' role="presentation" aria-hidden="true"' : ` aria-label="${escapeHtml(label)}"`;
+    const role = isDemo
+      ? ' role="presentation" aria-hidden="true" tabindex="-1"'
+      : ` aria-label="${escapeHtml(label)}"`;
     return `
-      <${tag}${typeAttr} class="wall-heart${isDemo ? " wall-heart--demo" : ""}" data-wish-id="${wid}"
+      <button type="button" class="wall-heart${isDemo ? " wall-heart--demo" : ""}" data-wish-id="${wid}"
         data-demo="${isDemo ? "1" : "0"}"
-        style="--enter-delay:${(i * 0.07).toFixed(2)}s;--flap:${flap}s;--flap-delay:${flapDelay}s"${role}>
+        style="--enter-delay:0s;--flap:${flap}s;--flap-delay:${flapDelay}s"${role}>
         <span class="wall-heart__body">
           <span class="wall-heart__wing wall-heart__wing--left" aria-hidden="true"></span>
           <span class="wall-heart__wing wall-heart__wing--right" aria-hidden="true"></span>
@@ -1467,7 +1466,7 @@
           </span>
           ${short ? `<span class="wall-heart__name">${short}</span>` : ""}
         </span>
-      </${tag}>`;
+      </button>`;
   }
 
   function isWallFullscreen() {
@@ -1593,26 +1592,39 @@
   }
 
   function startWallHeartFlight(stage) {
-    const host = $("#wall-letter-orbits", stage) || $("#wall-letter-orbits");
+    const host =
+      $("#wall-letter-fly", stage) ||
+      $("#wall-letter-orbits", stage) ||
+      $("#wall-letter-fly") ||
+      $("#wall-letter-orbits");
     if (!stage || !host) return;
 
     const reduce =
       perfMode === "low" || window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const rect = stage.getBoundingClientRect();
-    const hearts = Array.from(host.querySelectorAll(".wall-heart:not(.is-leaving)"));
+    let rect = stage.getBoundingClientRect();
+    /* stage may be 0×0 before layout — retry once */
+    if (rect.width < 40 || rect.height < 40) {
+      window.setTimeout(() => {
+        if (stage.isConnected) startWallHeartFlight(stage);
+      }, 120);
+      /* still place with fallback size so hearts aren't stuck opacity-0 */
+      rect = { width: Math.max(rect.width, 320), height: Math.max(rect.height, 400) };
+    }
+
+    const hearts = Array.from(
+      (host.id === "wall-letter-fly" ? host : host.querySelector("#wall-letter-fly") || host).querySelectorAll(
+        ".wall-heart:not(.is-leaving)"
+      )
+    );
+    if (!hearts.length) return;
 
     stopWallHeartFlight();
     wallFlyBodies = hearts.map((el, i) => {
       const b = makeFlyBody(el, rect.width, rect.height, i, hearts.length);
-      if (reduce) {
-        /* static scatter */
-        applyFlyTransform(b);
-      }
+      /* always place immediately so hearts are visible even before first RAF tick */
+      applyFlyTransform(b);
+      el.classList.add("is-in");
       return b;
-    });
-
-    requestAnimationFrame(() => {
-      hearts.forEach((el) => el.classList.add("is-in"));
     });
 
     if (reduce || !wallFlyBodies.length) return;
@@ -1901,6 +1913,10 @@
     bindWallLetterClicks(stage);
     startWallLetterFx(stage);
     startWallHeartFlight(stage);
+    /* second pass after layout so positions use real stage size */
+    window.setTimeout(() => {
+      if (stage.isConnected) startWallHeartFlight(stage);
+    }, 200);
     if (realCount > 0) startWallTimer();
     else if (wallTimer) {
       clearInterval(wallTimer);
