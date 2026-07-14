@@ -20,6 +20,8 @@
   let wallTimer = null;
   let wallObjectUrls = [];
   let wishCloudUnsub = null;
+  let wishRevealTimer = null;
+  let wishRevealOpen = false;
 
   /* ---------- Helpers ---------- */
   function t(obj, fallback) {
@@ -583,9 +585,10 @@
       (String(src).startsWith("data:image") ||
         String(src).startsWith("http://") ||
         String(src).startsWith("https://"));
+    const wid = escapeHtml(w.id || "");
     if (imgOk) {
       return `
-        <article class="wish-card wish-card--image reveal">
+        <article class="wish-card wish-card--image reveal" data-wish-id="${wid}" role="button" tabindex="0">
           <img class="wish-card__img" src="${src}" alt="${escapeHtml(w.name || "Wish")}" loading="lazy" />
           <div class="wish-card__meta">
             <h3 class="wish-card__name">${escapeHtml(w.name || "")}</h3>
@@ -596,7 +599,7 @@
         </article>`;
     }
     return `
-      <article class="wish-card reveal">
+      <article class="wish-card reveal" data-wish-id="${wid}" role="button" tabindex="0">
         <h3 class="wish-card__name">${escapeHtml(w.name || "")}</h3>
         ${w.relation ? `<p class="wish-card__relation">${escapeHtml(w.relation)}</p>` : ""}
         ${w.message ? `<p class="wish-card__msg">${escapeHtml(w.message)}</p>` : ""}
@@ -618,6 +621,170 @@
     }
     root.innerHTML = list.map((w) => renderWishCardHtml(w)).join("");
     observeReveal();
+    bindWishOpenClicks(root);
+  }
+
+  /* ---------- Wish open: burst + slow typewriter ---------- */
+  function findWishById(id) {
+    if (!id) return null;
+    const all = loadWishes();
+    return all.find((w) => w.id === id) || null;
+  }
+
+  function spawnWishSparkles() {
+    const layer = $("#wish-reveal-sparkles");
+    if (!layer) return;
+    layer.innerHTML = "";
+    const n = 28;
+    for (let i = 0; i < n; i++) {
+      const s = document.createElement("span");
+      s.className = "wish-reveal__spark";
+      const x = 10 + Math.random() * 80;
+      const y = 15 + Math.random() * 70;
+      const sx = (-80 + Math.random() * 160).toFixed(0) + "px";
+      const sy = (-120 + Math.random() * 80).toFixed(0) + "px";
+      s.style.left = x + "%";
+      s.style.top = y + "%";
+      s.style.setProperty("--sx", sx);
+      s.style.setProperty("--sy", sy);
+      s.style.animationDelay = (Math.random() * 0.45).toFixed(2) + "s";
+      layer.appendChild(s);
+    }
+  }
+
+  function openWishReveal(w) {
+    const root = $("#wish-reveal");
+    if (!root || !w) return;
+    if (wishRevealTimer) {
+      clearTimeout(wishRevealTimer);
+      wishRevealTimer = null;
+    }
+
+    const img = $("#wish-reveal-img");
+    const msgEl = $("#wish-reveal-message");
+    const nameEl = $("#wish-reveal-name");
+    const relEl = $("#wish-reveal-relation");
+    const src = wishImageSrc(w);
+
+    if (img) {
+      if (src) {
+        img.src = src;
+        img.hidden = false;
+      } else {
+        img.removeAttribute("src");
+        img.hidden = true;
+      }
+    }
+
+    if (msgEl) msgEl.innerHTML = "";
+    if (nameEl) {
+      nameEl.textContent = w.name ? "— " + w.name + " —" : "";
+      nameEl.classList.remove("is-show");
+    }
+    if (relEl) {
+      relEl.textContent = w.relation || "";
+      relEl.classList.remove("is-show");
+    }
+
+    root.hidden = false;
+    document.body.style.overflow = "hidden";
+    wishRevealOpen = true;
+    spawnWishSparkles();
+
+    requestAnimationFrame(() => {
+      root.classList.add("is-open", "is-burst");
+    });
+
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const message = String(w.message || "").trim();
+
+    function showFooter() {
+      nameEl?.classList.add("is-show");
+      setTimeout(() => relEl?.classList.add("is-show"), reduce ? 0 : 350);
+    }
+
+    function typeMessage() {
+      if (!msgEl || !message) {
+        showFooter();
+        return;
+      }
+      msgEl.innerHTML = "";
+      Array.from(message).forEach((ch) => {
+        const span = document.createElement("span");
+        span.className = "wchar" + (ch === " " ? " is-space" : "");
+        span.textContent = ch === " " ? "\u00a0" : ch;
+        msgEl.appendChild(span);
+      });
+      const chars = $$(".wchar", msgEl);
+      if (reduce) {
+        chars.forEach((c) => c.classList.add("is-on"));
+        showFooter();
+        return;
+      }
+      let i = 0;
+      const speed = 95; /* chậm, từng chữ */
+      function step() {
+        if (!wishRevealOpen) return;
+        if (i < chars.length) {
+          chars[i].classList.add("is-on");
+          i += 1;
+          wishRevealTimer = setTimeout(step, speed);
+          return;
+        }
+        wishRevealTimer = setTimeout(showFooter, 400);
+      }
+      /* chờ flash + card bay vào */
+      wishRevealTimer = setTimeout(step, 1100);
+    }
+
+    typeMessage();
+  }
+
+  function closeWishReveal() {
+    const root = $("#wish-reveal");
+    if (!root) return;
+    wishRevealOpen = false;
+    if (wishRevealTimer) {
+      clearTimeout(wishRevealTimer);
+      wishRevealTimer = null;
+    }
+    root.classList.remove("is-open", "is-burst");
+    document.body.style.overflow = "";
+    setTimeout(() => {
+      if (!wishRevealOpen) root.hidden = true;
+    }, 450);
+  }
+
+  function bindWishOpenClicks(root) {
+    if (!root || root._wishOpenBound) return;
+    root._wishOpenBound = true;
+    root.addEventListener("click", (e) => {
+      const card = e.target.closest("[data-wish-id]");
+      if (!card || !root.contains(card)) return;
+      const id = card.getAttribute("data-wish-id");
+      const w = findWishById(id);
+      if (w) openWishReveal(w);
+    });
+    root.addEventListener("keydown", (e) => {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      const card = e.target.closest("[data-wish-id]");
+      if (!card || !root.contains(card)) return;
+      e.preventDefault();
+      const w = findWishById(card.getAttribute("data-wish-id"));
+      if (w) openWishReveal(w);
+    });
+  }
+
+  function setupWishReveal() {
+    $("#wish-reveal-close")?.addEventListener("click", closeWishReveal);
+    $("#wish-reveal")?.addEventListener("click", (e) => {
+      if (e.target.id === "wish-reveal" || e.target.classList.contains("wish-reveal__burst")) {
+        closeWishReveal();
+      }
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && wishRevealOpen) closeWishReveal();
+    });
   }
 
   function renderWishes() {
@@ -699,8 +866,9 @@
         const msg = w.message
           ? escapeHtml(w.message.length > 90 ? w.message.slice(0, 90) + "…" : w.message)
           : "💕";
+        const wid = escapeHtml(w.id || "");
         return `
-          <article class="wall-card" style="--wx:${x.toFixed(1)}%;--wy:${y.toFixed(1)}%;--wrot:${rot.toFixed(1)}deg;--wscale:${scale};--wdelay:${delay}s">
+          <article class="wall-card" data-wish-id="${wid}" role="button" tabindex="0" style="--wx:${x.toFixed(1)}%;--wy:${y.toFixed(1)}%;--wrot:${rot.toFixed(1)}deg;--wscale:${scale};--wdelay:${delay}s">
             ${imgOk ? `<img class="wall-card__img" src="${src}" alt="" loading="lazy" />` : `<div class="wall-card__placeholder" aria-hidden="true">❧</div>`}
             <div class="wall-card__body">
               <p class="wall-card__msg">${msg}</p>
@@ -715,6 +883,7 @@
     requestAnimationFrame(() => {
       stage.querySelectorAll(".wall-card").forEach((el) => el.classList.add("is-in"));
     });
+    bindWishOpenClicks(stage);
 
     const ms = Math.max(3500, cfg.guestbook.wallRotateMs || 5000);
     if (wallTimer) clearInterval(wallTimer);
@@ -1126,6 +1295,7 @@
     renderGallery();
     setupLightbox();
     setupGuestbook();
+    setupWishReveal();
     /* local list ngay; cloud sẽ refresh qua subscribe */
     if (!useWishCloud()) {
       wishes = loadWishes();

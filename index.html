@@ -170,7 +170,7 @@
         </div>
       </section>
 
-      <!-- Lightbox -->
+      <!-- Lightbox gallery photos -->
       <div class="lightbox" id="lightbox" hidden>
         <button type="button" class="lightbox__close" id="lightbox-close" aria-label="Close">
           ×
@@ -182,6 +182,25 @@
         <button type="button" class="lightbox__nav lightbox__next" id="lightbox-next" aria-label="Next">
           ›
         </button>
+      </div>
+
+      <!-- Wish reveal: animation + typewriter message -->
+      <div class="wish-reveal" id="wish-reveal" hidden aria-modal="true" role="dialog">
+        <div class="wish-reveal__burst" aria-hidden="true"></div>
+        <div class="wish-reveal__sparkles" id="wish-reveal-sparkles" aria-hidden="true"></div>
+        <button type="button" class="wish-reveal__close" id="wish-reveal-close" aria-label="Close">
+          ×
+        </button>
+        <div class="wish-reveal__stage">
+          <div class="wish-reveal__card-wrap">
+            <img class="wish-reveal__img" id="wish-reveal-img" src="" alt="" />
+          </div>
+          <div class="wish-reveal__text">
+            <p class="wish-reveal__message font-script" id="wish-reveal-message" aria-live="polite"></p>
+            <p class="wish-reveal__name" id="wish-reveal-name"></p>
+            <p class="wish-reveal__relation" id="wish-reveal-relation"></p>
+          </div>
+        </div>
       </div>
 
       <!-- GUESTBOOK + CARD DECORATOR -->
