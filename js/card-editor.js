@@ -1741,7 +1741,7 @@
     state.templateId = g.templates?.[0]?.id || "rose";
     state.frameId = g.defaultFrame || "none";
     state.categoryId = g.defaultCategory || g.stickerCategories?.[0]?.id || "love";
-    state.fontId = g.defaultFontId || "script";
+    state.fontId = g.defaultFontId || "serif";
     state.textColor = g.defaultTextColor || "#3d2c24";
     state.textSize = g.defaultTextSize || 28;
     state.effects = {};

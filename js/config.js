@@ -428,13 +428,14 @@ window.WEDDING_CONFIG = {
 
     /* ----- Font & màu chữ gợi ý ----- */
     fonts: [
-      { id: "script", label: "Script", family: '"Great Vibes", cursive' },
-      { id: "serif", label: "Serif", family: '"Cormorant Garamond", Georgia, serif' },
-      { id: "sans", label: "Sans", family: '"Outfit", system-ui, sans-serif' },
+      { id: "serif", label: "Serif (cổ điển)", family: '"Cormorant Garamond", Georgia, serif' },
+      { id: "script", label: "Script (viết tay)", family: '"Great Vibes", cursive' },
+      { id: "sans", label: "Sans (hiện đại)", family: '"Outfit", system-ui, sans-serif' },
     ],
     textColors: ["#3d2c24", "#8b5e4f", "#6b4c6b", "#4a6741", "#9b4d5a", "#ffffff", "#c4a574", "#2a4a6b"],
     defaultTextColor: "#3d2c24",
-    defaultFontId: "script",
+    /** Serif dễ đọc tiếng Việt hơn Script trên thiệp */
+    defaultFontId: "serif",
     defaultTextSize: 28,
     defaultCategory: "love",
     defaultFrame: "none",

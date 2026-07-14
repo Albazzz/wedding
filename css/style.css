@@ -2311,13 +2311,17 @@ body.is-low-power .soft-float-ready {
 }
 
 .wish-reveal__message {
-  font-size: clamp(1.65rem, 5.5vw, 2.35rem);
-  line-height: 1.45;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(1.45rem, 4.8vw, 2.1rem);
+  line-height: 1.5;
   min-height: 1.5em;
   color: #ffe8dc;
   text-shadow: 0 2px 24px rgba(255, 160, 140, 0.45);
   margin: 0 auto;
   max-width: 18em;
+  letter-spacing: 0.02em;
 }
 
 .wish-reveal__message .wchar {
