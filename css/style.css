@@ -3359,6 +3359,22 @@ input[type="range"] {
   margin-bottom: 1.25rem;
 }
 
+.wishes-wall__actions {
+  margin-top: 0.85rem;
+  display: flex;
+  justify-content: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.wishes-wall__fx-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  padding: 0.55rem 1.1rem;
+}
+
 /* ---------- Galaxy heart fireworks show ---------- */
 .galaxy-show {
   position: fixed;
