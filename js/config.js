@@ -60,7 +60,7 @@ window.WEDDING_CONFIG = {
     /** Ảnh nền hero (đường dẫn local hoặc URL) */
     backgroundImage: "assets/images/hero.jpg",
     /** Overlay tối (0–1) để chữ dễ đọc */
-    overlayOpacity: 0.45,
+    overlayOpacity: 0.12,
   },
 
   /* ---------- Câu chuyện tình yêu (timeline) ---------- */
@@ -152,6 +152,11 @@ window.WEDDING_CONFIG = {
     wallSubtitle: {
       vi: "Chạm trái tim mang tên khách — mở lá thư lời chúc",
       en: "Tap a heart with a guest's name to open their letter",
+    },
+    /** Gợi ý trên điện thoại (ẩn nút toàn màn hình; xoay ngang) */
+    wallSubtitlePhone: {
+      vi: "Chạm ♥ để đọc thư · Xoay ngang màn hình để xem toàn màn hình",
+      en: "Tap ♥ to read · Rotate landscape for fullscreen",
     },
     /** Chữ glow giữa orbit */
     wallCenterTitle: { vi: "Trăm năm hạnh phúc", en: "A hundred years of happiness" },

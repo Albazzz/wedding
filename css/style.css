@@ -251,6 +251,7 @@ button {
   max-width: 100%;
   /* slightly tighter script so long names fit */
   letter-spacing: 0.01em;
+  font-style: italic;
 }
 
 .container {
@@ -884,7 +885,7 @@ body.intro-lock {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(145deg, #8b6b5a 0%, #6b4c3e 45%, #4a342c 100%);
+    linear-gradient(145deg, #c4a898 0%, #a88878 45%, #8b6b5a 100%);
   background-size: cover;
   background-position: center;
   transform: scale(1.06);
@@ -892,7 +893,7 @@ body.intro-lock {
 }
 
 .hero__bg.has-image {
-  background-color: #4a342c;
+  background-color: #a88878;
 }
 
 .hero__glow {
@@ -933,7 +934,7 @@ body.intro-lock {
   position: absolute;
   inset: 0;
   z-index: 1;
-  background: rgba(40, 28, 24, 0.45);
+  background: rgba(40, 28, 24, 0.12);
 }
 
 .hero__content {
@@ -968,6 +969,7 @@ body.intro-lock {
   /* ~30% smaller so long Vietnamese names fit one line */
   font-size: clamp(1.96rem, 7vw, 3.5rem);
   font-weight: 400;
+  font-style: italic;
   line-height: 1.2;
   margin-bottom: 0.75rem;
 }
@@ -3561,10 +3563,46 @@ input[type="range"] {
   inset: 0;
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
+  min-height: 100dvh;
+  max-height: none;
+}
+
+/* Phone landscape auto-FS: cover safe areas, no browser FS API */
+.wishes-wall__stage.wall-letter.is-fs-phone-landscape {
+  width: 100vw;
+  width: 100dvw;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 100dvh;
+  padding:
+    max(0.35rem, env(safe-area-inset-top))
+    max(0.35rem, env(safe-area-inset-right))
+    max(0.35rem, env(safe-area-inset-bottom))
+    max(0.35rem, env(safe-area-inset-left));
+  box-sizing: border-box;
 }
 
 body.wall-fs-lock {
   overflow: hidden;
+}
+
+/* Phones: Fullscreen API unreliable — hide button; rotate landscape instead */
+@media (hover: none) and (pointer: coarse) {
+  .wall-letter__fs,
+  .wall-letter__fs.is-phone-hidden {
+    display: none !important;
+  }
+}
+
+/* Phone landscape: stage fills the short viewport (rotate = “fullscreen”) */
+@media (hover: none) and (pointer: coarse) and (orientation: landscape) {
+  .wishes-wall__stage.wall-letter:not(.is-fs) {
+    min-height: 100svh;
+    max-height: none;
+    height: 100svh;
+    border-radius: 0;
+  }
 }
 
 @media (max-width: 480px) {

@@ -1234,7 +1234,11 @@
     const wallTitle = $("#wishes-wall-title");
     const wallSub = $("#wishes-wall-subtitle");
     if (wallTitle) wallTitle.textContent = t(cfg.guestbook.wallTitle);
-    if (wallSub) wallSub.textContent = t(cfg.guestbook.wallSubtitle);
+    if (wallSub) {
+      wallSub.textContent = isPhoneNoFsApi()
+        ? t(cfg.guestbook.wallSubtitlePhone) || t(cfg.guestbook.wallSubtitle)
+        : t(cfg.guestbook.wallSubtitle);
+    }
 
     /* Gallery list removed — only wall letter + cloud/local data */
     renderWishWall();
@@ -1277,7 +1281,11 @@
     if (title) title.textContent = t(cfg.guestbook.wallCenterTitle) || "Trăm năm hạnh phúc";
     if (hint) hint.textContent = t(cfg.guestbook.wallCenterHint) || "Chạm ♥ để đọc thư";
     if (wallTitle) wallTitle.textContent = t(cfg.guestbook.wallTitle);
-    if (wallSub) wallSub.textContent = t(cfg.guestbook.wallSubtitle);
+    if (wallSub) {
+      wallSub.textContent = isPhoneNoFsApi()
+        ? t(cfg.guestbook.wallSubtitlePhone) || t(cfg.guestbook.wallSubtitle)
+        : t(cfg.guestbook.wallSubtitle);
+    }
     syncWallFsButton();
   }
 
@@ -1475,10 +1483,35 @@
     return !!(stage && (fsEl === stage || stage.classList.contains("is-fs")));
   }
 
+  /**
+   * Phone / small touch devices: Fullscreen API often fails (iOS Safari…).
+   * On these devices we hide the FS button and use landscape as “fullscreen”.
+   */
+  function isPhoneNoFsApi() {
+    const touch = window.matchMedia("(hover: none) and (pointer: coarse)").matches;
+    if (!touch) return false;
+    const shortEdge = Math.min(
+      window.screen?.width || window.innerWidth,
+      window.screen?.height || window.innerHeight
+    );
+    /* phones + small phablets; large tablets keep the button */
+    return shortEdge <= 600;
+  }
+
+  function isLandscapeOrientation() {
+    return window.matchMedia("(orientation: landscape)").matches;
+  }
+
   function syncWallFsButton() {
     const btn = $("#wall-letter-fs");
     const label = $("#wall-letter-fs-label");
     if (!btn) return;
+    const phone = isPhoneNoFsApi();
+    btn.hidden = phone;
+    btn.setAttribute("aria-hidden", phone ? "true" : "false");
+    btn.classList.toggle("is-phone-hidden", phone);
+    if (phone) return;
+
     const on = isWallFullscreen();
     btn.setAttribute("aria-pressed", on ? "true" : "false");
     btn.classList.toggle("is-active", on);
@@ -1495,8 +1528,9 @@
       const exit = document.exitFullscreen || document.webkitExitFullscreen;
       if (exit) exit.call(document).catch(() => {});
     }
-    stage?.classList.remove("is-fs");
+    stage?.classList.remove("is-fs", "is-fs-phone-landscape");
     document.body.classList.remove("wall-fs-lock");
+    restoreLetterRevealHome();
     syncWallFsButton();
     /* reflow flight bounds after size change */
     if (stage && wallFlyRunning) {
@@ -1504,28 +1538,78 @@
     }
   }
 
+  /** CSS-only fullscreen (no Fullscreen API) — used on phones in landscape */
+  function enterWallCssFullscreen(fromPhoneLandscape) {
+    const stage = $("#wishes-wall-stage");
+    if (!stage) return;
+    stage.classList.add("is-fs");
+    if (fromPhoneLandscape) stage.classList.add("is-fs-phone-landscape");
+    document.body.classList.add("wall-fs-lock");
+    mountLetterRevealInWallFs();
+    syncWallFsButton();
+    window.setTimeout(() => startWallHeartFlight(stage), 100);
+  }
+
   function enterWallFullscreen() {
     const stage = $("#wishes-wall-stage");
     if (!stage) return;
+    /* Phones: never call Fullscreen API — landscape handles it */
+    if (isPhoneNoFsApi()) {
+      enterWallCssFullscreen(true);
+      return;
+    }
     const req = stage.requestFullscreen || stage.webkitRequestFullscreen;
     if (req) {
       Promise.resolve(req.call(stage))
         .then(() => {
+          mountLetterRevealInWallFs();
           syncWallFsButton();
           window.setTimeout(() => startWallHeartFlight(stage), 120);
         })
         .catch(() => {
-          /* iOS / blocked — CSS fallback */
-          stage.classList.add("is-fs");
-          document.body.classList.add("wall-fs-lock");
-          syncWallFsButton();
-          window.setTimeout(() => startWallHeartFlight(stage), 80);
+          /* blocked — CSS fallback */
+          enterWallCssFullscreen(false);
         });
     } else {
-      stage.classList.add("is-fs");
-      document.body.classList.add("wall-fs-lock");
+      enterWallCssFullscreen(false);
+    }
+  }
+
+  /**
+   * Phone: portrait → normal wall; landscape → CSS fullscreen.
+   * Desktop/tablet: button + Fullscreen API unchanged.
+   */
+  function syncPhoneLandscapeFullscreen() {
+    const stage = $("#wishes-wall-stage");
+    if (!stage) return;
+
+    if (!isPhoneNoFsApi()) {
+      stage.classList.remove("is-fs-phone-landscape");
+      /* leave desktop FS state alone */
       syncWallFsButton();
-      window.setTimeout(() => startWallHeartFlight(stage), 80);
+      return;
+    }
+
+    const wantFs = isLandscapeOrientation();
+    const isPhoneFs = stage.classList.contains("is-fs-phone-landscape");
+
+    if (wantFs && !isPhoneFs) {
+      /* exit any stuck native FS first */
+      if (document.fullscreenElement || document.webkitFullscreenElement) {
+        const exit = document.exitFullscreen || document.webkitExitFullscreen;
+        if (exit) exit.call(document).catch(() => {});
+      }
+      enterWallCssFullscreen(true);
+    } else if (!wantFs && isPhoneFs) {
+      stage.classList.remove("is-fs", "is-fs-phone-landscape");
+      document.body.classList.remove("wall-fs-lock");
+      restoreLetterRevealHome();
+      syncWallFsButton();
+      if (wallFlyRunning) {
+        window.setTimeout(() => startWallHeartFlight(stage), 100);
+      }
+    } else {
+      syncWallFsButton();
     }
   }
 
@@ -1538,16 +1622,25 @@
     btn.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
+      /* Phones use rotate-to-landscape instead of this button */
+      if (isPhoneNoFsApi()) {
+        syncPhoneLandscapeFullscreen();
+        return;
+      }
       if (isWallFullscreen()) exitWallFullscreen();
       else enterWallFullscreen();
     });
 
     const onFsChange = () => {
       if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-        stage.classList.remove("is-fs");
-        document.body.classList.remove("wall-fs-lock");
-        /* Put letter back on body so fixed overlay still works after FS ends */
-        restoreLetterRevealHome();
+        /* Don't strip phone-landscape CSS FS when native FS ends */
+        if (!stage.classList.contains("is-fs-phone-landscape")) {
+          stage.classList.remove("is-fs");
+          document.body.classList.remove("wall-fs-lock");
+          restoreLetterRevealHome();
+        }
+      } else {
+        mountLetterRevealInWallFs();
       }
       syncWallFsButton();
       if (wallFlyRunning) {
@@ -1558,12 +1651,32 @@
     document.addEventListener("webkitfullscreenchange", onFsChange);
 
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && stage.classList.contains("is-fs") && !document.fullscreenElement) {
+      if (
+        e.key === "Escape" &&
+        stage.classList.contains("is-fs") &&
+        !document.fullscreenElement &&
+        !stage.classList.contains("is-fs-phone-landscape")
+      ) {
         exitWallFullscreen();
       }
     });
 
+    if (!stage._phoneOrientBound) {
+      stage._phoneOrientBound = true;
+      const onOrient = () => {
+        window.setTimeout(syncPhoneLandscapeFullscreen, 80);
+      };
+      window.addEventListener("orientationchange", onOrient);
+      window.addEventListener("resize", onOrient, { passive: true });
+      try {
+        window.matchMedia("(orientation: landscape)").addEventListener("change", onOrient);
+      } catch (_) {
+        /* older browsers */
+      }
+    }
+
     syncWallFsButton();
+    syncPhoneLandscapeFullscreen();
   }
 
   function makeFlyBody(el, stageW, stageH, i, total) {
