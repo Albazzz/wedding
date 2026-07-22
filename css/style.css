@@ -4544,19 +4544,13 @@ body.is-low-power .wall-orbit {
     max-width: 100%;
   }
 
-  .hero__bg {
-    overflow: hidden !important;
-  }
-
-  /* JS setupHero set height + translateY — fallback nếu JS chậm */
   .hero__photo {
-    width: 100% !important;
-    max-width: none !important;
-    height: 112% !important;
-    object-fit: cover !important;
-    object-position: center top !important;
-    transform: translate3d(0, -8%, 0) !important;
-    transform-origin: center top !important;
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    object-fit: cover;
+    object-position: center top;
+    transform: none;
   }
 
   .hero__content {

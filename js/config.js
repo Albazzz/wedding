@@ -66,13 +66,8 @@ window.WEDDING_CONFIG = {
     cropTopPxOriginal: 618,
     cropTopPercent: 8,
     backgroundPosition: "center top",
-    /** Hạ khung desktop (0 = mép trên) */
+    /** object-position Y (0/top = mép trên) */
     focusY: "5%",
-    /**
-     * Phone: % kéo ảnh lên (cắt mép trên) — dùng translateY, KHÔNG phải object-position
-     * (trên phone dọc object-position Y không có tác dụng). Thử console: heroPhoneCrop(10)
-     */
-    focusYPhoneExtra: 8,
     /** Overlay tối (0–1) để chữ dễ đọc */
     overlayOpacity: 0.12,
   },
