@@ -4548,7 +4548,8 @@ body.is-low-power .wall-orbit {
     width: 100%;
     max-width: none;
     object-fit: cover;
-    object-position: center top;
+    /* cắt thêm ~2% mép trên so với desktop (center top) */
+    object-position: center 2% !important;
   }
 
   .hero__content {

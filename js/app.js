@@ -218,25 +218,36 @@
     const overlay = $("#hero-overlay");
     if (bg && cfg.hero?.backgroundImage) {
       const url = cfg.hero.backgroundImage;
-      /* hero.jpg cắt 8% mép trên; focusY hạ khung dọc (vd 5% = nudge xuống) */
+      /* hero.jpg cắt 8% mép trên; phone cắt thêm 2% (object-position Y) */
       const cacheVer = "v=cropTop8";
       const withVer = (u) => u + (u.includes("?") ? "&" : "?") + cacheVer;
-      const fyRaw = String(cfg.hero?.focusY ?? "0%").trim();
-      const focusY =
-        !fyRaw || fyRaw === "0" || fyRaw === "0%" || fyRaw === "top"
-          ? "top"
-          : fyRaw.endsWith("%")
-            ? fyRaw
-            : `${fyRaw}%`;
-      const pos = focusY === "top" ? "center top" : `center ${focusY}`;
+      const phoneExtraTop = Number(cfg.hero?.focusYPhoneExtra) || 2; /* % cắt thêm trên phone */
 
-      if (photo) {
-        photo.style.objectPosition = pos;
-        photo.style.transform = "";
+      function resolveHeroPos() {
+        const fyRaw = String(cfg.hero?.focusY ?? "0%").trim();
+        let y =
+          !fyRaw || fyRaw === "0" || fyRaw === "0%" || fyRaw === "top"
+            ? 0
+            : parseFloat(fyRaw) || 0;
+        if (isPhoneLayout()) y += phoneExtraTop;
+        if (y <= 0) return "center top";
+        return `center ${y}%`;
       }
-      if (bg) bg.style.backgroundPosition = pos;
+
+      function applyHeroPos() {
+        const pos = resolveHeroPos();
+        if (photo) {
+          photo.style.objectPosition = pos;
+          photo.style.transform = "";
+        }
+        if (bg) bg.style.backgroundPosition = pos;
+        return pos;
+      }
+
+      applyHeroPos();
 
       const reveal = () => {
+        const pos = applyHeroPos();
         if (photo) {
           photo.src = withVer(url);
           photo.style.objectPosition = pos;
@@ -247,6 +258,15 @@
         }
         bg.classList.add("has-image");
       };
+
+      /* xoay ngang/dọc: tính lại crop phone */
+      if (!bg._heroPosBound) {
+        bg._heroPosBound = true;
+        const mq = window.matchMedia("(max-width: 767px)");
+        const onMq = () => applyHeroPos();
+        if (mq.addEventListener) mq.addEventListener("change", onMq);
+        else if (mq.addListener) mq.addListener(onMq);
+      }
 
       const probe = new Image();
       probe.onload = reveal;

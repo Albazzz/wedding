@@ -66,8 +66,10 @@ window.WEDDING_CONFIG = {
     cropTopPxOriginal: 618,
     cropTopPercent: 8,
     backgroundPosition: "center top",
-    /** Hạ khung 5% (tương đương heroTune.nudge(5) từ top) */
+    /** Hạ khung desktop (0 = mép trên) */
     focusY: "5%",
+    /** Phone: cộng thêm % cắt mép trên (vd 2 = cắt thêm 2% so với focusY) */
+    focusYPhoneExtra: 2,
     /** Overlay tối (0–1) để chữ dễ đọc */
     overlayOpacity: 0.12,
   },
