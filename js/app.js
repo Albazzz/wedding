@@ -195,22 +195,20 @@
     if (bg && cfg.hero?.backgroundImage) {
       const url = cfg.hero.backgroundImage;
       /*
-        hero.jpg đã cắt ~42.5% mép trên ảnh gốc (bỏ xám studio trên đầu).
-        object-position: center top → neo mép trên mới, crop phần dưới.
+        hero.jpg cắt 31% mép trên (chừa tóc). Không Ken Burns.
+        focusY / backgroundPosition chỉnh neo dọc nếu còn lệch.
       */
-      const extraCrop = Number(cfg.hero?.cropTopPercentExtra) || 0;
-      const pos = cfg.hero?.backgroundPosition || "center top";
-      const cacheVer = "v=cropTop425";
+      const focusY = cfg.hero?.focusY || "0%";
+      const pos =
+        focusY && focusY !== "0%" && focusY !== "top"
+          ? `center ${focusY}`
+          : cfg.hero?.backgroundPosition || "center top";
+      const cacheVer = "v=cropTop31";
       const applyPos = (el) => {
         if (!el) return;
-        el.style.setProperty("--hero-crop-top", `${extraCrop}%`);
-        if (extraCrop > 0) {
-          el.style.objectPosition = `center ${extraCrop}%`;
-          el.style.backgroundPosition = `center ${extraCrop}%`;
-        } else {
-          el.style.objectPosition = pos.includes("top") ? "center top" : pos;
-          el.style.backgroundPosition = el.style.objectPosition;
-        }
+        el.style.setProperty("--hero-focus-y", focusY === "top" ? "0%" : focusY);
+        el.style.objectPosition = pos.includes("top") && focusY === "0%" ? "center top" : pos;
+        el.style.backgroundPosition = el.style.objectPosition;
       };
       applyPos(photo);
       applyPos(bg);

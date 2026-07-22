@@ -891,26 +891,25 @@ body.intro-lock {
 }
 
 /*
-  Ảnh hero: file đã cắt 255px trên (gốc 7733px ≈ 3.297%).
-  object-position top = cắt tiếp phần DƯỚI, không cắt ngang đầu.
-  --hero-crop-top: tinh chỉnh thêm theo % chiều cao ảnh (0 = không lệch).
+  Ảnh hero: file đã cắt ~31% mép trên (còn chừa tóc, bỏ bớt xám).
+  object-fit cover + position top — KHÔNG scale/Ken Burns (tránh cắt đầu).
+  --hero-focus-y: 0% = neo trên; tăng nhẹ (vd 8%) nếu muốn hạ khung xuống.
 */
 .hero__photo {
-  --hero-crop-top: 0%;
+  --hero-focus-y: 0%;
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  /* 50% X% — X lệch xuống theo cropTopPercent nếu set từ JS */
-  object-position: center var(--hero-crop-top, 0%);
+  object-position: center var(--hero-focus-y, 0%);
   display: block;
   opacity: 0;
-  transform: scale(1.02);
+  transform: none;
   transform-origin: center top;
   transition: opacity 0.6s ease;
-  will-change: transform;
-  animation: hero-ken 28s ease-in-out infinite alternate;
+  /* no Ken Burns — scale làm lệch/cắt đầu trên màn wide */
+  animation: none;
 }
 
 .hero__bg.has-image .hero__photo {

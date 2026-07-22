@@ -61,16 +61,17 @@ window.WEDDING_CONFIG = {
     backgroundImage: "assets/images/hero.jpg",
     /**
      * Crop mép trên ảnh gốc 5158×7733 (đã bake vào hero.jpg):
-     * Lần 1: 255px @ w727 → map 1809px (~23.4% H)
-     * Lần 2: +25% phần còn lại (bỏ khoảng xám studio phía trên đầu)
-     * Tổng ≈ 42.5% chiều cao gốc — neo top sát tóc, không cắt đầu
+     * 31% H (~2397px) — giữa “còn xám” và “cắt đầu” (42.5% quá đà).
+     * Chừa khoảng trên tóc; phần dưới cover cắt tự động.
      */
-    cropTopPxOriginal: 3290,
-    cropTopPercent: 42.55,
+    cropTopPxOriginal: 2397,
+    cropTopPercent: 31,
     /**
-     * Neo khung sau khi đã bỏ mép trên: "center top" = cắt tiếp từ trên xuống
+     * Neo dọc khung ảnh (object-position Y). 0 / "top" = mép trên.
+     * Tăng nếu muốn hạ đôi uyên ương xuống (vd "8%").
      */
     backgroundPosition: "center top",
+    focusY: "0%",
     /** Overlay tối (0–1) để chữ dễ đọc */
     overlayOpacity: 0.12,
   },
