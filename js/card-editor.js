@@ -422,10 +422,12 @@
   }
 
   /* ========== Text ========== */
-  function wrapText(text, maxWidth, font) {
+  /** Word-wrap + hard char-break. maxLines + ellipsis when overflow. */
+  function wrapText(text, maxWidth, font, maxLines) {
     ctx.font = font;
-    const words = String(text || "").split(/\s+/).filter(Boolean);
-    if (!words.length) return [];
+    const raw = String(text || "").replace(/\s+/g, " ").trim();
+    if (!raw) return [];
+    const words = raw.split(" ").filter(Boolean);
     const lines = [];
     let line = "";
     words.forEach((word) => {
@@ -452,45 +454,94 @@
       }
       if (chunk) out.push(chunk);
     });
-    return out.slice(0, 8);
+    const cap = Math.max(1, maxLines || 8);
+    if (out.length <= cap) return out;
+    const kept = out.slice(0, cap);
+    let last = kept[cap - 1];
+    while (last.length > 1 && ctx.measureText(last + "…").width > maxWidth) {
+      last = last.slice(0, -1);
+    }
+    kept[cap - 1] = last.replace(/\s+$/, "") + "…";
+    return kept;
+  }
+
+  /**
+   * Fit long wishes (up to 1800 chars) onto canvas:
+   * shrink font → more lines → ellipsis. Full text still saved & shown in letter UI.
+   */
+  function fitMessageLayout(message, preferredSize, fontFamily, maxW, topY, bottomY) {
+    const availH = Math.max(40, bottomY - topY);
+    let size = preferredSize || 28;
+    const minSize = 12;
+    let best = { size, lines: [], lineH: size * 1.22, blockH: 0, truncated: false };
+
+    for (; size >= minSize; size--) {
+      const lineH = size * 1.22;
+      const maxLines = Math.max(3, Math.floor(availH / lineH));
+      const font = `${size}px ${fontFamily}`;
+      const uncapped = wrapText(message || "", maxW, font, 9999);
+      const truncated = uncapped.length > maxLines;
+      const lines = truncated
+        ? wrapText(message || "", maxW, font, maxLines)
+        : uncapped;
+      const blockH = lines.length * lineH;
+      best = { size, lines, lineH, blockH, truncated };
+      if (!truncated && blockH <= availH + 1) break;
+    }
+    return best;
   }
 
   function drawText() {
     const font = currentFont();
-    const size = state.textSize || 28;
+    const preferredSize = state.textSize || 28;
     const color = state.textColor || "#3d2c24";
     const tpl = currentTemplate();
     const lightBg = (tpl.style === "glow");
-    const msgFont = `${size}px ${font.family}`;
-    const nameFont = `500 ${Math.max(14, Math.round(size * 0.55))}px "Cormorant Garamond", Georgia, serif`;
+    const nameFont = `500 ${Math.max(14, Math.round(preferredSize * 0.55))}px "Cormorant Garamond", Georgia, serif`;
     const maxW = W - 80;
     const ink = lightBg && color === "#3d2c24" ? "#f5e6e0" : color;
+    const polaroid = state.frameId === "polaroid";
+    const topY = polaroid ? 100 : 110;
+    const hasRel = !!relationLabel();
+    const bottomY = polaroid
+      ? hasRel
+        ? H - 130
+        : H - 118
+      : hasRel
+        ? H - 108
+        : H - 96;
 
     ctx.save();
     ctx.fillStyle = lightBg ? "rgba(255,220,230,0.55)" : "rgba(139,94,79,0.55)";
     ctx.font = '28px "Great Vibes", cursive';
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(monogram(), W / 2, state.frameId === "polaroid" ? 56 : 70);
+    ctx.fillText(monogram(), W / 2, polaroid ? 56 : 70);
     ctx.strokeStyle = lightBg ? "rgba(255,200,210,0.4)" : "rgba(196,165,116,0.5)";
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(W / 2 - 40, state.frameId === "polaroid" ? 78 : 92);
-    ctx.lineTo(W / 2 + 40, state.frameId === "polaroid" ? 78 : 92);
+    ctx.moveTo(W / 2 - 40, polaroid ? 78 : 92);
+    ctx.lineTo(W / 2 + 40, polaroid ? 78 : 92);
     ctx.stroke();
     ctx.restore();
 
-    const lines = wrapText(state.message || "", maxW, msgFont);
-    const lineH = size * 1.25;
-    const blockH = lines.length * lineH;
-    const startY = H / 2 - blockH / 2 + (state.frameId === "polaroid" ? -10 : 10);
+    const fit = fitMessageLayout(
+      state.message || "",
+      preferredSize,
+      font.family,
+      maxW,
+      topY,
+      bottomY
+    );
+    const msgFont = `${fit.size}px ${font.family}`;
+    const startY = topY + Math.max(0, (bottomY - topY - fit.blockH) / 2);
 
     ctx.save();
     ctx.fillStyle = ink;
     ctx.font = msgFont;
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
-    lines.forEach((ln, i) => ctx.fillText(ln, W / 2, startY + i * lineH));
+    fit.lines.forEach((ln, i) => ctx.fillText(ln, W / 2, startY + i * fit.lineH));
     ctx.restore();
 
     if (state.name) {
@@ -500,13 +551,13 @@
       ctx.font = nameFont;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      const hasRel = !!relationLabel();
-      const ny = state.frameId === "polaroid" ? (hasRel ? H - 112 : H - 100) : hasRel ? H - 90 : H - 78;
+      const hasRelName = !!relationLabel();
+      const ny = polaroid ? (hasRelName ? H - 112 : H - 100) : hasRelName ? H - 90 : H - 78;
       ctx.fillText("— " + state.name + " —", W / 2, ny);
-      if (hasRel) {
+      if (hasRelName) {
         ctx.globalAlpha = 0.75;
-        ctx.font = `400 ${Math.max(11, Math.round(size * 0.38))}px "Outfit", system-ui, sans-serif`;
-        ctx.fillText(relationLabel(), W / 2, ny + Math.max(16, size * 0.55));
+        ctx.font = `400 ${Math.max(11, Math.round(preferredSize * 0.38))}px "Outfit", system-ui, sans-serif`;
+        ctx.fillText(relationLabel(), W / 2, ny + Math.max(16, preferredSize * 0.55));
       }
       ctx.restore();
     }
@@ -1661,7 +1712,19 @@
     if (relCustom) relCustom.value = "";
     const customWrap = $("card-relation-custom-wrap");
     if (customWrap) customWrap.hidden = true;
+    updateMessageCount();
     render();
+  }
+
+  function updateMessageCount() {
+    const msg = $("card-message");
+    const el = $("card-message-count");
+    if (!el) return;
+    const max = Number(msg?.getAttribute("maxlength")) || 1800;
+    const n = (msg?.value || state.message || "").length;
+    el.textContent = `${n} / ${max}`;
+    el.classList.toggle("is-near", n >= max * 0.9);
+    el.classList.toggle("is-full", n >= max);
   }
 
   function buildRelations() {
@@ -1813,6 +1876,7 @@
     buildFonts();
     buildColors();
     applyLabels();
+    updateMessageCount();
 
     const sizeEl = $("card-size");
     if (sizeEl) sizeEl.value = String(state.textSize);
@@ -1832,6 +1896,7 @@
     });
     $("card-message")?.addEventListener("input", (e) => {
       state.message = e.target.value;
+      updateMessageCount();
       if (!animId) render();
     });
     $("card-font")?.addEventListener("change", (e) => {

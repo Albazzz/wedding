@@ -2597,17 +2597,24 @@ body.is-low-power .wishes-wall__stage {
   -webkit-font-smoothing: antialiased;
 }
 
-/* When only text (no card image): cream panel */
+/* When only text (no card image): cream panel — scroll for long wishes */
 .letter-full:not(.has-image) .letter-full__frame {
   background: linear-gradient(160deg, #fffaf3 0%, #f6ebe4 55%, #f0e0d8 100%);
   padding: 1.75rem 1.5rem 1.85rem;
   max-height: min(88svh, 820px);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
   box-shadow:
     0 0 0 1px rgba(255, 255, 255, 0.35),
     0 32px 80px rgba(0, 0, 0, 0.5),
     0 0 90px rgba(255, 180, 160, 0.3);
+}
+
+.letter-full:not(.has-image) .letter-full__msg {
+  font-size: clamp(1.15rem, 4.2vw, 1.65rem);
+  text-align: left;
+  max-width: 100%;
 }
 
 /* No sheen sweep on photo — it washes out / softens the card */
@@ -2672,11 +2679,67 @@ body.is-low-power .wishes-wall__stage {
   display: none !important;
 }
 
-/* With image: hide duplicate text (already on the card artwork) */
-.letter-full.has-image .letter-full__msg,
+/*
+  With image: still show full message (scroll) — canvas may truncate long text
+  with auto-fit + ellipsis; full 1800 chars live in data + this panel.
+*/
+.letter-full.has-image .letter-full__frame {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.85rem;
+  max-height: min(90svh, 860px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding: 0.35rem 0.15rem 0.6rem;
+}
+
+.letter-full.has-image .letter-full__img {
+  max-height: min(52svh, 480px);
+  flex-shrink: 0;
+}
+
+.letter-full.has-image .letter-full__msg {
+  display: block;
+  font-size: clamp(1rem, 3.6vw, 1.25rem);
+  line-height: 1.55;
+  text-align: left;
+  max-width: min(92vw, 420px);
+  width: 100%;
+  margin: 0 auto;
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  background: rgba(255, 250, 243, 0.94);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.35),
+    0 12px 32px rgba(0, 0, 0, 0.28);
+  max-height: min(28svh, 240px);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 .letter-full.has-image .letter-full__who,
 .letter-full.has-image .letter-full__rel {
-  display: none !important;
+  display: block;
+  max-width: min(92vw, 420px);
+  width: 100%;
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.letter-full.has-image .letter-full__who {
+  margin-top: 0.15rem;
+  font-size: clamp(1rem, 3.2vw, 1.2rem);
+  color: rgba(255, 236, 220, 0.95);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.45);
+}
+
+.letter-full.has-image .letter-full__rel {
+  margin-top: 0.15rem;
+  color: rgba(255, 210, 200, 0.88);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.4);
 }
 
 .letter-full__msg {
@@ -2690,6 +2753,7 @@ body.is-low-power .wishes-wall__stage {
   max-width: 22em;
   white-space: pre-wrap;
   word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .letter-full__who {
@@ -2942,7 +3006,25 @@ body.is-low-power .wishes-wall__stage {
 
 .form-field textarea {
   resize: vertical;
-  min-height: 100px;
+  min-height: 140px;
+  max-height: 320px;
+}
+
+.char-counter {
+  margin: 0.35rem 0 0;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  color: var(--color-muted);
+  text-align: right;
+}
+
+.char-counter.is-near {
+  color: #b07a3a;
+}
+
+.char-counter.is-full {
+  color: #a63d4a;
+  font-weight: 600;
 }
 
 .form-field label {
@@ -4533,6 +4615,14 @@ body.is-low-power .wall-orbit {
   color: var(--color-ink-soft);
   font-size: 0.95rem;
   white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 5;
+  line-clamp: 5;
+  overflow: hidden;
+  max-height: 7.5em;
 }
 
 .wish-card__time {

@@ -103,7 +103,7 @@
       name: String(meta.name || "").slice(0, 80),
       relation: String(meta.relation || "").slice(0, 80),
       relationId: String(meta.relationId || "").slice(0, 40),
-      message: String(meta.message || "").slice(0, 500),
+      message: String(meta.message || "").slice(0, 1800),
       image,
       at: meta.at || Date.now(),
       templateId: meta.templateId || "",
