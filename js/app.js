@@ -194,8 +194,9 @@
         el.classList.add("couple-names-line");
       }
       if (key === "coupleNames") {
-        const inHero = !!el.closest(".hero__names");
-        if (inHero && isPhoneLayout()) {
+        /* Phone: tên dài → mỗi người 1 dòng (hero + footer + mọi chỗ bind) */
+        const stackNames = isPhoneLayout() || !!el.closest(".footer__names, .footer");
+        if (stackNames) {
           const { first, second, joiner } = coupleNamesParts();
           el.classList.remove("couple-names-line");
           el.classList.add("couple-names-stack");
@@ -684,6 +685,26 @@
     updateTimelineFX();
   }
 
+  /** Khóa scroll overlay — không position:fixed / không scrollTo(0) (iOS hay nhảy về đầu) */
+  let pageScrollLockCount = 0;
+  function lockPageScroll() {
+    pageScrollLockCount += 1;
+    if (pageScrollLockCount === 1) {
+      document.documentElement.classList.add("page-scroll-lock");
+      document.body.classList.add("page-scroll-lock");
+    }
+  }
+  function unlockPageScroll() {
+    pageScrollLockCount = Math.max(0, pageScrollLockCount - 1);
+    if (pageScrollLockCount === 0) {
+      document.documentElement.classList.remove("page-scroll-lock");
+      document.body.classList.remove("page-scroll-lock");
+      document.body.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.top = "";
+    }
+  }
+
   function openLightbox(index) {
     const lb = $("#lightbox");
     const img = $("#lightbox-img");
@@ -694,14 +715,14 @@
     img.src = item.src;
     img.alt = item.alt || "";
     lb.hidden = false;
-    document.body.style.overflow = "hidden";
+    lockPageScroll();
   }
 
   function closeLightbox() {
     const lb = $("#lightbox");
     if (!lb) return;
     lb.hidden = true;
-    document.body.style.overflow = "";
+    unlockPageScroll();
   }
 
   function setupLightbox() {
@@ -1155,7 +1176,8 @@
     }
 
     root.hidden = false;
-    document.body.style.overflow = "hidden";
+    /* Wall viewer đã khóa scroll riêng — không double-lock */
+    if (!getWallFsHost()) lockPageScroll();
     wishRevealOpen = true;
 
     requestAnimationFrame(() => {
@@ -1194,7 +1216,7 @@
     }
     resetEnvelope();
     root.classList.remove("is-open", "is-ready", "is-reading");
-    if (!getWallFsHost()) document.body.style.overflow = "";
+    if (!getWallFsHost()) unlockPageScroll();
     $$(".wall-heart.is-tapped, .wish-card.is-tapped").forEach((el) =>
       el.classList.remove("is-tapped")
     );
@@ -3210,7 +3232,7 @@
       resizeEngine();
       root.hidden = false;
       root.classList.remove("is-caption");
-      document.body.style.overflow = "hidden";
+      lockPageScroll();
       galaxyRunning = true;
       requestAnimationFrame(() => root.classList.add("is-open"));
       galaxyRaf = requestAnimationFrame(tick);
@@ -3221,7 +3243,7 @@
       if (galaxyRaf) cancelAnimationFrame(galaxyRaf);
       galaxyRaf = 0;
       root.classList.remove("is-open", "is-caption");
-      document.body.style.overflow = "";
+      unlockPageScroll();
       setTimeout(() => {
         if (!galaxyRunning) root.hidden = true;
       }, 400);
@@ -3261,6 +3283,13 @@
 
   /* ---------- Boot ---------- */
   function init() {
+    /* Giữ vị trí scroll khi back/reload — không ép về đầu */
+    try {
+      if ("scrollRestoration" in history) history.scrollRestoration = "auto";
+    } catch (_) {
+      /* ignore */
+    }
+
     applyPerfMode();
     applyI18n();
     /* Đổi layout phone ↔ desktop: render lại tên 1 dòng / 2 dòng */

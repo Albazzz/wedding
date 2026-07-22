@@ -136,6 +136,10 @@ html {
   scroll-padding-top: var(--header-offset);
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  /* height auto — không khóa 100% (iOS hay reset scroll về 0) */
+  height: auto;
+  overflow-x: clip;
+  overscroll-behavior-y: none;
 }
 
 body {
@@ -147,11 +151,17 @@ body {
   line-height: 1.65;
   /* clip thay hidden — ít gây lỗi scroll dọc trên iOS */
   overflow-x: clip;
+  overflow-y: auto;
+  height: auto;
+  min-height: 100%;
+  position: relative;
   -webkit-font-smoothing: antialiased;
   /* Avoid content under home indicator when scrolling ends */
   padding-left: var(--sal);
   padding-right: var(--sar);
-  overscroll-behavior-y: auto;
+  /* none: tránh overscroll/rubber-band kéo về đầu trang trên mobile */
+  overscroll-behavior-y: none;
+  -webkit-overflow-scrolling: touch;
 }
 
 img {
@@ -214,8 +224,8 @@ button {
 }
 
 /*
-  Couple names / monogram: always a single line anywhere on the site
-  (hero, footer, intro, header, data-bind, etc.)
+  Couple names / monogram: single line by default
+  (stack .couple-names-stack overrides for long full names)
 */
 [data-bind="coupleNames"],
 [data-bind="monogram"],
@@ -239,6 +249,38 @@ button {
   display: inline-block;
   max-width: 100%;
   vertical-align: baseline;
+}
+
+/* Tên dài: mỗi người 1 dòng (+ & ở giữa) */
+.couple-names-stack,
+[data-bind="coupleNames"].couple-names-stack,
+.footer__names.couple-names-stack,
+.hero__names .couple-names-stack {
+  white-space: normal !important;
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1em;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.couple-names-stack__line {
+  display: block;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.couple-names-stack__joiner {
+  display: block;
+  font-size: 0.72em;
+  line-height: 1;
+  opacity: 0.88;
+  margin-block: 0.04em;
 }
 
 /* Long names: one line, full content width, no clip */
@@ -856,8 +898,8 @@ body.intro-lock {
 /* ---------- Hero ---------- */
 .hero {
   position: relative;
+  /* Chỉ svh (ổn định) — dvh đổi khi ẩn/hiện thanh địa chỉ → nhảy scroll về đầu */
   min-height: 100svh;
-  min-height: 100dvh;
   display: grid;
   place-items: center;
   text-align: center;
@@ -865,6 +907,7 @@ body.intro-lock {
   overflow: hidden;
   /* Vuốt dọc truyền ra document — không “nuốt” gesture */
   touch-action: pan-y;
+  overflow-anchor: none;
 }
 
 .hero__ambient {
@@ -1979,7 +2022,7 @@ button.timeline__img:hover .timeline__media {
   }
 }
 
-/* Page load / intro exit — camera zoom */
+/* Page load / intro exit — camera zoom (không giữ transform trên #hero sau khi xong) */
 body.is-booting #hero {
   transform: scale(1.08);
   filter: blur(8px);
@@ -2005,8 +2048,9 @@ body:not(.intro-lock) #hero .hero__content {
 }
 
 body.is-camera-in #hero {
-  transform: scale(1);
-  filter: blur(0);
+  /* none — tránh containing-block/transform làm iOS nhảy scroll */
+  transform: none;
+  filter: none;
   opacity: 1;
 }
 
@@ -3511,7 +3555,9 @@ body.wall-fs-lock {
 }
 
 html.wall-fs-lock,
-body.wall-fs-lock {
+body.wall-fs-lock,
+html.page-scroll-lock,
+body.page-scroll-lock {
   overflow: hidden !important;
   overscroll-behavior: none;
   /* không dùng position:fixed trên body — tránh nhảy scroll về 0 */
@@ -4561,8 +4607,15 @@ body.is-low-power .wall-orbit {
 }
 
 .footer__names {
-  font-size: clamp(2rem, 6vw, 2.75rem);
+  font-size: clamp(1.55rem, 5.2vw, 2.75rem);
   margin-bottom: 0.5rem;
+  max-width: 100%;
+  margin-inline: auto;
+}
+
+.footer__names.couple-names-stack {
+  font-size: clamp(1.45rem, 5vw, 2.4rem);
+  gap: 0.12em;
 }
 
 .footer__sign {
@@ -4619,6 +4672,8 @@ body.is-low-power .wall-orbit {
 @media (max-width: 767px) {
   html {
     scroll-behavior: auto !important;
+    overscroll-behavior-y: none !important;
+    height: auto !important;
   }
 
   html,
@@ -4627,17 +4682,35 @@ body.is-low-power .wall-orbit {
     overflow-x: clip;
     max-width: none;
     width: 100%;
-    overscroll-behavior-y: auto;
+    height: auto !important;
+    min-height: 0;
+    overscroll-behavior-y: none !important;
     -webkit-overflow-scrolling: touch;
+  }
+
+  body {
+    /* Không position:fixed / height:100% khi scroll trang */
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+  }
+
+  /* wall lock vẫn khóa overflow — không đụng position body */
+  body.wall-fs-lock {
+    position: relative !important;
+    top: auto !important;
+    overflow: hidden !important;
   }
 
   .hero {
     width: 100%;
     max-width: none;
+    /* svh ổn định — không dùng dvh (đổi theo chrome → nhảy về đầu) */
     min-height: 100svh;
-    min-height: 100dvh;
     overflow: hidden;
     touch-action: pan-y;
+    overflow-anchor: none;
   }
 
   .hero__parallax,
@@ -4698,11 +4771,13 @@ body.is-low-power .wall-orbit {
     box-sizing: border-box;
   }
 
-  /* Tắt nowrap + soft-float tràn khung trên phone */
+  /* Tắt nowrap + soft-float tràn khung trên phone — tên từng dòng */
   .hero__names .font-script,
   .hero__names [data-bind="coupleNames"],
   .hero__names .couple-names-line,
-  .hero__names .couple-names-stack {
+  .hero__names .couple-names-stack,
+  .footer__names,
+  .footer__names.couple-names-stack {
     white-space: normal !important;
     word-break: normal !important;
     overflow-wrap: normal !important;
@@ -4714,7 +4789,6 @@ body.is-low-power .wall-orbit {
     justify-content: center;
     gap: 0.12em;
     box-sizing: border-box;
-    font-size: clamp(1.35rem, 6vw, 1.75rem) !important;
     line-height: 1.22;
     letter-spacing: 0.01em;
     text-align: center;
@@ -4722,20 +4796,39 @@ body.is-low-power .wall-orbit {
     transform: none !important;
   }
 
-  .hero__names .couple-names-stack__line {
+  .hero__names .font-script,
+  .hero__names [data-bind="coupleNames"],
+  .hero__names .couple-names-line,
+  .hero__names .couple-names-stack {
+    font-size: clamp(1.35rem, 6vw, 1.75rem) !important;
+  }
+
+  .footer__names,
+  .footer__names.couple-names-stack {
+    font-size: clamp(1.4rem, 5.5vw, 1.85rem) !important;
+  }
+
+  .hero__names .couple-names-stack__line,
+  .footer__names .couple-names-stack__line {
     display: block;
     white-space: nowrap;
     max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    overflow: visible;
+    text-overflow: clip;
   }
 
-  .hero__names .couple-names-stack__joiner {
+  .hero__names .couple-names-stack__joiner,
+  .footer__names .couple-names-stack__joiner {
     display: block;
     font-size: 0.75em;
     line-height: 1;
     opacity: 0.9;
     margin-block: 0.05em;
+  }
+
+  .footer__thanks {
+    font-size: clamp(1.35rem, 5.2vw, 1.75rem);
+    margin-bottom: 0.65rem;
   }
 
   .hero__date {
@@ -4913,10 +5006,6 @@ body.is-low-power .wall-orbit {
   .form-field label,
   .field-label {
     font-size: 0.82rem;
-  }
-
-  .footer__thanks {
-    font-size: 2.1rem;
   }
 
   .wish-card__name {
