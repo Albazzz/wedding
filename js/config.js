@@ -61,14 +61,16 @@ window.WEDDING_CONFIG = {
     backgroundImage: "assets/images/hero.jpg",
     /**
      * Crop mép trên ảnh gốc 5158×7733 (đã bake vào hero.jpg):
-     * 20% H — vừa đủ bớt xám, vẫn thấy đầu chú rể/cô dâu.
-     * (31%+ cắt quá sâu → chỉ còn thân/hoa)
+     * 8% H — chừa đầu; tinh chỉnh thêm bằng focusY hoặc F12 (xem heroTune).
      */
-    cropTopPxOriginal: 1546,
-    cropTopPercent: 20,
+    cropTopPxOriginal: 618,
+    cropTopPercent: 8,
     /**
-     * Neo dọc khung ảnh (object-position Y). 0 / "top" = mép trên.
-     * Tăng nếu muốn hạ đôi uyên ương xuống (vd "8%").
+     * Neo dọc (object-position Y):
+     * - "0%" / "top" = neo mép trên ảnh
+     * - tăng % (vd "15%") = khung nhìn thấp hơn (thấy nhiều thân hơn)
+     * - giảm về 0 = thấy nhiều phần trên (đầu) hơn
+     * F12 live: heroTune.setY('12%') rồi gửi lại số cho dev
      */
     backgroundPosition: "center top",
     focusY: "0%",

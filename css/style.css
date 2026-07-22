@@ -891,9 +891,8 @@ body.intro-lock {
 }
 
 /*
-  Ảnh hero: file đã cắt ~20% mép trên (thấy đầu, bớt xám studio).
-  object-fit cover + position top — KHÔNG scale/Ken Burns (tránh cắt đầu).
-  --hero-focus-y: 0% = neo trên; tăng nhẹ (vd 8%) nếu muốn hạ khung xuống.
+  Ảnh hero: cắt nhẹ ~8% mép trên. Chỉnh live: F12 → Console → heroTune.help()
+  --hero-focus-y: 0% = trên (thấy đầu); tăng % = hạ khung.
 */
 .hero__photo {
   --hero-focus-y: 0%;
@@ -906,9 +905,8 @@ body.intro-lock {
   display: block;
   opacity: 0;
   transform: none;
-  transform-origin: center top;
-  transition: opacity 0.6s ease;
-  /* no Ken Burns — scale làm lệch/cắt đầu trên màn wide */
+  transform-origin: center center;
+  transition: opacity 0.6s ease, object-position 0.15s ease;
   animation: none;
 }
 

@@ -195,34 +195,83 @@
     if (bg && cfg.hero?.backgroundImage) {
       const url = cfg.hero.backgroundImage;
       /*
-        hero.jpg cắt 20% mép trên — thấy đầu chú rể/cô dâu, bớt xám.
-        focusY / backgroundPosition chỉnh neo dọc nếu còn lệch.
+        hero.jpg cắt 8% mép trên. Chỉnh live bằng window.heroTune (F12).
+        focusY: 0% = trên cùng; tăng % = hạ khung (thấy nhiều thân).
       */
-      const focusY = cfg.hero?.focusY || "0%";
-      const pos =
-        focusY && focusY !== "0%" && focusY !== "top"
-          ? `center ${focusY}`
-          : cfg.hero?.backgroundPosition || "center top";
-      const cacheVer = "v=cropTop20";
-      const applyPos = (el) => {
+      let focusY = cfg.hero?.focusY || "0%";
+      const cacheVer = "v=cropTop8";
+
+      function resolvePos(y) {
+        const v = String(y == null ? "0%" : y).trim();
+        if (!v || v === "0" || v === "0%" || v === "top") return "center top";
+        if (v.startsWith("center")) return v;
+        return `center ${v}`;
+      }
+
+      function applyPos(el, y) {
         if (!el) return;
-        el.style.setProperty("--hero-focus-y", focusY === "top" ? "0%" : focusY);
-        el.style.objectPosition = pos.includes("top") && focusY === "0%" ? "center top" : pos;
-        el.style.backgroundPosition = el.style.objectPosition;
+        const pos = resolvePos(y);
+        const yy = pos === "center top" ? "0%" : pos.replace(/^center\s+/, "");
+        el.style.setProperty("--hero-focus-y", yy);
+        el.style.objectPosition = pos;
+        el.style.backgroundPosition = pos;
+      }
+
+      function applyAll(y) {
+        focusY = y;
+        applyPos(photo, y);
+        applyPos(bg, y);
+      }
+
+      applyAll(focusY);
+
+      /* F12: chỉnh tay rồi copy thông số gửi lại */
+      window.heroTune = {
+        /** object-position Y hiện tại */
+        getY() {
+          return focusY;
+        },
+        /** setY('0%') | setY('12%') | setY('top') — xem ngay trên trang */
+        setY(y) {
+          applyAll(y);
+          const pos = resolvePos(y);
+          console.log(
+            `[heroTune] object-position: ${pos}  |  gửi lại cho dev: focusY: "${y}"`
+          );
+          return pos;
+        },
+        /** nudge(5) hạ khung 5%; nudge(-5) kéo lên (thấy đầu hơn) */
+        nudge(deltaPercent) {
+          const n = parseFloat(String(focusY).replace("%", "")) || 0;
+          const next = `${Math.max(0, Math.min(100, n + Number(deltaPercent) || 0))}%`;
+          return window.heroTune.setY(next);
+        },
+        /** In hướng dẫn nhanh */
+        help() {
+          console.log(
+            [
+              "=== heroTune (chỉnh khung ảnh hero) ===",
+              "heroTune.setY('0%')   // neo trên — thấy đầu hơn",
+              "heroTune.setY('15%')  // hạ khung — thấy thân/hoa hơn",
+              "heroTune.nudge(-5)    // kéo lên 5% (thấy đầu)",
+              "heroTune.nudge(5)     // hạ xuống 5%",
+              "heroTune.getY()       // xem giá trị hiện tại",
+              "Khi ưng, gửi: focusY + screenshot",
+            ].join("\n")
+          );
+        },
       };
-      applyPos(photo);
-      applyPos(bg);
 
       const withVer = (u) => u + (u.includes("?") ? "&" : "?") + cacheVer;
 
       const reveal = () => {
         if (photo) {
           photo.src = withVer(url);
-          applyPos(photo);
+          applyAll(focusY);
         } else {
           bg.style.backgroundImage = `url("${withVer(url)}")`;
           bg.style.backgroundSize = "cover";
-          applyPos(bg);
+          applyAll(focusY);
         }
         bg.classList.add("has-image");
       };
