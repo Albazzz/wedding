@@ -1238,9 +1238,16 @@
     resetEnvelope();
     root.classList.remove("is-open", "is-ready", "is-reading");
     if (!getWallFsHost()) unlockPageScroll();
-    $$(".wall-heart.is-tapped, .wish-card.is-tapped").forEach((el) =>
-      el.classList.remove("is-tapped")
-    );
+    $$(".wall-heart.is-tapped, .wish-card.is-tapped").forEach((el) => {
+      el.classList.remove("is-tapped");
+      /* Reset icon animation so tap-pop forwards không để ♥ opacity:0 */
+      const icon = el.querySelector(".wall-heart__icon");
+      if (icon) {
+        icon.style.animation = "none";
+        void icon.offsetWidth;
+        icon.style.animation = "";
+      }
+    });
     clearLetterFxLayers();
     setTimeout(() => {
       if (!wishRevealOpen) {
@@ -1540,8 +1547,8 @@
           <span class="wall-heart__core">
             <span class="wall-heart__icon" aria-hidden="true">♥</span>
           </span>
-          ${short ? `<span class="wall-heart__name">${short}</span>` : ""}
         </span>
+        ${short ? `<span class="wall-heart__name">${short}</span>` : ""}
       </button>`;
   }
 
@@ -1971,7 +1978,9 @@
       const r = stage.getBoundingClientRect();
       const w = r.width;
       const h = r.height;
+      /* pad đáy lớn hơn — chừa chỗ badge tên dưới trái tim */
       const pad = 36;
+      const padBottom = 52;
       const cx = w * 0.5;
       const cy = h * 0.5;
       /* soft keep-out around center title */
@@ -2021,8 +2030,8 @@
         if (b.y < pad) {
           b.y = pad;
           b.vy = Math.abs(b.vy) * 0.95;
-        } else if (b.y > h - pad) {
-          b.y = h - pad;
+        } else if (b.y > h - padBottom) {
+          b.y = h - padBottom;
           b.vy = -Math.abs(b.vy) * 0.95;
         }
 
@@ -2103,7 +2112,9 @@
     if (!all.length) return;
 
     const hearts = Array.from(
-      fly.querySelectorAll(".wall-heart:not(.is-leaving):not(.wall-heart--demo)")
+      fly.querySelectorAll(
+        ".wall-heart:not(.is-leaving):not(.wall-heart--demo):not(.is-tapped)"
+      )
     );
     if (!hearts.length) {
       /* only fillers on stage — rebuild when real wishes exist */
@@ -2111,7 +2122,11 @@
       return;
     }
 
-    const onIds = new Set(hearts.map((el) => el.getAttribute("data-wish-id")));
+    const onIds = new Set(
+      Array.from(fly.querySelectorAll(".wall-heart:not(.is-leaving)")).map((el) =>
+        el.getAttribute("data-wish-id")
+      )
+    );
     let pool = all.filter((w) => w.id && !onIds.has(w.id));
     if (!pool.length) {
       if (all.length <= hearts.length) return;
@@ -2162,6 +2177,8 @@
     if (wallTimer) clearInterval(wallTimer);
     wallTimer = setInterval(() => {
       if (document.hidden) return;
+      /* Đang đọc thư — không swap kẻo mất tên dưới trái tim vừa chạm */
+      if (wishRevealOpen) return;
       if (!$("#wall-letter-orbits")) {
         clearInterval(wallTimer);
         wallTimer = null;

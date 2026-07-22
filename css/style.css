@@ -2599,6 +2599,8 @@ body.is-low-power .wishes-wall__stage {
 
 /* When only text (no card image): cream panel — scroll for long wishes */
 .letter-full:not(.has-image) .letter-full__frame {
+  display: flex;
+  flex-direction: column;
   background: linear-gradient(160deg, #fffaf3 0%, #f6ebe4 55%, #f0e0d8 100%);
   padding: 1.75rem 1.5rem 1.85rem;
   max-height: min(88svh, 820px);
@@ -2611,10 +2613,20 @@ body.is-low-power .wishes-wall__stage {
     0 0 90px rgba(255, 180, 160, 0.3);
 }
 
+/* HTML: who/rel trước msg — không ảnh thì chữ ký vẫn dưới lời chúc */
 .letter-full:not(.has-image) .letter-full__msg {
+  order: 1;
   font-size: clamp(1.15rem, 4.2vw, 1.65rem);
   text-align: left;
   max-width: 100%;
+}
+
+.letter-full:not(.has-image) .letter-full__who {
+  order: 2;
+}
+
+.letter-full:not(.has-image) .letter-full__rel {
+  order: 3;
 }
 
 /* No sheen sweep on photo — it washes out / softens the card */
@@ -2700,6 +2712,32 @@ body.is-low-power .wishes-wall__stage {
   flex-shrink: 0;
 }
 
+/* Tên / quan hệ ngay dưới thiệp — không đẩy xuống sau đoạn lời chúc dài */
+.letter-full.has-image .letter-full__who,
+.letter-full.has-image .letter-full__rel {
+  display: block;
+  max-width: min(92vw, 420px);
+  width: 100%;
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+  flex-shrink: 0;
+}
+
+.letter-full.has-image .letter-full__who {
+  margin-top: 0.1rem;
+  font-size: clamp(1rem, 3.2vw, 1.2rem);
+  color: rgba(255, 236, 220, 0.95);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.45);
+}
+
+.letter-full.has-image .letter-full__rel {
+  margin-top: 0.15rem;
+  margin-bottom: 0.15rem;
+  color: rgba(255, 210, 200, 0.88);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.4);
+}
+
 .letter-full.has-image .letter-full__msg {
   display: block;
   font-size: clamp(1rem, 3.6vw, 1.25rem);
@@ -2707,7 +2745,7 @@ body.is-low-power .wishes-wall__stage {
   text-align: left;
   max-width: min(92vw, 420px);
   width: 100%;
-  margin: 0 auto;
+  margin: 0.25rem auto 0;
   padding: 0.85rem 1rem;
   border-radius: 10px;
   background: rgba(255, 250, 243, 0.94);
@@ -2717,30 +2755,10 @@ body.is-low-power .wishes-wall__stage {
   max-height: min(28svh, 240px);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  order: 10;
 }
 
-.letter-full.has-image .letter-full__who,
-.letter-full.has-image .letter-full__rel {
-  display: block;
-  max-width: min(92vw, 420px);
-  width: 100%;
-  text-align: center;
-  margin-left: auto;
-  margin-right: auto;
-}
 
-.letter-full.has-image .letter-full__who {
-  margin-top: 0.15rem;
-  font-size: clamp(1rem, 3.2vw, 1.2rem);
-  color: rgba(255, 236, 220, 0.95);
-  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.45);
-}
-
-.letter-full.has-image .letter-full__rel {
-  margin-top: 0.15rem;
-  color: rgba(255, 210, 200, 0.88);
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.4);
-}
 
 .letter-full__msg {
   font-family: var(--font-display);
@@ -2851,9 +2869,9 @@ body.is-low-power .wishes-wall__stage {
   }
 }
 
-/* Wall heart tap pop before open */
+/* Wall heart tap pop before open — không forwards opacity:0 (dễ kẹt sau khi đóng thư) */
 .wall-heart.is-tapped .wall-heart__icon {
-  animation: wall-heart-tap-pop 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  animation: wall-heart-tap-pop 0.38s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 @keyframes wall-heart-tap-pop {
@@ -2863,10 +2881,11 @@ body.is-low-power .wishes-wall__stage {
   }
   45% {
     transform: scale(1.5);
+    opacity: 1;
   }
   100% {
-    transform: scale(0.2);
-    opacity: 0;
+    transform: scale(1);
+    opacity: 1;
   }
 }
 
@@ -4039,6 +4058,9 @@ body.page-scroll-lock {
   position: absolute;
   left: 0;
   top: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   width: max-content;
   margin: 0;
   padding: 0;
@@ -4108,7 +4130,7 @@ body.page-scroll-lock {
   color: #fff4e8;
   background: rgba(80, 40, 50, 0.72);
   border-color: rgba(255, 180, 190, 0.45);
-  transform: translateX(-50%) scale(1.06);
+  transform: scale(1.06);
 }
 
 .wall-heart:focus-visible {
@@ -4298,8 +4320,7 @@ body.page-scroll-lock {
   }
 }
 
-.wall-heart.is-pulse .wall-heart__icon,
-.wall-heart.is-tapped .wall-heart__icon {
+.wall-heart.is-pulse .wall-heart__icon {
   animation: wall-heart-pulse 0.5s var(--ease-expo);
 }
 
@@ -4342,13 +4363,12 @@ body.page-scroll-lock {
   }
 }
 
+/* Tên ngoài body (filter drop-shadow hay clip absolute overflow) */
 .wall-heart__name {
-  position: absolute;
-  top: 100%;
-  left: 50%;
+  position: relative;
   z-index: 2;
-  transform: translateX(-50%);
-  margin-top: 0.2rem;
+  flex-shrink: 0;
+  margin-top: 0.15rem;
   max-width: 5.5rem;
   padding: 0.12rem 0.4rem;
   border-radius: 999px;
@@ -4364,6 +4384,8 @@ body.page-scroll-lock {
   text-overflow: ellipsis;
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
+  pointer-events: none;
+  transition: transform 0.25s ease, color 0.25s ease, background 0.25s ease, border-color 0.25s ease;
 }
 
 .wishes-wall__empty {
