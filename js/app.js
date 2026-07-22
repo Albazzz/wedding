@@ -57,6 +57,18 @@
     return displayOrder === "groom-bride" ? groom + j + bride : bride + j + groom;
   }
 
+  /** 2 dòng trên phone: chú rể / cô dâu (hoặc ngược lại theo displayOrder) */
+  function isPhoneLayout() {
+    return window.matchMedia("(max-width: 767px)").matches;
+  }
+
+  function coupleNamesParts() {
+    const { bride, groom, displayOrder, joiner } = cfg.couple;
+    const first = displayOrder === "groom-bride" ? groom : bride;
+    const second = displayOrder === "groom-bride" ? bride : groom;
+    return { first, second, joiner: joiner || "&" };
+  }
+
   function monogram() {
     return cfg.hero?.monogram || coupleNames();
   }
@@ -177,8 +189,20 @@
         el.classList.add("couple-names-line");
       }
       if (key === "coupleNames") {
-        el.textContent = coupleNames();
-        el.classList.add("couple-names-line");
+        const inHero = !!el.closest(".hero__names");
+        if (inHero && isPhoneLayout()) {
+          const { first, second, joiner } = coupleNamesParts();
+          el.classList.remove("couple-names-line");
+          el.classList.add("couple-names-stack");
+          el.innerHTML =
+            `<span class="couple-names-stack__line">${escapeHtml(first)}</span>` +
+            `<span class="couple-names-stack__joiner" aria-hidden="true">${escapeHtml(joiner)}</span>` +
+            `<span class="couple-names-stack__line">${escapeHtml(second)}</span>`;
+        } else {
+          el.classList.remove("couple-names-stack");
+          el.classList.add("couple-names-line");
+          el.textContent = coupleNames();
+        }
       }
       if (key === "dateDisplay") el.textContent = t(cfg.wedding?.dateDisplay);
       if (key === "timeDisplay") el.textContent = t(cfg.wedding?.timeDisplay);
@@ -3093,6 +3117,12 @@
   function init() {
     applyPerfMode();
     applyI18n();
+    /* Đổi layout phone ↔ desktop: render lại tên 1 dòng / 2 dòng */
+    let phoneMq = window.matchMedia("(max-width: 767px)");
+    const onPhoneLayout = () => applyI18n();
+    if (phoneMq.addEventListener) phoneMq.addEventListener("change", onPhoneLayout);
+    else if (phoneMq.addListener) phoneMq.addListener(onPhoneLayout);
+
     setupHero();
     setupCountdown();
     renderGallery();
