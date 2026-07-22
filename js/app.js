@@ -218,55 +218,94 @@
     const overlay = $("#hero-overlay");
     if (bg && cfg.hero?.backgroundImage) {
       const url = cfg.hero.backgroundImage;
-      /* hero.jpg cắt 8% mép trên; phone cắt thêm 2% (object-position Y) */
+      /*
+        hero.jpg đã crop file ~8%.
+        Phone dọc: object-position Y VÔ DỤNG (cover khít chiều cao) → dùng
+        height > 100% + translateY để cắt mép trên thật.
+      */
       const cacheVer = "v=cropTop8";
       const withVer = (u) => u + (u.includes("?") ? "&" : "?") + cacheVer;
-      const phoneExtraTop = Number(cfg.hero?.focusYPhoneExtra) || 2; /* % cắt thêm trên phone */
+      const phoneExtraTop = Number(cfg.hero?.focusYPhoneExtra);
+      const phoneCrop = Number.isFinite(phoneExtraTop) ? phoneExtraTop : 8;
 
-      function resolveHeroPos() {
+      function resolveDesktopPos() {
         const fyRaw = String(cfg.hero?.focusY ?? "0%").trim();
-        let y =
+        const y =
           !fyRaw || fyRaw === "0" || fyRaw === "0%" || fyRaw === "top"
             ? 0
             : parseFloat(fyRaw) || 0;
-        if (isPhoneLayout()) y += phoneExtraTop;
         if (y <= 0) return "center top";
         return `center ${y}%`;
       }
 
       function applyHeroPos() {
-        const pos = resolveHeroPos();
+        const phone = isPhoneLayout();
         if (photo) {
-          photo.style.objectPosition = pos;
-          photo.style.transform = "";
+          if (phone) {
+            /* kéo ảnh lên = cắt phần trên; height dư để không hở đáy */
+            const lift = Math.max(0, Math.min(20, phoneCrop));
+            photo.style.objectFit = "cover";
+            photo.style.objectPosition = "center top";
+            photo.style.width = "100%";
+            photo.style.height = `${100 + lift * 1.4}%`;
+            photo.style.left = "0";
+            photo.style.right = "0";
+            photo.style.top = "0";
+            photo.style.bottom = "auto";
+            photo.style.transform = `translate3d(0, -${lift}%, 0)`;
+            photo.style.transformOrigin = "center top";
+          } else {
+            photo.style.objectFit = "cover";
+            photo.style.objectPosition = resolveDesktopPos();
+            photo.style.width = "100%";
+            photo.style.height = "100%";
+            photo.style.inset = "0";
+            photo.style.left = "";
+            photo.style.right = "";
+            photo.style.top = "";
+            photo.style.bottom = "";
+            photo.style.transform = "";
+            photo.style.transformOrigin = "";
+          }
         }
-        if (bg) bg.style.backgroundPosition = pos;
-        return pos;
+        if (bg) {
+          bg.style.backgroundPosition = phone ? "center top" : resolveDesktopPos();
+          bg.style.overflow = "hidden";
+        }
       }
 
       applyHeroPos();
 
       const reveal = () => {
-        const pos = applyHeroPos();
         if (photo) {
           photo.src = withVer(url);
-          photo.style.objectPosition = pos;
+          applyHeroPos();
         } else {
           bg.style.backgroundImage = `url("${withVer(url)}")`;
           bg.style.backgroundSize = "cover";
-          bg.style.backgroundPosition = pos;
+          bg.style.backgroundPosition = resolveDesktopPos();
         }
         bg.classList.add("has-image");
+        applyHeroPos();
       };
 
-      /* xoay ngang/dọc: tính lại crop phone */
       if (!bg._heroPosBound) {
         bg._heroPosBound = true;
         const mq = window.matchMedia("(max-width: 767px)");
         const onMq = () => applyHeroPos();
         if (mq.addEventListener) mq.addEventListener("change", onMq);
         else if (mq.addListener) mq.addListener(onMq);
+        window.addEventListener("resize", () => applyHeroPos(), { passive: true });
       }
+
+      /* Console thử: heroPhoneCrop(10) */
+      window.heroPhoneCrop = (pct) => {
+        cfg.hero = cfg.hero || {};
+        cfg.hero.focusYPhoneExtra = Number(pct) || 0;
+        applyHeroPos();
+        console.log("[hero] phone top crop =", cfg.hero.focusYPhoneExtra + "%");
+        return cfg.hero.focusYPhoneExtra;
+      };
 
       const probe = new Image();
       probe.onload = reveal;
