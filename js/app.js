@@ -195,12 +195,12 @@
     if (bg && cfg.hero?.backgroundImage) {
       const url = cfg.hero.backgroundImage;
       /*
-        hero.jpg đã cắt top theo 255/727 ≈ 35.076% (ref width 727px).
+        hero.jpg đã cắt ~42.5% mép trên ảnh gốc (bỏ xám studio trên đầu).
         object-position: center top → neo mép trên mới, crop phần dưới.
       */
       const extraCrop = Number(cfg.hero?.cropTopPercentExtra) || 0;
       const pos = cfg.hero?.backgroundPosition || "center top";
-      const cacheVer = "v=crop727x255";
+      const cacheVer = "v=cropTop425";
       const applyPos = (el) => {
         if (!el) return;
         el.style.setProperty("--hero-crop-top", `${extraCrop}%`);
