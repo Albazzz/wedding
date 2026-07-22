@@ -1527,20 +1527,23 @@
     return window.matchMedia("(orientation: landscape)").matches;
   }
 
-  /** Phone: chỉ fullscreen khi user bấm nút (không ép xoay lúc xem thường) */
+  /**
+   * Phone wall viewer: tách stage ra body → không bị scroll trang đẩy mất khi xoay.
+   * Dọc: chỉ nền + yêu cầu xoay. Ngang: hiện wall đầy đủ sẵn.
+   */
   let phoneWallFsWanted = false;
+  let wallViewerScrollY = 0;
+  let wallStageHome = null; /* { parent, next } */
 
   function syncWallFsButton() {
     const btn = $("#wall-letter-fs");
     const label = $("#wall-letter-fs-label");
     if (!btn) return;
-    /* Mobile cũng hiện nút — xem thường không bắt xoay */
     btn.hidden = false;
     btn.setAttribute("aria-hidden", "false");
     btn.classList.remove("is-phone-hidden");
 
-    const pending = phoneWallFsWanted && isPhoneNoFsApi() && !isLandscapeOrientation();
-    const on = isWallFullscreen() || pending;
+    const on = isWallFullscreen() || phoneWallFsWanted;
     btn.setAttribute("aria-pressed", on ? "true" : "false");
     btn.classList.toggle("is-active", on);
     const text = on
@@ -1548,6 +1551,51 @@
       : t(cfg.guestbook.wallFullscreen) || "Toàn màn hình";
     if (label) label.textContent = text;
     btn.title = text;
+  }
+
+  function mountWallStageToBody(stage) {
+    if (!stage || stage.parentElement === document.body) return;
+    wallStageHome = {
+      parent: stage.parentElement,
+      next: stage.nextSibling,
+    };
+    document.body.appendChild(stage);
+  }
+
+  function restoreWallStageHome(stage) {
+    if (!stage || !wallStageHome || !wallStageHome.parent) {
+      wallStageHome = null;
+      return;
+    }
+    const { parent, next } = wallStageHome;
+    try {
+      if (next && next.parentNode === parent) parent.insertBefore(stage, next);
+      else parent.appendChild(stage);
+    } catch (_) {
+      const wall = $("#wishes-wall");
+      if (wall) wall.appendChild(stage);
+    }
+    wallStageHome = null;
+  }
+
+  function lockBodyForWallViewer() {
+    wallViewerScrollY = window.scrollY || window.pageYOffset || 0;
+    document.body.classList.add("wall-fs-lock");
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${wallViewerScrollY}px`;
+    document.body.style.left = "0";
+    document.body.style.right = "0";
+    document.body.style.width = "100%";
+  }
+
+  function unlockBodyForWallViewer() {
+    document.body.classList.remove("wall-fs-lock");
+    document.body.style.position = "";
+    document.body.style.top = "";
+    document.body.style.left = "";
+    document.body.style.right = "";
+    document.body.style.width = "";
+    window.scrollTo(0, wallViewerScrollY || 0);
   }
 
   function exitWallFullscreen() {
@@ -1561,23 +1609,25 @@
       "is-fs",
       "is-fs-phone-landscape",
       "is-phone-portrait",
-      "is-phone-fs-pending"
+      "is-phone-fs-pending",
+      "is-wall-viewer",
+      "is-wall-wait-rotate"
     );
-    document.body.classList.remove("wall-fs-lock");
     setWallRotateHintVisible(false);
     restoreLetterRevealHome();
+    if (stage) restoreWallStageHome(stage);
+    unlockBodyForWallViewer();
     syncWallFsButton();
     if (stage && wallFlyRunning) {
-      window.setTimeout(() => startWallHeartFlight(stage), 80);
+      window.setTimeout(() => startWallHeartFlight(stage), 100);
     }
   }
 
-  /** CSS-only fullscreen (no Fullscreen API) — phone landscape sau khi user bấm */
   function enterWallCssFullscreen(fromPhoneLandscape) {
     const stage = $("#wishes-wall-stage");
     if (!stage) return;
     stage.classList.add("is-fs");
-    stage.classList.remove("is-phone-fs-pending", "is-phone-portrait");
+    stage.classList.remove("is-phone-fs-pending", "is-phone-portrait", "is-wall-wait-rotate");
     if (fromPhoneLandscape) stage.classList.add("is-fs-phone-landscape");
     document.body.classList.add("wall-fs-lock");
     setWallRotateHintVisible(false);
@@ -1616,7 +1666,7 @@
     let hint = $("#wall-letter-rotate-hint", stage) || $("#wall-letter-rotate-hint");
     if (!hint) {
       hint = document.createElement("div");
-      hint.className = "wall-letter__rotate-hint is-banner";
+      hint.className = "wall-letter__rotate-hint";
       hint.id = "wall-letter-rotate-hint";
       hint.hidden = true;
       hint.innerHTML =
@@ -1624,15 +1674,14 @@
         '<p class="wall-letter__rotate-text" id="wall-letter-rotate-text"></p>' +
         '<button type="button" class="wall-letter__rotate-cancel" id="wall-letter-rotate-cancel">Thoát</button>';
       stage.appendChild(hint);
-    } else {
-      hint.classList.add("is-banner");
     }
+    hint.classList.remove("is-banner");
     const textEl = $("#wall-letter-rotate-text", hint) || $("#wall-letter-rotate-text");
     if (textEl) {
       const raw =
         t(cfg.guestbook.wallRotateHint) ||
-        "Xoay ngang để xem rộng hơn";
-      textEl.textContent = raw.replace(/\n/g, " · ");
+        "Xoay ngang điện thoại để xem bầu trời lời chúc";
+      textEl.textContent = raw.replace(/\n/g, " ");
     }
     const cancel = $("#wall-letter-rotate-cancel", hint) || $("#wall-letter-rotate-cancel");
     if (cancel && !cancel._bound) {
@@ -1651,24 +1700,27 @@
     if (!hint) return;
     hint.hidden = !show;
     hint.setAttribute("aria-hidden", show ? "false" : "true");
-    /* Banner gợi ý — không khóa is-phone-portrait / không che wall */
-    hint.classList.toggle("is-banner", true);
   }
 
   /**
-   * Phone + bấm ⛶:
-   *  Mở ngay “trang wall” full viewport (thấy tim, bay, chạm được).
-   *  Không chặn bằng full-page chỉ để xoay.
-   *  Dọc → banner gợi ý xoay (không che wall).
-   *  Ngang → ẩn banner, class landscape cho layout rộng.
-   * Không bấm ⛶ → wall nhúng trong trang như cũ.
+   * Phone bấm ⛶:
+   *  1) Tách stage ra body + lock scroll → “trang wall” riêng (không bị đẩy khi xoay)
+   *  2) Dọc: chỉ nền + màn yêu cầu xoay
+   *  3) Ngang: hiện wall đầy đủ ngay (đã ở viewer, không cần kéo trang)
+   * Không bấm → wall nhúng trang như cũ.
    */
   function syncPhoneLandscapeFullscreen() {
     const stage = $("#wishes-wall-stage");
     if (!stage) return;
 
     if (!isPhoneNoFsApi()) {
-      stage.classList.remove("is-fs-phone-landscape", "is-phone-portrait", "is-phone-fs-pending");
+      stage.classList.remove(
+        "is-fs-phone-landscape",
+        "is-phone-portrait",
+        "is-phone-fs-pending",
+        "is-wall-wait-rotate",
+        "is-wall-viewer"
+      );
       setWallRotateHintVisible(false);
       syncWallFsButton();
       return;
@@ -1680,10 +1732,12 @@
         "is-fs-phone-landscape",
         "is-phone-portrait",
         "is-phone-fs-pending",
-        "is-wall-viewer"
+        "is-wall-viewer",
+        "is-wall-wait-rotate"
       );
-      if (!document.fullscreenElement) document.body.classList.remove("wall-fs-lock");
       setWallRotateHintVisible(false);
+      if (stage.parentElement === document.body) restoreWallStageHome(stage);
+      unlockBodyForWallViewer();
       syncWallFsButton();
       if (wallFlyRunning) {
         window.setTimeout(() => startWallHeartFlight(stage), 80);
@@ -1691,25 +1745,37 @@
       return;
     }
 
-    /* Không dùng Fullscreen API trang — chỉ mở viewer wall full viewport */
     if (document.fullscreenElement || document.webkitFullscreenElement) {
       const exit = document.exitFullscreen || document.webkitExitFullscreen;
       if (exit) exit.call(document).catch(() => {});
+    }
+
+    /* Vào “trang wall” riêng — tách khỏi flow scroll trang */
+    mountWallStageToBody(stage);
+    if (!document.body.classList.contains("wall-fs-lock") || !document.body.style.position) {
+      lockBodyForWallViewer();
     }
 
     const land = isLandscapeOrientation();
 
     stage.classList.add("is-fs", "is-wall-viewer");
     stage.classList.toggle("is-fs-phone-landscape", land);
+    stage.classList.toggle("is-wall-wait-rotate", !land);
     stage.classList.toggle("is-phone-fs-pending", !land);
     stage.classList.remove("is-phone-portrait");
     document.body.classList.add("wall-fs-lock");
     mountLetterRevealInWallFs();
 
-    /* Banner xoay: chỉ gợi ý, không che wall */
-    setWallRotateHintVisible(!land);
-    syncWallFsButton();
-    window.setTimeout(() => startWallHeartFlight(stage), 120);
+    if (land) {
+      /* Đã ngang: wall hiện sẵn full — không cần kéo */
+      setWallRotateHintVisible(false);
+      syncWallFsButton();
+      window.setTimeout(() => startWallHeartFlight(stage), 120);
+    } else {
+      /* Dọc: chỉ nền + yêu cầu xoay (wall đã “vào trang” sẵn) */
+      setWallRotateHintVisible(true);
+      syncWallFsButton();
+    }
   }
 
   function setupWallFullscreen() {
@@ -1736,7 +1802,7 @@
 
     const onFsChange = () => {
       if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-        if (!stage.classList.contains("is-fs-phone-landscape") && !phoneWallFsWanted) {
+        if (!phoneWallFsWanted && !stage.classList.contains("is-fs-phone-landscape")) {
           stage.classList.remove("is-fs");
           document.body.classList.remove("wall-fs-lock");
           restoreLetterRevealHome();
@@ -1765,7 +1831,7 @@
     if (!stage._phoneOrientBound) {
       stage._phoneOrientBound = true;
       const onOrient = () => {
-        window.setTimeout(syncPhoneLandscapeFullscreen, 80);
+        window.setTimeout(syncPhoneLandscapeFullscreen, 100);
       };
       window.addEventListener("orientationchange", onOrient);
       window.addEventListener("resize", onOrient, { passive: true });
@@ -1779,7 +1845,6 @@
     phoneWallFsWanted = false;
     setWallRotateHintVisible(false);
     syncWallFsButton();
-    /* không auto-FS khi load — chỉ khi user bấm */
   }
 
   function makeFlyBody(el, stageW, stageH, i, total) {
