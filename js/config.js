@@ -72,10 +72,15 @@ window.WEDDING_CONFIG = {
      * F12: heroTune.help() | setX/setY | nudgeX/nudgeY
      */
     backgroundPosition: "center top",
-    /** Trái ← → phải (50% = giữa) */
+    /** Trái ← → phải (50% = giữa). F12: heroTune.nudgeX(±5) */
     focusX: "50%",
     /** Trên ↑ ↓ dưới — 5% = hạ nhẹ so với mép trên */
     focusY: "5%",
+    /**
+     * Phóng ảnh > 1 để luôn pan được 2 trục (màn wide trước đây X không đổi).
+     * 1.2–1.4 hợp lý; cao quá sẽ hơi zoom.
+     */
+    panScale: 1.28,
     /** Overlay tối (0–1) để chữ dễ đọc */
     overlayOpacity: 0.12,
   },
