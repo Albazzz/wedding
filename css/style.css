@@ -4720,9 +4720,13 @@ body.is-low-power .wall-orbit {
     max-width: none;
     /* svh ổn định — không dùng dvh (đổi theo chrome → nhảy về đầu) */
     min-height: 100svh;
-    overflow: hidden;
+    height: auto;
+    /* visible: không cắt countdown khi tên 3 dòng + padding đẩy xuống */
+    overflow: visible;
     touch-action: pan-y;
     overflow-anchor: none;
+    align-items: center;
+    justify-items: center;
   }
 
   .hero__parallax,
@@ -4734,6 +4738,11 @@ body.is-low-power .wall-orbit {
     right: 0;
     width: 100%;
     max-width: none;
+    /* phủ full hero kể cả khi cao > 100svh */
+    top: 0;
+    bottom: 0;
+    height: auto;
+    min-height: 100%;
     /* parallax layers không chặn vuốt */
     pointer-events: none;
     touch-action: pan-y;
@@ -4758,13 +4767,35 @@ body.is-low-power .wall-orbit {
     width: 100%;
     box-sizing: border-box;
     padding-inline: 1rem;
-    /* +10px so content sits a bit lower on phone */
-    padding-top: calc(var(--header-offset) + 1.75rem + 10px);
-    padding-bottom: max(3.25rem, calc(1.75rem + var(--sab)));
+    /* +20px so content sits lower on phone (10 + 10) */
+    padding-top: calc(var(--header-offset) + 1.75rem + 20px);
+    padding-bottom: max(2.75rem, calc(1.5rem + var(--sab)));
     margin-inline: 0;
     /* nội dung hero vẫn nhận tap, vuốt dọc scroll page */
     pointer-events: auto;
     touch-action: pan-y;
+    /* không parallax transform — tránh đẩy countdown ra ngoài */
+    transform: none !important;
+  }
+
+  /* Countdown luôn hiện — tắt soft-float (dễ bị clip) */
+  .countdown,
+  .countdown.soft-float-ready {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    animation: none !important;
+    transform: none !important;
+    margin: 1.35rem 0 1.1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.45rem;
+    max-width: 100%;
+  }
+
+  .countdown__item {
+    min-width: 3.35rem;
+    flex: 0 0 auto;
   }
 
   .hero__eyebrow {

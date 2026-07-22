@@ -199,12 +199,13 @@
       if (key === "coupleNames") {
         /*
           3 hàng: tên 1 / & / tên 2
-          - Footer: luôn tách (tên dài)
-          - Còn lại: tách trên mobile
+          - Footer + hero: luôn tách (tên dài)
+          - Chỗ khác: tách trên mobile
         */
         const isFooterNames =
           el.classList.contains("footer__names") || !!el.closest("#footer, .footer");
-        const stackNames = isFooterNames || isPhoneLayout();
+        const isHeroNames = !!el.closest(".hero__names, #hero, .hero");
+        const stackNames = isFooterNames || isHeroNames || isPhoneLayout();
         if (stackNames) {
           const { first, second, joiner } = coupleNamesParts();
           el.classList.remove("couple-names-line");
@@ -2547,7 +2548,10 @@
     if (!hero) return;
     if (perfMode === "low") return;
     if (prefersReducedMotion()) return;
+    /* Mobile / touch: không parallax (transform dễ đẩy/cắt countdown) */
     if (window.matchMedia("(hover: none)").matches) return;
+    if (window.matchMedia("(max-width: 767px)").matches) return;
+    if (window.matchMedia("(pointer: coarse)").matches) return;
 
     let mx = 0;
     let my = 0;
