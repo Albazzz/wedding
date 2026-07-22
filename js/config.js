@@ -68,8 +68,8 @@ window.WEDDING_CONFIG = {
     backgroundPosition: "center top",
     /** Hạ khung desktop (0 = mép trên) */
     focusY: "5%",
-    /** Phone: cộng thêm % cắt mép trên (vd 2 = cắt thêm 2% so với focusY) */
-    focusYPhoneExtra: 2,
+    /** Phone: cộng thêm % cắt mép trên so với focusY desktop */
+    focusYPhoneExtra: 5,
     /** Overlay tối (0–1) để chữ dễ đọc */
     overlayOpacity: 0.12,
   },

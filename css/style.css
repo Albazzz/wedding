@@ -4548,8 +4548,8 @@ body.is-low-power .wall-orbit {
     width: 100%;
     max-width: none;
     object-fit: cover;
-    /* fallback: focusY 5% + phone extra 2% = 7% (JS setupHero ghi đè) */
-    object-position: center 7%;
+    /* fallback: focusY 5% + phone extra 5% = 10% (JS setupHero ghi đè) */
+    object-position: center 10%;
   }
 
   .hero__content {
