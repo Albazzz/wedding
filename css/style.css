@@ -887,13 +887,15 @@ body.intro-lock {
   background:
     linear-gradient(145deg, #c4a898 0%, #a88878 45%, #8b6b5a 100%);
   background-size: cover;
-  background-position: center;
+  /* Neo từ trên xuống (không crop giữa) để thấy mặt cô dâu chú rể */
+  background-position: center top;
   transform: scale(1.06);
   animation: hero-ken 26s ease-in-out infinite alternate;
 }
 
 .hero__bg.has-image {
   background-color: #a88878;
+  background-position: center top;
 }
 
 .hero__glow {

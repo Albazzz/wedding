@@ -193,9 +193,12 @@
     const overlay = $("#hero-overlay");
     if (bg && cfg.hero?.backgroundImage) {
       const url = cfg.hero.backgroundImage;
+      const pos = cfg.hero?.backgroundPosition || "center top";
+      bg.style.backgroundPosition = pos;
       const img = new Image();
       img.onload = () => {
         bg.style.backgroundImage = `url("${url}")`;
+        bg.style.backgroundPosition = pos;
         bg.classList.add("has-image");
       };
       img.onerror = () => {

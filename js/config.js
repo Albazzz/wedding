@@ -59,6 +59,11 @@ window.WEDDING_CONFIG = {
     },
     /** Ảnh nền hero (đường dẫn local hoặc URL) */
     backgroundImage: "assets/images/hero.jpg",
+    /**
+     * Vị trí crop ảnh: "center top" = cắt từ trên xuống (thấy mặt đôi uyên ương)
+     * VD khác: "center 20%", "center center"
+     */
+    backgroundPosition: "center top",
     /** Overlay tối (0–1) để chữ dễ đọc */
     overlayOpacity: 0.12,
   },
