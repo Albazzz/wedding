@@ -22,7 +22,7 @@
       href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Great+Vibes&family=Outfit:wght@300;400;500;600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/style.css?v=names3" />
   </head>
   <body class="intro-lock is-booting">
     <!-- Petals canvas -->
@@ -387,8 +387,16 @@
     <!-- FOOTER -->
     <footer class="footer" id="footer">
       <div class="container">
-        <p class="footer__thanks font-script" data-i18n="footer.thankYou">Cảm ơn bạn</p>
-        <p class="footer__names font-script" data-bind="coupleNames">Nguyễn Văn Quân & Thông Thị Tú Trâm</p>
+        <p class="footer__thanks font-script" data-i18n="footer.thankYou">Cảm ơn bạn đã ghé thăm</p>
+        <p
+          class="footer__names font-script couple-names-stack"
+          data-bind="coupleNames"
+          aria-label="Nguyễn Văn Quân & Thông Thị Tú Trâm"
+        >
+          <span class="couple-names-stack__line">Nguyễn Văn Quân</span>
+          <span class="couple-names-stack__joiner" aria-hidden="true">&</span>
+          <span class="couple-names-stack__line">Thông Thị Tú Trâm</span>
+        </p>
         <p class="footer__sign" data-i18n="footer.signature">Với tất cả yêu thương</p>
         <div class="footer__ornament" aria-hidden="true">❧</div>
       </div>
@@ -425,9 +433,9 @@
     <!-- Heart fireworks (Three.js) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
-    <script src="js/config.js"></script>
-    <script src="js/firebase-wishes.js"></script>
-    <script src="js/card-editor.js"></script>
-    <script src="js/app.js"></script>
+    <script src="js/config.js?v=names3"></script>
+    <script src="js/firebase-wishes.js?v=names3"></script>
+    <script src="js/card-editor.js?v=names3"></script>
+    <script src="js/app.js?v=names3"></script>
   </body>
 </html>

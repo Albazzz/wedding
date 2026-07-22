@@ -225,62 +225,62 @@ button {
 
 /*
   Couple names / monogram: single line by default
-  (stack .couple-names-stack overrides for long full names)
+  Footer / .couple-names-stack = 3 hàng (tên / & / tên)
 */
-[data-bind="coupleNames"],
+[data-bind="coupleNames"]:not(.couple-names-stack),
 [data-bind="monogram"],
 .couple-names-line,
-.footer__names,
 .scroll-letter__names,
 .header__logo,
-.hero__names,
-.hero__names .font-script {
+.hero__names:not(:has(.couple-names-stack)),
+.hero__names .font-script:not(.couple-names-stack) {
   white-space: nowrap !important;
   word-break: keep-all;
   overflow-wrap: normal;
   hyphens: none;
 }
 
-[data-bind="coupleNames"],
+[data-bind="coupleNames"]:not(.couple-names-stack),
 .couple-names-line,
-.footer__names,
 .scroll-letter__names,
-.hero__names .font-script {
+.hero__names .font-script:not(.couple-names-stack) {
   display: inline-block;
   max-width: 100%;
   vertical-align: baseline;
 }
 
-/* Tên dài: mỗi người 1 dòng (+ & ở giữa) */
+/* 3 hàng: tên chú rể / & / tên cô dâu */
 .couple-names-stack,
 [data-bind="coupleNames"].couple-names-stack,
+.footer__names,
 .footer__names.couple-names-stack,
 .hero__names .couple-names-stack {
   white-space: normal !important;
   display: flex !important;
-  flex-direction: column;
+  flex-direction: column !important;
   align-items: center;
   justify-content: center;
-  gap: 0.1em;
+  gap: 0.12em;
   max-width: 100%;
   width: 100%;
   box-sizing: border-box;
   text-align: center;
-  line-height: 1.2;
+  line-height: 1.25;
 }
 
 .couple-names-stack__line {
-  display: block;
+  display: block !important;
   white-space: nowrap;
   max-width: 100%;
+  line-height: 1.2;
 }
 
 .couple-names-stack__joiner {
-  display: block;
-  font-size: 0.72em;
+  display: block !important;
+  font-size: 0.7em;
   line-height: 1;
-  opacity: 0.88;
-  margin-block: 0.04em;
+  opacity: 0.9;
+  margin-block: 0.06em;
 }
 
 /* Long names: one line, full content width, no clip */
@@ -4607,15 +4607,27 @@ body.is-low-power .wall-orbit {
 }
 
 .footer__names {
-  font-size: clamp(1.55rem, 5.2vw, 2.75rem);
+  font-size: clamp(1.45rem, 5vw, 2.4rem);
   margin-bottom: 0.5rem;
-  max-width: 100%;
+  max-width: min(100%, 22rem);
   margin-inline: auto;
+  /* luôn 3 hàng — không nowrap 1 dòng */
+  white-space: normal !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center;
+  gap: 0.14em;
 }
 
-.footer__names.couple-names-stack {
-  font-size: clamp(1.45rem, 5vw, 2.4rem);
-  gap: 0.12em;
+.footer__names .couple-names-stack__line {
+  display: block !important;
+  white-space: nowrap;
+}
+
+.footer__names .couple-names-stack__joiner {
+  display: block !important;
+  font-size: 0.68em;
+  opacity: 0.88;
 }
 
 .footer__sign {

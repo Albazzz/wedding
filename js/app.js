@@ -194,12 +194,19 @@
         el.classList.add("couple-names-line");
       }
       if (key === "coupleNames") {
-        /* Phone: tên dài → mỗi người 1 dòng (hero + footer + mọi chỗ bind) */
-        const stackNames = isPhoneLayout() || !!el.closest(".footer__names, .footer");
+        /*
+          3 hàng: tên 1 / & / tên 2
+          - Footer: luôn tách (tên dài)
+          - Còn lại: tách trên mobile
+        */
+        const isFooterNames =
+          el.classList.contains("footer__names") || !!el.closest("#footer, .footer");
+        const stackNames = isFooterNames || isPhoneLayout();
         if (stackNames) {
           const { first, second, joiner } = coupleNamesParts();
           el.classList.remove("couple-names-line");
           el.classList.add("couple-names-stack");
+          el.setAttribute("aria-label", coupleNames());
           el.innerHTML =
             `<span class="couple-names-stack__line">${escapeHtml(first)}</span>` +
             `<span class="couple-names-stack__joiner" aria-hidden="true">${escapeHtml(joiner)}</span>` +
@@ -207,6 +214,7 @@
         } else {
           el.classList.remove("couple-names-stack");
           el.classList.add("couple-names-line");
+          el.removeAttribute("aria-label");
           el.textContent = coupleNames();
         }
       }
