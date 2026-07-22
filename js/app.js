@@ -1616,20 +1616,22 @@
     let hint = $("#wall-letter-rotate-hint", stage) || $("#wall-letter-rotate-hint");
     if (!hint) {
       hint = document.createElement("div");
-      hint.className = "wall-letter__rotate-hint";
+      hint.className = "wall-letter__rotate-hint is-banner";
       hint.id = "wall-letter-rotate-hint";
       hint.hidden = true;
       hint.innerHTML =
         '<span class="wall-letter__rotate-icon" aria-hidden="true">↻</span>' +
         '<p class="wall-letter__rotate-text" id="wall-letter-rotate-text"></p>' +
-        '<button type="button" class="wall-letter__rotate-cancel" id="wall-letter-rotate-cancel">Hủy</button>';
+        '<button type="button" class="wall-letter__rotate-cancel" id="wall-letter-rotate-cancel">Thoát</button>';
       stage.appendChild(hint);
+    } else {
+      hint.classList.add("is-banner");
     }
     const textEl = $("#wall-letter-rotate-text", hint) || $("#wall-letter-rotate-text");
     if (textEl) {
       const raw =
         t(cfg.guestbook.wallRotateHint) ||
-        "Xoay ngang điện thoại để xem toàn màn hình";
+        "Xoay ngang để xem rộng hơn";
       textEl.textContent = raw.replace(/\n/g, " · ");
     }
     const cancel = $("#wall-letter-rotate-cancel", hint) || $("#wall-letter-rotate-cancel");
@@ -1649,18 +1651,17 @@
     if (!hint) return;
     hint.hidden = !show;
     hint.setAttribute("aria-hidden", show ? "false" : "true");
-    const stage = $("#wishes-wall-stage");
-    stage?.classList.toggle("is-phone-fs-pending", !!show);
-    /* không dùng is-phone-portrait ép mờ khi xem thường */
-    if (!show) stage?.classList.remove("is-phone-portrait");
+    /* Banner gợi ý — không khóa is-phone-portrait / không che wall */
+    hint.classList.toggle("is-banner", true);
   }
 
   /**
-   * Phone + đã bấm ⛶:
-   *  1) Luôn phóng full màn (is-fs) ngay
-   *  2) Dọc → overlay “xoay ngang” trên full màn
-   *  3) Ngang → ẩn overlay, hiện wall fullscreen
-   * Không bấm ⛶ → stage bình thường trong trang (không ép xoay).
+   * Phone + bấm ⛶:
+   *  Mở ngay “trang wall” full viewport (thấy tim, bay, chạm được).
+   *  Không chặn bằng full-page chỉ để xoay.
+   *  Dọc → banner gợi ý xoay (không che wall).
+   *  Ngang → ẩn banner, class landscape cho layout rộng.
+   * Không bấm ⛶ → wall nhúng trong trang như cũ.
    */
   function syncPhoneLandscapeFullscreen() {
     const stage = $("#wishes-wall-stage");
@@ -1678,7 +1679,8 @@
         "is-fs",
         "is-fs-phone-landscape",
         "is-phone-portrait",
-        "is-phone-fs-pending"
+        "is-phone-fs-pending",
+        "is-wall-viewer"
       );
       if (!document.fullscreenElement) document.body.classList.remove("wall-fs-lock");
       setWallRotateHintVisible(false);
@@ -1689,34 +1691,25 @@
       return;
     }
 
-    /* —— User đã bấm ⛶: luôn full màn trước —— */
+    /* Không dùng Fullscreen API trang — chỉ mở viewer wall full viewport */
     if (document.fullscreenElement || document.webkitFullscreenElement) {
       const exit = document.exitFullscreen || document.webkitExitFullscreen;
       if (exit) exit.call(document).catch(() => {});
     }
 
-    stage.classList.add("is-fs");
+    const land = isLandscapeOrientation();
+
+    stage.classList.add("is-fs", "is-wall-viewer");
+    stage.classList.toggle("is-fs-phone-landscape", land);
+    stage.classList.toggle("is-phone-fs-pending", !land);
+    stage.classList.remove("is-phone-portrait");
     document.body.classList.add("wall-fs-lock");
     mountLetterRevealInWallFs();
 
-    const land = isLandscapeOrientation();
-
-    if (land) {
-      stage.classList.add("is-fs-phone-landscape");
-      stage.classList.remove("is-phone-fs-pending", "is-phone-portrait");
-      setWallRotateHintVisible(false);
-      syncWallFsButton();
-      window.setTimeout(() => startWallHeartFlight(stage), 100);
-    } else {
-      /* Full màn dọc + yêu cầu xoay */
-      stage.classList.remove("is-fs-phone-landscape");
-      stage.classList.add("is-phone-fs-pending");
-      setWallRotateHintVisible(true);
-      syncWallFsButton();
-      if (wallFlyRunning) {
-        window.setTimeout(() => startWallHeartFlight(stage), 80);
-      }
-    }
+    /* Banner xoay: chỉ gợi ý, không che wall */
+    setWallRotateHintVisible(!land);
+    syncWallFsButton();
+    window.setTimeout(() => startWallHeartFlight(stage), 120);
   }
 
   function setupWallFullscreen() {
