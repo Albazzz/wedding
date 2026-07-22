@@ -1579,27 +1579,22 @@
   }
 
   function lockBodyForWallViewer() {
+    /* Chỉ khóa scroll — KHÔNG position:fixed (gây nhảy về đầu trang trên mobile) */
     wallViewerScrollY = window.scrollY || window.pageYOffset || 0;
     document.body.classList.add("wall-fs-lock");
-    document.body.style.position = "fixed";
-    document.body.style.top = `-${wallViewerScrollY}px`;
-    document.body.style.left = "0";
-    document.body.style.right = "0";
-    document.body.style.width = "100%";
+    document.documentElement.classList.add("wall-fs-lock");
   }
 
   function unlockBodyForWallViewer() {
     document.body.classList.remove("wall-fs-lock");
+    document.documentElement.classList.remove("wall-fs-lock");
     document.body.style.position = "";
     document.body.style.top = "";
     document.body.style.left = "";
     document.body.style.right = "";
     document.body.style.width = "";
     document.body.style.overflow = "";
-    const y = wallViewerScrollY || 0;
-    requestAnimationFrame(() => {
-      window.scrollTo(0, y);
-    });
+    /* Không scrollTo(0,…) — tránh tự kéo về đầu trang */
   }
 
   function exitWallFullscreen() {

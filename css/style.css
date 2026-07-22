@@ -131,17 +131,11 @@
 }
 
 html {
-  /* smooth chỉ desktop — mobile smooth dễ “kéo dính” banner */
+  /* Tắt smooth — tránh vuốt nhẹ bị “kéo dính / về đầu” trên mobile & desktop */
   scroll-behavior: auto;
   scroll-padding-top: var(--header-offset);
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  html {
-    scroll-behavior: smooth;
-  }
 }
 
 body {
@@ -3516,9 +3510,11 @@ body.wall-fs-lock {
   box-sizing: border-box !important;
 }
 
+html.wall-fs-lock,
 body.wall-fs-lock {
   overflow: hidden !important;
   overscroll-behavior: none;
+  /* không dùng position:fixed trên body — tránh nhảy scroll về 0 */
 }
 
 /* Overlay xoay full — chỉ khi đã vào viewer và đang dọc */
