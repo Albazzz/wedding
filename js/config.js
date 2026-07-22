@@ -72,21 +72,69 @@ window.WEDDING_CONFIG = {
     overlayOpacity: 0.12,
   },
 
-  /* ---------- Thư viện ảnh (Love Story đã gỡ) ---------- */
+  /* ---------- Gallery — layout timeline giống Love Story ---------- */
   gallery: {
     title: { vi: "Khoảnh khắc đẹp", en: "Beautiful Moments" },
     subtitle: {
       vi: "Một vài khung hình chúng mình muốn chia sẻ",
       en: "A few frames we'd love to share",
     },
+    /**
+     * Mỗi ảnh = 1 mốc timeline (date / title / description + image)
+     * Sửa chữ tự do; layout + animation giống Love Story
+     */
     images: [
-      { src: "assets/images/gallery-1.jpg", alt: "Nguyễn Văn Quân & Thông Thị Tú Trâm 1" },
-      { src: "assets/images/gallery-2.jpg", alt: "Nguyễn Văn Quân & Thông Thị Tú Trâm 2" },
-      { src: "assets/images/gallery-3.jpg", alt: "Nguyễn Văn Quân & Thông Thị Tú Trâm 3" },
-      { src: "assets/images/gallery-4.jpg", alt: "Nguyễn Văn Quân & Thông Thị Tú Trâm 4" },
-      { src: "assets/images/gallery-5.jpg", alt: "Nguyễn Văn Quân & Thông Thị Tú Trâm 5" },
+      {
+        src: "assets/images/gallery-1.jpg",
+        alt: "Nguyễn Văn Quân & Thông Thị Tú Trâm 1",
+        date: { vi: "Khoảnh khắc 01", en: "Moment 01" },
+        title: { vi: "Bên nhau", en: "Together" },
+        description: {
+          vi: "Một khung hình dịu dàng — chúng mình và ngày trọng đại.",
+          en: "A gentle frame — us and our special day.",
+        },
+      },
+      {
+        src: "assets/images/gallery-2.jpg",
+        alt: "Nguyễn Văn Quân & Thông Thị Tú Trâm 2",
+        date: { vi: "Khoảnh khắc 02", en: "Moment 02" },
+        title: { vi: "Nụ cười", en: "Smiles" },
+        description: {
+          vi: "Những nụ cười chân thành mà chúng mình muốn giữ mãi.",
+          en: "Honest smiles we want to keep forever.",
+        },
+      },
+      {
+        src: "assets/images/gallery-3.jpg",
+        alt: "Nguyễn Văn Quân & Thông Thị Tú Trâm 3",
+        date: { vi: "Khoảnh khắc 03", en: "Moment 03" },
+        title: { vi: "Ánh mắt", en: "Eyes meet" },
+        description: {
+          vi: "Ánh mắt trao nhau — lời hẹn thầm lặng của hai trái tim.",
+          en: "A shared look — a quiet promise between two hearts.",
+        },
+      },
+      {
+        src: "assets/images/gallery-4.jpg",
+        alt: "Nguyễn Văn Quân & Thông Thị Tú Trâm 4",
+        date: { vi: "Khoảnh khắc 04", en: "Moment 04" },
+        title: { vi: "Tay trong tay", en: "Hand in hand" },
+        description: {
+          vi: "Cùng bước vào chương mới của cuộc đời.",
+          en: "Stepping together into a new chapter.",
+        },
+      },
+      {
+        src: "assets/images/gallery-5.jpg",
+        alt: "Nguyễn Văn Quân & Thông Thị Tú Trâm 5",
+        date: { vi: "Khoảnh khắc 05", en: "Moment 05" },
+        title: { vi: "Trọn vẹn", en: "Complete" },
+        description: {
+          vi: "Cảm ơn vì đã chọn nhau — và chọn hôm nay.",
+          en: "Thank you for choosing each other — and today.",
+        },
+      },
     ],
-    /** Video YouTube — để rỗng "" để ẩn (đã bỏ pre-wedding) */
     youtubeVideoId: "",
     youtubeTitle: { vi: "", en: "" },
   },

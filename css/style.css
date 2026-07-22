@@ -1202,6 +1202,7 @@ body.intro-lock {
   body.has-cursor-fx select,
   body.has-cursor-fx label,
   body.has-cursor-fx .gallery__item,
+  body.has-cursor-fx .gallery-tl__photo,
   body.has-cursor-fx .wish-card,
   body.has-cursor-fx .wall-card {
     cursor: none;
@@ -1749,7 +1750,7 @@ body.intro-lock {
   line-height: 1.65;
 }
 
-/* Parallax image frame */
+/* Parallax image frame (gallery = clickable button) */
 .timeline__img {
   margin-top: 1rem;
   border-radius: var(--radius-sm);
@@ -1758,6 +1759,27 @@ body.intro-lock {
   background: var(--color-bg-alt);
   position: relative;
   isolation: isolate;
+}
+
+button.timeline__img {
+  display: block;
+  width: 100%;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button.timeline__img:focus-visible {
+  outline: 2px solid rgba(196, 165, 116, 0.75);
+  outline-offset: 3px;
+}
+
+button.timeline__img:hover .timeline__media {
+  filter: brightness(1.04) saturate(1.05);
 }
 
 .timeline__img img,
@@ -1955,95 +1977,13 @@ body.intro-lock {
   color: var(--color-accent-deep);
 }
 
-/* ---------- Gallery (reveal + parallax kiểu Love Story) ---------- */
-.gallery {
-  --gal-ease: cubic-bezier(0.22, 1, 0.36, 1);
-  --gal-duration: 1.05s;
+/* ---------- Gallery = Love Story timeline ---------- */
+.gallery.story .timeline {
+  max-width: 900px;
 }
 
-.gallery__grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.75rem;
-}
-
-@media (min-width: 640px) {
-  .gallery__grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 1rem;
-  }
-}
-
-.gallery__item {
-  --gal-from-y: 48px;
-  position: relative;
-  aspect-ratio: 1;
-  border: 0;
-  padding: 0;
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-  cursor: pointer;
-  background: var(--color-bg-alt);
-  box-shadow:
-    0 12px 36px rgba(61, 44, 36, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.45);
-  opacity: 0;
-  transform: translate3d(0, var(--gal-from-y), 0) scale(0.94);
-  transition:
-    opacity var(--gal-duration) var(--gal-ease),
-    transform var(--gal-duration) var(--gal-ease),
-    box-shadow 0.45s var(--gal-ease);
-  will-change: opacity, transform;
-}
-
-.gallery__item.is-in {
-  opacity: 1;
-  transform: translate3d(0, 0, 0) scale(1);
-}
-
-.gallery__media {
-  position: absolute;
-  inset: -8%;
-  display: block;
-  overflow: hidden;
-  transform: translate3d(0, var(--gal-parallax, 0px), 0) scale(1.06);
-  will-change: transform;
-}
-
-.gallery__photo,
-.gallery__item img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-  transition:
-    transform 0.9s var(--gal-ease),
-    filter 0.7s ease;
-}
-
-.gallery__item.is-in:hover {
-  transform: scale(1.03) rotate(0.5deg);
-  box-shadow: var(--shadow-lg);
-  z-index: 1;
-}
-
-.gallery__item.is-in:hover .gallery__photo,
-.gallery__item.is-in:hover img {
-  transform: scale(1.08);
-  filter: brightness(1.04) saturate(1.05);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .gallery__item {
-    opacity: 1;
-    transform: none;
-    transition: none;
-  }
-
-  .gallery__media {
-    inset: 0;
-    transform: none;
-  }
+.gallery.story .timeline__img .timeline__media {
+  transition: filter 0.55s ease, transform 0.9s var(--tl-ease, cubic-bezier(0.22, 1, 0.36, 1));
 }
 
 .music-toggle.is-playing::after {

@@ -366,7 +366,7 @@
       "pointerover",
       (e) => {
         const hit = e.target.closest(
-          "a, button, .gallery__item, .wish-card, .wall-card, input, textarea, select, label"
+          "a, button, .gallery__item, .gallery-tl__photo, .wish-card, .wall-card, input, textarea, select, label"
         );
         dot.classList.toggle("is-hover", !!hit);
       },
@@ -382,7 +382,7 @@
   }
 
   function enhanceGlassShine() {
-    $$(".timeline__card, .wish-card, .gallery__item, .card-panel, .coming-soon__card").forEach(
+    $$(".timeline__card, .wish-card, .gallery__item, .gallery-tl__photo, .card-panel, .coming-soon__card").forEach(
       (el) => el.classList.add("glass-shine")
     );
     setupCardTilt();
@@ -435,7 +435,7 @@
       (e) => {
         if (e.button !== 0) return;
         const host = e.target.closest(
-          "button, .btn, a.scroll-hint, .gallery__item, .wish-card, .wall-card, .sticker-btn, .template-swatch, .effect-chip, .frame-chip, .sticker-cat, .intro__enter"
+          "button, .btn, a.scroll-hint, .gallery__item, .gallery-tl__photo, .wish-card, .wall-card, .sticker-btn, .template-swatch, .effect-chip, .frame-chip, .sticker-cat, .intro__enter"
         );
         if (!host) return;
 
@@ -499,58 +499,78 @@
     });
   }
 
-  /* ---------- Gallery (scroll reveal kiểu Love Story) ---------- */
+  /* ---------- Gallery = Love Story timeline (ảnh + chữ) ---------- */
   function renderGallery() {
-    const root = $("#gallery-grid");
+    const root = $("#gallery-timeline") || $("#gallery-grid");
     if (!root) return;
     galleryImages = cfg.gallery?.images || [];
 
-    root.innerHTML = galleryImages
+    const cards = galleryImages
       .map((img, i) => {
+        const date =
+          t(img.date) ||
+          (lang === "vi" ? `Khoảnh khắc ${String(i + 1).padStart(2, "0")}` : `Moment ${String(i + 1).padStart(2, "0")}`);
+        const title = t(img.title) || img.alt || (lang === "vi" ? "Kỷ niệm" : "Memory");
+        const desc = t(img.description) || "";
+        const alt = escapeHtml(img.alt || title);
         return `
-          <button type="button" class="gallery__item glass-shine" data-index="${i}" aria-label="${escapeHtml(img.alt || "Photo")}">
-            <span class="gallery__media">
-              <img class="gallery__photo" src="${escapeHtml(img.src)}" alt="${escapeHtml(img.alt || "")}" loading="lazy" decoding="async"
-                onerror="const p=this.closest('.gallery__item');if(p){p.classList.add('is-placeholder');p.textContent='Photo '+(${i}+1);}" />
-            </span>
-          </button>`;
+          <article class="timeline__item">
+            <span class="timeline__dot" aria-hidden="true"></span>
+            <div class="timeline__card glass-shine">
+              <p class="timeline__date">${escapeHtml(date)}</p>
+              <h3 class="timeline__title">${escapeHtml(title)}</h3>
+              ${desc ? `<p class="timeline__desc">${escapeHtml(desc)}</p>` : ""}
+              <button type="button" class="timeline__img gallery-tl__photo" data-index="${i}"
+                aria-label="${alt}">
+                <img class="timeline__media" src="${escapeHtml(img.src)}" alt="${alt}"
+                  loading="lazy" decoding="async"
+                  onerror="const p=this.closest('.timeline__img');if(p){p.classList.add('is-placeholder');this.remove();p.appendChild(document.createTextNode('Photo'));}" />
+              </button>
+            </div>
+          </article>`;
       })
       .join("");
+
+    root.classList.add("timeline");
+    root.innerHTML =
+      `<div class="timeline__track" aria-hidden="true"><div class="timeline__progress"></div></div>` +
+      cards;
 
     if (!root._galleryClickBound) {
       root._galleryClickBound = true;
       root.addEventListener("click", (e) => {
-        const item = e.target.closest(".gallery__item");
-        if (!item || item.classList.contains("is-placeholder")) return;
-        openLightbox(Number(item.dataset.index));
+        const hit = e.target.closest("[data-index].gallery-tl__photo, .gallery-tl__photo[data-index]");
+        if (!hit || hit.classList.contains("is-placeholder")) return;
+        openLightbox(Number(hit.dataset.index));
       });
     }
 
-    setupGalleryScroll();
+    setupGalleryTimelineScroll();
   }
 
   /**
-   * Gallery FX (từ Love Story): reveal tuần tự + soft parallax khi scroll.
+   * Love Story FX: reveal tuần tự + line progress + parallax ảnh
    */
-  function setupGalleryScroll() {
+  function setupGalleryTimelineScroll() {
     const section = $("#gallery");
-    const root = $("#gallery-grid");
+    const root = $("#gallery-timeline") || $("#gallery-grid");
     if (!root || !section) return;
 
-    const items = $$(".gallery__item", root);
-    const media = $$(".gallery__photo", root);
+    const items = $$(".timeline__item", root);
+    const media = $$(".timeline__media", root);
     if (!items.length) return;
 
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     if (reduce) {
       items.forEach((el) => el.classList.add("is-in"));
+      section.style.setProperty("--tl-progress", "1");
       return;
     }
 
     const queue = [];
     let queueBusy = false;
-    const gapMs = 280;
+    const gapMs = 420;
 
     function runQueue() {
       if (queueBusy || !queue.length) return;
@@ -564,8 +584,8 @@
     }
 
     function enqueueReveal(el) {
-      if (el.classList.contains("is-in") || el._galQueued) return;
-      el._galQueued = true;
+      if (el.classList.contains("is-in") || el._tlQueued) return;
+      el._tlQueued = true;
       queue.push(el);
       runQueue();
     }
@@ -583,21 +603,17 @@
         (entries) => {
           entries
             .filter((e) => e.isIntersecting)
-            .sort((a, b) => {
-              const ia = items.indexOf(a.target);
-              const ib = items.indexOf(b.target);
-              return ia - ib;
-            })
+            .sort((a, b) => items.indexOf(a.target) - items.indexOf(b.target))
             .forEach((e) => {
               enqueueReveal(e.target);
               io.unobserve(e.target);
             });
         },
-        { threshold: 0.18, rootMargin: "0px 0px -10% 0px" }
+        { threshold: 0.22, rootMargin: "0px 0px -12% 0px" }
       );
       root._galIo = io;
       items.forEach((el) => {
-        el._galQueued = false;
+        el._tlQueued = false;
         el.classList.remove("is-in");
         io.observe(el);
       });
@@ -608,26 +624,39 @@
     }
 
     let ticking = false;
-    function updateGalleryFX() {
+    function clamp(n, a, b) {
+      return Math.max(a, Math.min(b, n));
+    }
+
+    function updateTimelineFX() {
       ticking = false;
+      const first = items[0];
+      const last = items[items.length - 1];
+      const firstTop = first.getBoundingClientRect().top + window.scrollY;
+      const lastMid =
+        last.getBoundingClientRect().top + window.scrollY + last.offsetHeight * 0.35;
+      const start = firstTop - window.innerHeight * 0.55;
+      const end = lastMid - window.innerHeight * 0.35;
+      const range = Math.max(1, end - start);
+      const progress = clamp((window.scrollY - start) / range, 0, 1);
+      section.style.setProperty("--tl-progress", progress.toFixed(4));
+
       const vh = window.innerHeight || 1;
       media.forEach((img) => {
-        const box = img.parentElement;
-        if (!box) return;
-        const item = box.closest(".gallery__item");
-        if (item && item.classList.contains("is-placeholder")) return;
+        const box = img.closest(".timeline__img") || img.parentElement;
+        if (!box || box.classList.contains("is-placeholder")) return;
         const r = box.getBoundingClientRect();
         if (r.bottom < -40 || r.top > vh + 40) return;
         const mid = r.top + r.height / 2;
-        const offset = ((mid - vh / 2) / vh) * -14;
-        box.style.setProperty("--gal-parallax", offset.toFixed(2) + "px");
+        const offset = ((mid - vh / 2) / vh) * -18;
+        box.style.setProperty("--tl-parallax", offset.toFixed(2) + "px");
       });
     }
 
     function onScroll() {
       if (ticking) return;
       ticking = true;
-      requestAnimationFrame(updateGalleryFX);
+      requestAnimationFrame(updateTimelineFX);
     }
 
     if (root._galBound) {
@@ -637,7 +666,7 @@
     root._galBound = onScroll;
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll, { passive: true });
-    updateGalleryFX();
+    updateTimelineFX();
   }
 
   function openLightbox(index) {
