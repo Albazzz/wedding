@@ -38,15 +38,15 @@ window.WEDDING_CONFIG = {
   /* ---------- Ngày cưới (dùng cho countdown + hiển thị) ---------- */
   wedding: {
     /** ISO local: YYYY-MM-DDTHH:mm:ss */
-    datetime: "2026-07-24T10:00:00",
+    datetime: "2026-07-24T11:00:00",
     /** Chuỗi hiển thị đẹp (tuỳ chỉnh tự do) */
     dateDisplay: {
       vi: "Thứ Sáu, 24 Tháng 7, 2026",
       en: "Friday, July 24, 2026",
     },
     timeDisplay: {
-      vi: "10:00 sáng",
-      en: "10:00 AM",
+      vi: "11:00 sáng",
+      en: "11:00 AM",
     },
   },
 
