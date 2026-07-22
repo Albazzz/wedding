@@ -900,11 +900,17 @@ body.intro-lock {
   position: relative;
   /* Chỉ svh (ổn định) — dvh đổi khi ẩn/hiện thanh địa chỉ → nhảy scroll về đầu */
   min-height: 100svh;
+  height: auto;
   display: grid;
   place-items: center;
   text-align: center;
   color: #fff;
-  overflow: hidden;
+  /*
+    Không overflow:hidden — tên 3 dòng + countdown dễ bị cắt mất
+    (desktop lẫn mobile). Chỉ clip trục ngang.
+  */
+  overflow-x: clip;
+  overflow-y: visible;
   /* Vuốt dọc truyền ra document — không “nuốt” gesture */
   touch-action: pan-y;
   overflow-anchor: none;
@@ -942,6 +948,9 @@ body.intro-lock {
   position: absolute;
   inset: 0;
   z-index: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
   will-change: transform;
   transition: transform 0.45s var(--ease-expo);
   overflow: hidden;
@@ -950,6 +959,8 @@ body.intro-lock {
 .hero__bg {
   position: absolute;
   inset: 0;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
   background:
     linear-gradient(145deg, #c4a898 0%, #a88878 45%, #8b6b5a 100%);
@@ -1017,7 +1028,10 @@ body.intro-lock {
   position: absolute;
   inset: 0;
   z-index: 1;
+  width: 100%;
+  height: 100%;
   background: rgba(40, 28, 24, 0.12);
+  pointer-events: none;
 }
 
 .hero__content {
@@ -1031,12 +1045,14 @@ body.intro-lock {
   /* wider so couple names aren't clipped */
   max-width: min(100%, 980px);
   width: 100%;
-  will-change: transform;
-  transition: transform 0.5s var(--ease-expo);
+  /* không will-change/transform kéo dài — dễ đẩy countdown lệch */
+  transition: none;
+  overflow: visible;
 }
 
+/* Countdown: không soft-float (dễ bị “mất” khi cha overflow/clip) */
 .countdown.soft-float-ready {
-  animation: soft-float 8.5s var(--ease) infinite;
+  animation: none;
 }
 
 .hero__eyebrow {
@@ -1083,10 +1099,33 @@ body.intro-lock {
 
 /* Countdown — flip / roll */
 .countdown {
-  display: flex;
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1;
   justify-content: center;
+  flex-wrap: wrap;
   gap: clamp(0.75rem, 3vw, 1.5rem);
   margin: 2.25rem 0 2rem;
+  max-width: 100%;
+  position: relative;
+  z-index: 3;
+  overflow: visible;
+  transform: none !important;
+}
+
+/* fade-up xong vẫn giữ hiện (tránh kẹt opacity:0) */
+.countdown.fade-up {
+  animation: fadeUp 0.9s var(--ease) forwards;
+  animation-delay: 0.45s;
+  animation-fill-mode: both;
+}
+
+.countdown.fade-up.is-shown,
+.hero.is-section-in .countdown.fade-up,
+body.is-camera-in .countdown {
+  opacity: 1 !important;
+  transform: none !important;
+  visibility: visible !important;
 }
 
 .countdown__item {

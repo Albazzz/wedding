@@ -328,8 +328,14 @@
     const ended = $("#countdown-ended");
     if (!root) return;
 
-    /* soft float after entrance animation settles */
-    setTimeout(() => root.classList.add("soft-float-ready"), 1600);
+    /* đảm bảo không bị ẩn / clip */
+    root.hidden = false;
+    root.style.display = "";
+    root.style.visibility = "visible";
+    root.style.opacity = "";
+    root.classList.add("is-shown");
+    /* không soft-float — dễ làm countdown “biến mất” khi hero overflow */
+    root.classList.remove("soft-float-ready");
 
     const target = new Date(cfg.wedding?.datetime || Date.now()).getTime();
     const reduce = prefersReducedMotion();
@@ -375,6 +381,9 @@
         }
         return;
       }
+
+      /* còn thời gian → luôn hiện */
+      root.hidden = false;
 
       const days = Math.floor(diff / 86400000);
       diff %= 86400000;
