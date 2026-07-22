@@ -112,11 +112,12 @@
   transform: translate3d(0, 0, 0) scale(1);
 }
 
+/* Desktop: fade-in nhẹ khi scroll (không mờ quá để tưởng “đứng hình”) */
 @media (hover: hover) and (pointer: fine) {
   .section:not(.hero):not(.is-section-in) {
-    opacity: 0.55;
-    filter: blur(4px);
-    transform: translate3d(0, 28px, 0) scale(0.985);
+    opacity: 0.88;
+    filter: none;
+    transform: translate3d(0, 18px, 0);
   }
 }
 

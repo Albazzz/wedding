@@ -137,8 +137,8 @@ window.WEDDING_CONFIG = {
     enabled: true,
     title: { vi: "Sổ lời chúc", en: "Guestbook" },
     subtitle: {
-      vi: "Trang trí thiệp emoji, viết lời chúc — mọi khách xem được (Firestore, không cần Storage)",
-      en: "Decorate with stickers, write a wish — everyone can view (Firestore only, no Storage)",
+      vi: "Trang trí thiệp emoji, viết lời chúc — mọi khách đều xem được",
+      en: "Decorate with stickers, write a wish — everyone can view",
     },
     /**
      * true = chỉ localStorage (mỗi máy tự thấy).

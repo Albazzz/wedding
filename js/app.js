@@ -29,18 +29,19 @@
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       return "low";
     }
-    const cores = navigator.hardwareConcurrency || 4;
-    const mem = navigator.deviceMemory || 4;
+    const cores = navigator.hardwareConcurrency || 8;
+    /* deviceMemory often undefined on desktop — đừng default 4 (sẽ luôn low-power) */
+    const mem = navigator.deviceMemory;
     const saveData = !!(navigator.connection && navigator.connection.saveData);
-    const coarse = window.matchMedia("(pointer: coarse)").matches;
-    if (saveData || mem <= 2 || cores <= 2) return "low";
-    if (coarse || mem <= 4 || cores <= 4) return "balanced";
+    if (saveData || (mem != null && mem <= 2) || cores <= 2) return "low";
+    if ((mem != null && mem <= 4) || cores <= 4) return "balanced";
     return "full";
   }
 
   function applyPerfMode() {
     perfMode = detectPerfMode();
-    document.body.classList.toggle("is-low-power", perfMode !== "full");
+    /* Chỉ tắt FX nặng khi low — balanced vẫn chạy soft-float / ambient / glass */
+    document.body.classList.toggle("is-low-power", perfMode === "low");
     document.body.dataset.perf = perfMode;
   }
 
@@ -553,16 +554,28 @@
     const io = new IntersectionObserver(
       (entries) => {
         entries.forEach((e) => {
-          if (e.isIntersecting && e.intersectionRatio > 0.12) {
+          if (e.isIntersecting) {
             e.target.classList.add("is-section-in");
           }
         });
       },
-      { threshold: [0.12, 0.25, 0.4], rootMargin: "0px 0px -8% 0px" }
+      /* rootMargin nới để desktop kích hoạt sớm hơn */
+      { threshold: [0, 0.08, 0.15, 0.25], rootMargin: "0px 0px -4% 0px" }
     );
 
     sections.forEach((s) => {
       if (s.id !== "hero") io.observe(s);
+    });
+
+    /* fallback: section đã trong viewport lúc load (desktop) */
+    requestAnimationFrame(() => {
+      sections.forEach((s) => {
+        if (s.id === "hero") return;
+        const r = s.getBoundingClientRect();
+        if (r.top < window.innerHeight * 0.92 && r.bottom > 0) {
+          s.classList.add("is-section-in");
+        }
+      });
     });
   }
 
