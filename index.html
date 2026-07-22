@@ -220,6 +220,13 @@
           Đóng lại
         </button>
 
+        <div class="letter-zoom" id="letter-zoom" hidden>
+          <button type="button" class="letter-zoom__btn" id="letter-zoom-out" aria-label="Thu nhỏ">−</button>
+          <span class="letter-zoom__label" id="letter-zoom-label" aria-live="polite">100%</span>
+          <button type="button" class="letter-zoom__btn" id="letter-zoom-in" aria-label="Phóng to">+</button>
+          <button type="button" class="letter-zoom__btn letter-zoom__reset" id="letter-zoom-reset" aria-label="Đặt lại">1:1</button>
+        </div>
+
         <div class="letter-reveal__stage" id="letter-stage">
           <div class="envelope" id="letter-envelope">
             <div class="envelope__body" aria-hidden="true"></div>
@@ -240,11 +247,21 @@
 
         <!-- Full readable letter after card pulls out -->
         <article class="letter-full" id="letter-full" aria-live="polite">
-          <div class="letter-full__frame">
-            <img class="letter-full__img" id="letter-full-img" src="" alt="" hidden />
-            <p class="letter-full__who" id="letter-full-who"></p>
-            <p class="letter-full__rel" id="letter-full-rel"></p>
-            <p class="letter-full__msg" id="letter-full-msg"></p>
+          <div class="letter-full__viewport" id="letter-full-viewport">
+            <div class="letter-full__sizer" id="letter-full-sizer">
+              <div class="letter-full__frame" id="letter-full-frame">
+                <div class="letter-full__img-wrap" id="letter-full-img-wrap" hidden>
+                  <img class="letter-full__img" id="letter-full-img" src="" alt="" hidden />
+                  <canvas class="letter-full__fx" id="letter-full-fx" aria-hidden="true" hidden></canvas>
+                  <span class="letter-full__corner-frame is-tr" id="letter-full-corner" hidden>
+                    <img class="letter-full__corner-img" id="letter-full-corner-img" src="" alt="" />
+                  </span>
+                </div>
+                <p class="letter-full__who" id="letter-full-who"></p>
+                <p class="letter-full__rel" id="letter-full-rel"></p>
+                <p class="letter-full__msg" id="letter-full-msg"></p>
+              </div>
+            </div>
           </div>
         </article>
       </div>

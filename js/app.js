@@ -792,6 +792,30 @@
     return w.imageUrl || w.image || "";
   }
 
+  /** Config override per wish id (e.g. corner portrait for one guest) */
+  function specialWishCfg(w) {
+    const id = typeof w === "string" ? w : w?.id;
+    if (!id) return null;
+    return cfg.guestbook?.specialWishes?.[id] || null;
+  }
+
+  function specialCornerPhotoSrc(w) {
+    const sp = specialWishCfg(w);
+    return sp?.cornerPhoto ? String(sp.cornerPhoto) : "";
+  }
+
+  function cornerPhotoMarkup(w, className) {
+    const src = specialCornerPhotoSrc(w);
+    if (!src) return "";
+    const side =
+      specialWishCfg(w)?.corner === "top-left" ? "is-tl" : "is-tr";
+    return (
+      `<span class="${className || "wish-corner-frame"} ${side}" aria-hidden="true">` +
+      `<img class="wish-corner-frame__img" src="${escapeHtml(src)}" alt="" loading="lazy" />` +
+      `</span>`
+    );
+  }
+
   function wishRelationKey(w) {
     if (w.relationId && w.relationId !== "other") return "id:" + w.relationId;
     if (w.relation) return "rel:" + String(w.relation).trim().toLowerCase();
@@ -897,10 +921,15 @@
         String(src).startsWith("http://") ||
         String(src).startsWith("https://"));
     const wid = escapeHtml(w.id || "");
+    const corner = cornerPhotoMarkup(w, "wish-corner-frame");
+    const hasCorner = !!corner;
     if (imgOk) {
       return `
-        <article class="wish-card wish-card--image reveal" data-wish-id="${wid}" role="button" tabindex="0">
-          <img class="wish-card__img" src="${src}" alt="${escapeHtml(w.name || "Wish")}" loading="lazy" />
+        <article class="wish-card wish-card--image${hasCorner ? " wish-card--corner" : ""} reveal" data-wish-id="${wid}" role="button" tabindex="0">
+          <div class="wish-card__img-wrap">
+            <img class="wish-card__img" src="${src}" alt="${escapeHtml(w.name || "Wish")}" loading="lazy" />
+            ${corner}
+          </div>
           <div class="wish-card__meta">
             <h3 class="wish-card__name">${escapeHtml(w.name || "")}</h3>
             ${w.relation ? `<p class="wish-card__relation">${escapeHtml(w.relation)}</p>` : ""}
@@ -1017,9 +1046,12 @@
    * - Hi-res (≥700px): fit viewport, no soft stretch past ~1×
    * - Old soft cards: barely upscale (≤1.1×) so less blurry
    */
-  function setLetterFullImage(src) {
+  function setLetterFullImage(src, wish) {
     const el = $("#letter-full-img");
     const full = $("#letter-full");
+    const wrap = $("#letter-full-img-wrap");
+    const corner = $("#letter-full-corner");
+    const cornerImg = $("#letter-full-corner-img");
     if (!el) return;
 
     const clearSize = () => {
@@ -1027,17 +1059,39 @@
       el.style.height = "";
       el.style.maxWidth = "";
       el.style.maxHeight = "";
+      if (wrap) {
+        wrap.style.width = "";
+        wrap.style.maxWidth = "";
+      }
     };
+
+    const cornerSrc = specialCornerPhotoSrc(wish);
+    if (corner && cornerImg) {
+      if (cornerSrc) {
+        cornerImg.src = cornerSrc;
+        corner.hidden = false;
+        corner.classList.toggle("is-tl", specialWishCfg(wish)?.corner === "top-left");
+        corner.classList.toggle("is-tr", specialWishCfg(wish)?.corner !== "top-left");
+        full?.classList.add("has-corner-photo");
+      } else {
+        corner.hidden = true;
+        cornerImg.removeAttribute("src");
+        full?.classList.remove("has-corner-photo");
+      }
+    }
 
     if (!src) {
       el.removeAttribute("src");
       el.hidden = true;
+      if (wrap) wrap.hidden = true;
       clearSize();
-      full?.classList.remove("has-image", "is-hires", "is-lores");
+      full?.classList.remove("has-image", "is-hires", "is-lores", "has-corner-photo");
+      if (corner) corner.hidden = true;
       return;
     }
 
     el.hidden = false;
+    if (wrap) wrap.hidden = false;
     full?.classList.add("has-image");
 
     const applySize = () => {
@@ -1046,7 +1100,10 @@
       if (!nw || !nh) return;
 
       const maxW = Math.min(window.innerWidth * 0.9, nw >= 900 ? 480 : 400);
-      const maxH = Math.min(window.innerHeight * 0.86, 860);
+      const maxH = Math.min(
+        window.innerHeight * (cornerSrc ? 0.52 : 0.86),
+        cornerSrc ? 480 : 860
+      );
       /* Never upscale soft legacy cards much; hi-res can fill screen */
       const maxUpscale = nw >= 900 ? 1 : nw >= 640 ? 1.05 : 1.08;
       const scale = Math.min(maxW / nw, maxH / nh, maxUpscale);
@@ -1056,6 +1113,10 @@
       el.style.height = "auto";
       el.style.maxWidth = "none";
       el.style.maxHeight = maxH + "px";
+      if (wrap) {
+        wrap.style.width = w + "px";
+        wrap.style.maxWidth = "100%";
+      }
       full?.classList.toggle("is-hires", nw >= 640);
       full?.classList.toggle("is-lores", nw > 0 && nw < 640);
     };
@@ -1074,6 +1135,8 @@
     const relation = w.relation || "";
     const message = String(w.message || "").trim() || "💕";
     const src = wishImageSrc(w);
+    const sp = specialWishCfg(w);
+    const full = $("#letter-full");
 
     /* Mini card inside envelope (preview during pull-out) */
     const who = $("#letter-card-who");
@@ -1097,7 +1160,287 @@
       fRel.hidden = !relation;
     }
     if (fMsg) fMsg.textContent = message;
-    setLetterFullImage(src);
+    /* Panel chữ dưới ảnh chỉ khi config bật hoặc lời chúc dài (canvas cắt …) */
+    const forceText =
+      !!(sp && sp.forceReadableText) ||
+      (message.length > 320 && !!src);
+    full?.classList.toggle("is-force-readable", forceText);
+    setLetterFullImage(src, w);
+    startLetterCardFx(w);
+  }
+
+  /* ---------- Replay motion effects on opened letter card ---------- */
+  let letterFxRaf = 0;
+  let letterFxParts = [];
+  let letterFxRunning = false;
+
+  function stopLetterCardFx() {
+    letterFxRunning = false;
+    if (letterFxRaf) {
+      cancelAnimationFrame(letterFxRaf);
+      letterFxRaf = 0;
+    }
+    letterFxParts = [];
+    const c = $("#letter-full-fx");
+    if (c) {
+      c.hidden = true;
+      const cx = c.getContext("2d");
+      if (cx) cx.clearRect(0, 0, c.width, c.height);
+    }
+  }
+
+  function letterFxEmoji(id) {
+    const list = cfg.guestbook?.motionEffects || [];
+    const found = list.find((e) => e.id === id);
+    return found?.emoji || "✨";
+  }
+
+  function makeLetterFxParticle(type, emoji, W, H, i) {
+    const bubble = type === "bubbles";
+    return {
+      type,
+      emoji,
+      x: Math.random() * W,
+      y: bubble ? H + Math.random() * H * 0.35 : Math.random() * H,
+      vx: -0.4 + Math.random() * 0.8,
+      vy: type === "hearts" || bubble ? -0.55 - Math.random() * 1.1 : 0.5 + Math.random() * 1.2,
+      r: bubble ? 8 + Math.random() * 22 : 10 + Math.random() * 14,
+      rot: Math.random() * 360,
+      vr: -1 + Math.random() * 2,
+      alpha: bubble ? 0.55 + Math.random() * 0.4 : 0.45 + Math.random() * 0.5,
+      phase: Math.random() * Math.PI * 2,
+      wobble: 0.4 + Math.random() * 1.2,
+      life: Math.random(),
+      drawR: 0,
+    };
+  }
+
+  function rebuildLetterFxParticles(effectIds, W, H) {
+    const parts = [];
+    (effectIds || []).forEach((id) => {
+      const emoji = letterFxEmoji(id);
+      let count = 16;
+      if (id === "halo") count = 1;
+      else if (id === "fireworks") count = 8;
+      else if (id === "sparkle" || id === "dust") count = 22;
+      else if (id === "bubbles") count = 22;
+      for (let i = 0; i < count; i++) {
+        parts.push(makeLetterFxParticle(id, emoji, W, H, i));
+      }
+    });
+    return parts;
+  }
+
+  function stepLetterFx(parts, W, H) {
+    parts.forEach((p) => {
+      p.phase += p.type === "bubbles" ? 0.05 : 0.04;
+      if (p.type === "halo") {
+        p.r = 60 + Math.sin(p.phase) * 12;
+        p.x = W / 2;
+        p.y = H * 0.42;
+        return;
+      }
+      if (p.type === "bubbles") {
+        p.y += p.vy;
+        p.x += Math.sin(p.phase * p.wobble) * 0.9 + (p.vx || 0) * 0.15;
+        p.drawR = p.r * (0.92 + 0.08 * Math.sin(p.phase * 1.3));
+        if (p.y < -30) {
+          p.y = H + 10 + Math.random() * 40;
+          p.x = Math.random() * W;
+          p.r = 8 + Math.random() * 22;
+          p.vy = -0.55 - Math.random() * 1.1;
+          p.alpha = 0.55 + Math.random() * 0.4;
+        }
+        return;
+      }
+      if (p.type === "hearts") {
+        p.y += p.vy;
+        p.x += Math.sin(p.phase) * 0.6;
+        if (p.y < -20) {
+          p.y = H + 10;
+          p.x = Math.random() * W;
+        }
+      } else if (p.type === "fireworks") {
+        p.life += 0.012;
+        if (p.life > 1) {
+          p.life = 0;
+          p.x = 40 + Math.random() * (W - 80);
+          p.y = 60 + Math.random() * (H * 0.45);
+        }
+        p.r = 8 + p.life * 28;
+        p.alpha = 1 - p.life;
+      } else if (p.type === "sparkle" || p.type === "dust") {
+        p.x += p.vx;
+        p.y += p.vy * 0.3;
+        p.alpha = 0.3 + Math.abs(Math.sin(p.phase)) * 0.6;
+        if (p.x < 0 || p.x > W || p.y < 0 || p.y > H) {
+          p.x = Math.random() * W;
+          p.y = Math.random() * H;
+        }
+      } else if (p.type === "confetti") {
+        p.y += p.vy;
+        p.x += Math.sin(p.phase * 2) * 1.2;
+        p.rot += p.vr * 4;
+        if (p.y > H + 20) {
+          p.y = -10;
+          p.x = Math.random() * W;
+        }
+      } else {
+        p.y += p.vy;
+        p.x += p.vx + Math.sin(p.phase) * 0.5;
+        p.rot += p.vr;
+        if (p.y > H + 20) {
+          p.y = -15;
+          p.x = Math.random() * W;
+        }
+      }
+    });
+  }
+
+  function drawLetterFx(cx, parts) {
+    parts.forEach((p) => {
+      cx.save();
+      if (p.type === "halo") {
+        const hg = cx.createRadialGradient(p.x, p.y, 10, p.x, p.y, p.r);
+        hg.addColorStop(0, "rgba(255,230,180,0.35)");
+        hg.addColorStop(0.5, "rgba(255,200,150,0.12)");
+        hg.addColorStop(1, "rgba(255,200,150,0)");
+        cx.fillStyle = hg;
+        cx.beginPath();
+        cx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        cx.fill();
+        cx.restore();
+        return;
+      }
+      if (p.type === "fireworks") {
+        cx.globalAlpha = Math.max(0, p.alpha);
+        cx.strokeStyle = `hsla(${(p.phase * 40) % 360},70%,65%,${p.alpha})`;
+        cx.lineWidth = 1.5;
+        for (let k = 0; k < 8; k++) {
+          const a = (k / 8) * Math.PI * 2 + p.phase;
+          cx.beginPath();
+          cx.moveTo(p.x, p.y);
+          cx.lineTo(p.x + Math.cos(a) * p.r, p.y + Math.sin(a) * p.r);
+          cx.stroke();
+        }
+        cx.restore();
+        return;
+      }
+      if (p.type === "bubbles") {
+        const r = p.drawR || p.r;
+        const g = cx.createRadialGradient(
+          p.x - r * 0.28,
+          p.y - r * 0.32,
+          r * 0.05,
+          p.x,
+          p.y,
+          r
+        );
+        g.addColorStop(0, "rgba(255,255,255,0.55)");
+        g.addColorStop(0.35, "rgba(200,230,255,0.22)");
+        g.addColorStop(0.75, "rgba(160,200,255,0.12)");
+        g.addColorStop(1, "rgba(120,170,230,0.06)");
+        cx.globalAlpha = Math.min(1, p.alpha);
+        cx.fillStyle = g;
+        cx.beginPath();
+        cx.arc(p.x, p.y, r, 0, Math.PI * 2);
+        cx.fill();
+        cx.strokeStyle = "rgba(110,160,220,0.75)";
+        cx.lineWidth = Math.max(1.2, r * 0.08);
+        cx.stroke();
+        cx.fillStyle = "rgba(255,255,255,0.85)";
+        cx.beginPath();
+        cx.arc(p.x - r * 0.32, p.y - r * 0.35, Math.max(1.5, r * 0.14), 0, Math.PI * 2);
+        cx.fill();
+        cx.restore();
+        return;
+      }
+      if (p.type === "confetti") {
+        cx.translate(p.x, p.y);
+        cx.rotate((p.rot * Math.PI) / 180);
+        cx.globalAlpha = p.alpha;
+        cx.fillStyle = `hsl(${(p.x * 2 + p.y) % 360},70%,60%)`;
+        cx.fillRect(-3, -5, 6, 10);
+        cx.restore();
+        return;
+      }
+      cx.translate(p.x, p.y);
+      cx.rotate(((p.rot || 0) * Math.PI) / 180);
+      cx.globalAlpha = p.alpha;
+      cx.fillStyle = "#000000";
+      cx.font = `${p.r}px "Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif`;
+      cx.textAlign = "center";
+      cx.textBaseline = "middle";
+      cx.fillText(p.emoji, 0, 0);
+      cx.restore();
+    });
+  }
+
+  function wishEffectIds(w) {
+    const fromDoc = Array.isArray(w?.effects) ? w.effects.filter(Boolean) : [];
+    if (fromDoc.length) return fromDoc;
+    /* Thiệp cũ / special override trong config (vd. Chị Tuyền) */
+    const sp = specialWishCfg(w);
+    if (Array.isArray(sp?.effects) && sp.effects.length) {
+      return sp.effects.filter(Boolean);
+    }
+    return [];
+  }
+
+  function startLetterCardFx(w) {
+    stopLetterCardFx();
+    const reduce = prefersReducedMotion();
+    const ids = wishEffectIds(w);
+    const canvas = $("#letter-full-fx");
+    const img = $("#letter-full-img");
+    if (!canvas || !ids.length || reduce || !img) return;
+
+    const boot = () => {
+      const wrap = $("#letter-full-img-wrap");
+      const rect = wrap?.getBoundingClientRect();
+      const dispW = Math.max(1, Math.round(rect?.width || img.clientWidth || 264));
+      const dispH = Math.max(
+        1,
+        Math.round(rect?.height || img.clientHeight || dispW * (520 / 360))
+      );
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      /* Logical size = editor card (360×520) so particle motion matches studio */
+      const LW = 360;
+      const LH = 520;
+      canvas.width = Math.round(LW * dpr);
+      canvas.height = Math.round(LH * dpr);
+      canvas.style.width = "100%";
+      canvas.style.height = "100%";
+      canvas.hidden = false;
+      const cx = canvas.getContext("2d");
+      if (!cx) return;
+      letterFxParts = rebuildLetterFxParticles(ids, LW, LH);
+      letterFxRunning = true;
+
+      const tick = () => {
+        if (!letterFxRunning || !canvas.isConnected) {
+          letterFxRunning = false;
+          return;
+        }
+        stepLetterFx(letterFxParts, LW, LH);
+        cx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        cx.clearRect(0, 0, LW, LH);
+        drawLetterFx(cx, letterFxParts);
+        letterFxRaf = requestAnimationFrame(tick);
+      };
+      letterFxRaf = requestAnimationFrame(tick);
+    };
+
+    if (img.complete && img.naturalWidth) {
+      /* wait a frame so wrap has layout size */
+      requestAnimationFrame(() => requestAnimationFrame(boot));
+    } else {
+      img.addEventListener(
+        "load",
+        () => requestAnimationFrame(() => requestAnimationFrame(boot)),
+        { once: true }
+      );
+    }
   }
 
   function resetEnvelope() {
@@ -1222,6 +1565,7 @@
           if (!wishRevealOpen) return;
           /* Card fully out → enlarge letter, hide envelope */
           root.classList.add("is-reading");
+          resetLetterZoom();
         }, delayReading);
       }, delayOpen);
     }, delayReady);
@@ -1237,6 +1581,8 @@
     }
     resetEnvelope();
     root.classList.remove("is-open", "is-ready", "is-reading");
+    resetLetterZoom();
+    stopLetterCardFx();
     if (!getWallFsHost()) unlockPageScroll();
     $$(".wall-heart.is-tapped, .wish-card.is-tapped").forEach((el) => {
       el.classList.remove("is-tapped");
@@ -1255,6 +1601,230 @@
         restoreLetterRevealHome();
       }
     }, 450);
+  }
+
+  /* ---------- Letter zoom (in / out / pinch / wheel) ---------- */
+  const LETTER_ZOOM_MIN = 0.6;
+  const LETTER_ZOOM_MAX = 3;
+  const LETTER_ZOOM_STEP = 0.2;
+  let letterZoom = 1;
+  let letterZoomBound = false;
+
+  function letterZoomEls() {
+    return {
+      bar: $("#letter-zoom"),
+      label: $("#letter-zoom-label"),
+      btnIn: $("#letter-zoom-in"),
+      btnOut: $("#letter-zoom-out"),
+      btnReset: $("#letter-zoom-reset"),
+      full: $("#letter-full"),
+      frame: $("#letter-full-frame") || $("#letter-full")?.querySelector(".letter-full__frame"),
+      sizer: $("#letter-full-sizer"),
+      viewport: $("#letter-full-viewport"),
+    };
+  }
+
+  function applyLetterZoom(opts) {
+    const keepCenter = !opts || opts.keepCenter !== false;
+    const { frame, sizer, label, btnIn, btnOut, full, viewport } = letterZoomEls();
+    letterZoom =
+      Math.round(Math.min(LETTER_ZOOM_MAX, Math.max(LETTER_ZOOM_MIN, letterZoom)) * 100) / 100;
+
+    if (frame && sizer) {
+      /* Measure natural layout size (unscaled) */
+      const prev = frame.style.transform;
+      frame.style.transform = "none";
+      const w = Math.max(1, frame.offsetWidth);
+      const h = Math.max(1, frame.offsetHeight);
+      frame.style.transform = prev;
+
+      if (letterZoom === 1) {
+        frame.style.transform = "";
+        frame.style.transformOrigin = "";
+        sizer.style.width = "";
+        sizer.style.height = "";
+        sizer.style.minWidth = "";
+      } else {
+        frame.style.transformOrigin = "0 0";
+        frame.style.transform = `scale(${letterZoom})`;
+        /* Expand sizer so overflow scroll can reach scaled edges */
+        sizer.style.width = Math.ceil(w * letterZoom) + "px";
+        sizer.style.height = Math.ceil(h * letterZoom) + "px";
+        sizer.style.minWidth = Math.ceil(w * letterZoom) + "px";
+      }
+    } else if (frame) {
+      frame.style.transform =
+        letterZoom === 1 ? "" : `scale(${letterZoom})`;
+    }
+
+    if (label) label.textContent = Math.round(letterZoom * 100) + "%";
+    if (btnIn) btnIn.disabled = letterZoom >= LETTER_ZOOM_MAX - 0.001;
+    if (btnOut) btnOut.disabled = letterZoom <= LETTER_ZOOM_MIN + 0.001;
+    full?.classList.toggle("is-zoomed", letterZoom > 1.01);
+
+    if (viewport && keepCenter && letterZoom > 1) {
+      requestAnimationFrame(() => {
+        const midX = Math.max(0, (viewport.scrollWidth - viewport.clientWidth) / 2);
+        const midY = Math.max(0, (viewport.scrollHeight - viewport.clientHeight) / 2);
+        viewport.scrollLeft = midX;
+        viewport.scrollTop = midY;
+      });
+    }
+  }
+
+  function resetLetterZoom() {
+    letterZoom = 1;
+    const { frame, sizer, full, viewport } = letterZoomEls();
+    if (frame) {
+      frame.style.transform = "";
+      frame.style.transformOrigin = "";
+    }
+    if (sizer) {
+      sizer.style.width = "";
+      sizer.style.height = "";
+      sizer.style.minWidth = "";
+    }
+    full?.classList.remove("is-zoomed", "is-zooming");
+    if (viewport) {
+      viewport.scrollLeft = 0;
+      viewport.scrollTop = 0;
+      viewport.classList.remove("is-panning");
+    }
+    applyLetterZoom({ keepCenter: false });
+  }
+
+  function letterZoomBy(delta) {
+    letterZoom += delta;
+    applyLetterZoom();
+  }
+
+  function setupLetterZoom() {
+    if (letterZoomBound) return;
+    letterZoomBound = true;
+    const { bar, btnIn, btnOut, btnReset, viewport, full } = letterZoomEls();
+    if (bar) bar.hidden = false;
+
+    bar?.addEventListener("click", (e) => e.stopPropagation());
+    btnIn?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      letterZoomBy(LETTER_ZOOM_STEP);
+    });
+    btnOut?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      letterZoomBy(-LETTER_ZOOM_STEP);
+    });
+    btnReset?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      resetLetterZoom();
+    });
+
+    const root = $("#wish-reveal");
+    /* Ctrl/⌘ + wheel or trackpad pinch (browser sends wheel+ctrl) */
+    root?.addEventListener(
+      "wheel",
+      (e) => {
+        if (!wishRevealOpen || !root.classList.contains("is-reading")) return;
+        if (!(e.ctrlKey || e.metaKey)) return;
+        if (!e.target.closest("#letter-full, #letter-zoom")) return;
+        e.preventDefault();
+        const dir = e.deltaY > 0 ? -LETTER_ZOOM_STEP * 0.55 : LETTER_ZOOM_STEP * 0.55;
+        full?.classList.add("is-zooming");
+        letterZoomBy(dir);
+        window.clearTimeout(root._zoomEaseT);
+        root._zoomEaseT = window.setTimeout(() => full?.classList.remove("is-zooming"), 80);
+      },
+      { passive: false }
+    );
+
+    /* Pinch zoom (2 fingers) + double-tap toggle */
+    let pinchStartDist = 0;
+    let pinchStartZoom = 1;
+    let lastTapT = 0;
+    let didPinch = false;
+    const pinchDist = (t1, t2) => {
+      const dx = t1.clientX - t2.clientX;
+      const dy = t1.clientY - t2.clientY;
+      return Math.hypot(dx, dy);
+    };
+    viewport?.addEventListener(
+      "touchstart",
+      (e) => {
+        if (e.touches.length === 2) {
+          didPinch = true;
+          pinchStartDist = pinchDist(e.touches[0], e.touches[1]);
+          pinchStartZoom = letterZoom;
+          full?.classList.add("is-zooming");
+        }
+      },
+      { passive: true }
+    );
+    viewport?.addEventListener(
+      "touchmove",
+      (e) => {
+        if (e.touches.length !== 2 || !pinchStartDist) return;
+        e.preventDefault();
+        didPinch = true;
+        const d = pinchDist(e.touches[0], e.touches[1]);
+        letterZoom = pinchStartZoom * (d / pinchStartDist);
+        applyLetterZoom({ keepCenter: false });
+      },
+      { passive: false }
+    );
+    viewport?.addEventListener(
+      "touchend",
+      (e) => {
+        if (e.touches.length < 2) {
+          pinchStartDist = 0;
+          full?.classList.remove("is-zooming");
+        }
+        if (didPinch) {
+          if (e.touches.length === 0) didPinch = false;
+          return;
+        }
+        if (e.touches.length > 0 || e.changedTouches.length !== 1) return;
+        const now = Date.now();
+        if (now - lastTapT < 300) {
+          letterZoom = letterZoom > 1.2 ? 1 : 2;
+          applyLetterZoom();
+          lastTapT = 0;
+        } else {
+          lastTapT = now;
+        }
+      },
+      { passive: true }
+    );
+
+    /* Drag to pan when zoomed (mouse) */
+    let pan = null;
+    viewport?.addEventListener("mousedown", (e) => {
+      if (letterZoom <= 1.02) return;
+      if (e.button !== 0) return;
+      pan = {
+        x: e.clientX,
+        y: e.clientY,
+        sl: viewport.scrollLeft,
+        st: viewport.scrollTop,
+      };
+      viewport.classList.add("is-panning");
+      e.preventDefault();
+    });
+    window.addEventListener("mousemove", (e) => {
+      if (!pan || !viewport) return;
+      viewport.scrollLeft = pan.sl - (e.clientX - pan.x);
+      viewport.scrollTop = pan.st - (e.clientY - pan.y);
+    });
+    window.addEventListener("mouseup", () => {
+      pan = null;
+      viewport?.classList.remove("is-panning");
+    });
+
+    viewport?.addEventListener("dblclick", (e) => {
+      e.preventDefault();
+      letterZoom = letterZoom > 1.2 ? 1 : 2;
+      applyLetterZoom();
+    });
+
+    applyLetterZoom({ keepCenter: false });
   }
 
   function bindWishOpenClicks(root) {
@@ -1295,7 +1865,21 @@
         e.preventDefault();
         closeWishReveal();
       }
+      if (!wishRevealOpen) return;
+      const root = $("#wish-reveal");
+      if (!root?.classList.contains("is-reading")) return;
+      if (e.key === "+" || e.key === "=") {
+        e.preventDefault();
+        letterZoomBy(LETTER_ZOOM_STEP);
+      } else if (e.key === "-" || e.key === "_") {
+        e.preventDefault();
+        letterZoomBy(-LETTER_ZOOM_STEP);
+      } else if (e.key === "0" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        resetLetterZoom();
+      }
     });
+    setupLetterZoom();
   }
 
   function renderWishes() {

@@ -1589,22 +1589,33 @@
    * Render thiệp ở độ phân giải cao (không phóng to ảnh 360px).
    * scale=3 → 1080×1560 — nét khi mở full letter / retina.
    */
-  function exportDataURL(type, quality, pixelScale) {
+  /**
+   * @param {string} [type]
+   * @param {number} [quality]
+   * @param {number} [pixelScale]
+   * @param {{ skipParticles?: boolean }} [exportOpts]
+   *   skipParticles: true khi gửi thiệp — particle sẽ animate lại lúc mở thư (tránh dính ảnh tĩnh).
+   */
+  function exportDataURL(type, quality, pixelScale, exportOpts) {
     if (!canvas || !ctx) return "";
     const prev = state.selected;
     const scale = Math.max(1, pixelScale || 3);
+    const skipParticles = !!(exportOpts && exportOpts.skipParticles);
     state.selected = -1;
     freezeMotion = true;
     if (animId) {
       cancelAnimationFrame(animId);
       animId = 0;
     }
+    const savedParticles = particles;
+    if (skipParticles) particles = [];
 
     const out = document.createElement("canvas");
     out.width = Math.round(W * scale);
     out.height = Math.round(H * scale);
     const outCtx = out.getContext("2d");
     if (!outCtx) {
+      particles = savedParticles;
       freezeMotion = false;
       state.selected = prev;
       return "";
@@ -1623,6 +1634,7 @@
 
     canvas = viewCanvas;
     ctx = viewCtx;
+    particles = savedParticles;
     freezeMotion = false;
     state.selected = prev;
     ensureAnim();
@@ -1654,8 +1666,9 @@
       return;
     }
 
-    /* Ảnh thiệp 3× (1080×1560) jpeg cao — nét khi mở full; Firestore data URL */
-    const image = exportDataURL("image/jpeg", 0.92, 3);
+    /* Ảnh không vẽ particle — effects lưu riêng, animate khi mở thư */
+    const effectIds = activeEffectIds();
+    const image = exportDataURL("image/jpeg", 0.92, 3, { skipParticles: true });
     const id = "wish_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8);
     const relation = relationLabel();
     const useCloud = !!(
@@ -1674,6 +1687,7 @@
       at: Date.now(),
       templateId: state.templateId,
       frameId: state.frameId,
+      effects: effectIds,
     };
 
     if (useCloud) {

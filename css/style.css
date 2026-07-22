@@ -2329,6 +2329,130 @@ body.is-low-power .wishes-wall__stage {
   background: rgba(255, 255, 255, 0.12);
 }
 
+/* Zoom controls for full letter */
+.letter-zoom {
+  position: absolute;
+  top: max(1rem, calc(0.75rem + var(--sat)));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 7;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(40, 20, 28, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.3s ease, visibility 0.3s;
+}
+
+.letter-reveal.is-reading .letter-zoom {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.letter-zoom[hidden] {
+  display: none !important;
+}
+
+.letter-zoom__btn {
+  width: 2rem;
+  height: 2rem;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fffaf3;
+  font-size: 1.15rem;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.letter-zoom__btn:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.letter-zoom__btn:active {
+  transform: scale(0.94);
+}
+
+.letter-zoom__btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+  transform: none;
+}
+
+.letter-zoom__reset {
+  width: auto;
+  min-width: 2.4rem;
+  padding: 0 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+}
+
+.letter-zoom__label {
+  min-width: 3.1rem;
+  text-align: center;
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: rgba(255, 250, 243, 0.92);
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+}
+
+.letter-full__viewport {
+  width: 100%;
+  max-height: min(88svh, 860px);
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: manipulation;
+  border-radius: 12px;
+  cursor: default;
+}
+
+.letter-full.is-zoomed .letter-full__viewport {
+  cursor: grab;
+}
+
+.letter-full__viewport.is-panning {
+  cursor: grabbing;
+  user-select: none;
+}
+
+/* Sizer expands scroll area when frame is CSS-scaled */
+.letter-full__sizer {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  width: 100%;
+  min-height: 100%;
+  margin: 0 auto;
+  box-sizing: content-box;
+}
+
+.letter-full__sizer .letter-full__frame {
+  transform-origin: 0 0;
+  transition: transform 0.18s ease;
+  will-change: transform;
+  flex-shrink: 0;
+}
+
+.letter-full.is-zooming .letter-full__sizer .letter-full__frame {
+  transition: none;
+}
+
 .letter-reveal__stage {
   position: relative;
   z-index: 4;
@@ -2559,13 +2683,13 @@ body.is-low-power .wishes-wall__stage {
   z-index: 5;
   left: 50%;
   top: 50%;
-  width: min(94vw, 480px);
-  max-height: min(90svh, 860px);
+  width: min(96vw, 560px);
+  max-height: min(88svh, 860px);
   margin: 0;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  /* translate only — scale() causes GPU blur on photos */
+  /* translate only on shell — zoom scale lives on frame */
   transform: translate3d(-50%, calc(-50% + 14px), 0);
   filter: none !important;
   transition:
@@ -2589,7 +2713,7 @@ body.is-low-power .wishes-wall__stage {
   border-radius: 12px;
   padding: 0;
   text-align: center;
-  max-height: min(90svh, 820px);
+  max-height: none;
   overflow: visible;
   position: relative;
   box-shadow: none;
@@ -2652,6 +2776,20 @@ body.is-low-power .wishes-wall__stage {
   animation: letter-sheen 1s ease 0.2s forwards;
 }
 
+/* Card image wrap — holds optional corner portrait for special wishes */
+.letter-full__img-wrap {
+  position: relative;
+  display: block;
+  margin: 0 auto;
+  width: max-content;
+  max-width: 100%;
+  flex-shrink: 0;
+}
+
+.letter-full__img-wrap[hidden] {
+  display: none !important;
+}
+
 /*
   Card image — JS sets exact width from natural size (no soft stretch).
   Tiny contrast helps soft legacy JPEGs without looking processed.
@@ -2676,6 +2814,91 @@ body.is-low-power .wishes-wall__stage {
   transform: translateZ(0);
   /* micro clarity — avoid blur filters */
   filter: contrast(1.04) saturate(1.02);
+}
+
+/* Khung ảnh góc (chỉ thiệp special trong config) */
+.letter-full__corner-frame {
+  position: absolute;
+  z-index: 4;
+  width: clamp(4.4rem, 22%, 5.6rem);
+  /* Dọc hơn một chút so với vuông — chỉ khung tuyen.jpg */
+  aspect-ratio: 3 / 4;
+  padding: 0.22rem;
+  border-radius: 10px;
+  background:
+    linear-gradient(145deg, #fffaf3 0%, #f3e4dc 55%, #e8d0c4 100%);
+  box-shadow:
+    0 0 0 1px rgba(196, 165, 116, 0.55),
+    0 0 0 3px rgba(255, 250, 243, 0.9),
+    0 8px 20px rgba(40, 20, 24, 0.4);
+  pointer-events: none;
+}
+
+.letter-full__corner-frame.is-tr {
+  top: 0.55rem;
+  right: 0.55rem;
+}
+
+.letter-full__corner-frame.is-tl {
+  top: 0.55rem;
+  left: 0.55rem;
+}
+
+.letter-full__corner-frame[hidden] {
+  display: none !important;
+}
+
+.letter-full__corner-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  border-radius: 6px;
+}
+
+/* Lớp particle animate khi mở thư (đè lên ảnh thiệp) */
+.letter-full__fx {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+  border-radius: 6px;
+}
+
+.letter-full__fx[hidden] {
+  display: none !important;
+}
+
+/* Có ảnh thiệp: ẩn chữ trùng (đã vẽ trên canvas). Chỉ hiện lại khi force-readable. */
+.letter-full.has-image .letter-full__msg,
+.letter-full.has-image .letter-full__who,
+.letter-full.has-image .letter-full__rel {
+  display: none !important;
+}
+
+.letter-full.has-image.is-force-readable .letter-full__msg {
+  display: block !important;
+  background: rgba(255, 250, 243, 0.97);
+  color: #3a2a2e;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 1.6;
+  max-height: min(34svh, 280px);
+  font-size: clamp(1rem, 3.6vw, 1.25rem);
+  text-align: left;
+  max-width: min(92vw, 420px);
+  width: 100%;
+  margin: 0.25rem auto 0;
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.35),
+    0 12px 32px rgba(0, 0, 0, 0.28);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .letter-full.is-hires .letter-full__img {
@@ -2712,50 +2935,21 @@ body.is-low-power .wishes-wall__stage {
   flex-shrink: 0;
 }
 
-/* Tên / quan hệ ngay dưới thiệp — không đẩy xuống sau đoạn lời chúc dài */
-.letter-full.has-image .letter-full__who,
-.letter-full.has-image .letter-full__rel {
-  display: block;
-  max-width: min(92vw, 420px);
-  width: 100%;
-  text-align: center;
-  margin-left: auto;
-  margin-right: auto;
+.letter-full.has-image .letter-full__img-wrap {
   flex-shrink: 0;
 }
 
-.letter-full.has-image .letter-full__who {
-  margin-top: 0.1rem;
-  font-size: clamp(1rem, 3.2vw, 1.2rem);
-  color: rgba(255, 236, 220, 0.95);
-  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.45);
+.letter-full.has-image .letter-full__img-wrap .letter-full__img {
+  margin: 0;
+  box-shadow: none;
 }
 
-.letter-full.has-image .letter-full__rel {
-  margin-top: 0.15rem;
-  margin-bottom: 0.15rem;
-  color: rgba(255, 210, 200, 0.88);
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.4);
-}
-
-.letter-full.has-image .letter-full__msg {
-  display: block;
-  font-size: clamp(1rem, 3.6vw, 1.25rem);
-  line-height: 1.55;
-  text-align: left;
-  max-width: min(92vw, 420px);
-  width: 100%;
-  margin: 0.25rem auto 0;
-  padding: 0.85rem 1rem;
-  border-radius: 10px;
-  background: rgba(255, 250, 243, 0.94);
+.letter-full.has-image .letter-full__img-wrap {
+  border-radius: 6px;
   box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.35),
-    0 12px 32px rgba(0, 0, 0, 0.28);
-  max-height: min(28svh, 240px);
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  order: 10;
+    0 0 0 1px rgba(255, 255, 255, 0.28),
+    0 24px 56px rgba(0, 0, 0, 0.48);
+  overflow: visible;
 }
 
 
@@ -4607,11 +4801,56 @@ body.is-low-power .wall-orbit {
   box-shadow: var(--shadow-lg);
 }
 
+.wish-card__img-wrap {
+  position: relative;
+  width: 100%;
+  overflow: visible;
+}
+
 .wish-card__img {
   width: 100%;
   aspect-ratio: 360 / 520;
   object-fit: cover;
   background: var(--color-bg-alt);
+  display: block;
+}
+
+/* Gallery: khung ảnh góc phải (special wish) */
+.wish-corner-frame {
+  position: absolute;
+  z-index: 2;
+  width: 22%;
+  min-width: 3.2rem;
+  max-width: 4.6rem;
+  /* Dọc hơn một chút — khớp khung mở thư */
+  aspect-ratio: 3 / 4;
+  padding: 0.18rem;
+  border-radius: 8px;
+  background: linear-gradient(145deg, #fffaf3, #edd9cf);
+  box-shadow:
+    0 0 0 1px rgba(196, 165, 116, 0.5),
+    0 0 0 2px rgba(255, 250, 243, 0.95),
+    0 4px 12px rgba(40, 20, 24, 0.28);
+  pointer-events: none;
+}
+
+.wish-corner-frame.is-tr {
+  top: 0.45rem;
+  right: 0.45rem;
+}
+
+.wish-corner-frame.is-tl {
+  top: 0.45rem;
+  left: 0.45rem;
+}
+
+.wish-corner-frame__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  border-radius: 5px;
 }
 
 .wish-card__meta {

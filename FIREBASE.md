@@ -29,7 +29,9 @@ guestbook: {
 },
 ```
 
-## 3. Firestore Rules
+## 3. Firestore Rules (bắt buộc — lỗi "Missing or insufficient permissions" = rules chưa đúng)
+
+Vào **Firebase Console** → project **wedding-fa939** → **Firestore Database** → tab **Rules** → dán → **Publish**:
 
 ```
 rules_version = '2';
@@ -37,16 +39,29 @@ service cloud.firestore {
   match /databases/{database}/documents {
     match /wishes/{wishId} {
       allow read: if true;
-      allow create: if request.resource.data.name is string
+      // Tạo thiệp mới (khách ẩn danh). message tối đa 1800 (khớp app).
+      allow create: if request.resource.data.keys().hasAll(['name', 'message', 'at'])
+        && request.resource.data.name is string
         && request.resource.data.name.size() > 0
-        && request.resource.data.name.size() < 80
+        && request.resource.data.name.size() <= 80
         && request.resource.data.message is string
-        && request.resource.data.message.size() < 600;
+        && request.resource.data.message.size() > 0
+        && request.resource.data.message.size() <= 1800
+        && request.resource.data.at is number;
+      // Không cho sửa / xóa từ client
       allow update, delete: if false;
     }
   }
 }
 ```
+
+### Lỗi thường gặp
+
+| Console / lỗi | Cách xử lý |
+|---|---|
+| `Missing or insufficient permissions` | Rules chưa Publish, hoặc `message.size()` rule cũ `< 600` trong khi app cho 1800 |
+| Rules ở chế độ **Production** khóa chặt | Thay bằng block rules ở trên rồi Publish |
+| Chỉ đọc được, không gửi được | Thiếu `allow create` (hoặc create quá chặt) |
 
 ## 4. Kiểm tra
 

@@ -98,6 +98,10 @@
       }
     }
 
+    const effects = Array.isArray(meta.effects)
+      ? meta.effects.map((e) => String(e)).filter(Boolean).slice(0, 20)
+      : [];
+
     const doc = {
       id,
       name: String(meta.name || "").slice(0, 80),
@@ -108,6 +112,7 @@
       at: meta.at || Date.now(),
       templateId: meta.templateId || "",
       frameId: meta.frameId || "",
+      effects,
     };
 
     await db.collection(collectionName()).doc(id).set(doc);
@@ -169,6 +174,7 @@
       at: x.at || 0,
       templateId: x.templateId || "",
       frameId: x.frameId || "",
+      effects: Array.isArray(x.effects) ? x.effects : [],
     };
   }
 

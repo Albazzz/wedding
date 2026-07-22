@@ -145,6 +145,23 @@ window.WEDDING_CONFIG = {
      * false + firebase.enabled = lưu cloud, ai mở cũng thấy.
      */
     localOnly: false, // Firebase đã bật
+    /**
+     * Thiệp đặc biệt (theo id Firestore) — chỉ áp dụng đúng 1 thiệp.
+     * cornerPhoto: ảnh khung góc phải trên thiệp khi mở / xem gallery.
+     */
+    specialWishes: {
+      "wish_1784690030203_u7c6fu": {
+        cornerPhoto: "assets/images/tuyen.jpg",
+        corner: "top-right",
+        /** false = không lặp lời chúc dưới ảnh (chữ đã nằm trên thiệp) */
+        forceReadableText: false,
+        /**
+         * Thiệp gửi trước khi lưu field effects — gán tay để mở thư vẫn animate.
+         * Khớp nền bong bóng trên ảnh (không cần tạo lại doc Firebase).
+         */
+        effects: ["bubbles"],
+      },
+    },
     emptyText: {
       vi: "Chưa có thiệp nào — hãy trang trí và gửi lời chúc đầu tiên!",
       en: "No cards yet — decorate and send the first wish!",
