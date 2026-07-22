@@ -3614,42 +3614,54 @@ body.wall-fs-lock {
   }
 }
 
-/* Phone landscape FS sau khi user bấm + xoay */
-.wishes-wall__stage.wall-letter.is-fs-phone-landscape {
+/* Phone landscape / wall viewer: căn giữa chữ chắc (full-width + flex) */
+.wishes-wall__stage.wall-letter.is-fs-phone-landscape,
+.wishes-wall__stage.wall-letter.is-fs.is-wall-viewer {
   z-index: 600;
-  display: block;
 }
 
-/* Giữ translate(-50%,-50%) + scale — scale một mình sẽ lệch tâm */
 .wishes-wall__stage.wall-letter.is-fs-phone-landscape .wall-letter__center,
 .wishes-wall__stage.wall-letter.is-fs.is-wall-viewer .wall-letter__center {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  right: auto;
-  bottom: auto;
-  transform: translate(-50%, -50%) scale(0.92);
-  transform-origin: center center;
-  max-width: min(70vw, 360px);
-  width: max-content;
-  text-align: center;
-  margin: 0;
-  padding: 0.35rem 0.5rem;
-  box-sizing: border-box;
+  position: absolute !important;
+  left: 0 !important;
+  right: 0 !important;
+  top: 50% !important;
+  bottom: auto !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 0.35rem max(1rem, env(safe-area-inset-left), env(safe-area-inset-right)) !important;
+  box-sizing: border-box !important;
+  transform: translateY(-50%) !important;
+  transform-origin: center center !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  pointer-events: none;
+  z-index: 3;
 }
 
 .wishes-wall__stage.wall-letter.is-fs-phone-landscape .wall-letter__title,
 .wishes-wall__stage.wall-letter.is-fs.is-wall-viewer .wall-letter__title {
-  font-size: clamp(1.15rem, 5.2vh, 1.85rem);
-  margin: 0 auto;
-  text-align: center;
+  width: 100% !important;
+  max-width: min(90vw, 28rem);
+  margin: 0 auto !important;
+  padding: 0 !important;
+  font-size: clamp(1.2rem, 5.5vh, 1.9rem) !important;
+  line-height: 1.25 !important;
+  text-align: center !important;
 }
 
 .wishes-wall__stage.wall-letter.is-fs-phone-landscape .wall-letter__hint,
 .wishes-wall__stage.wall-letter.is-fs.is-wall-viewer .wall-letter__hint {
-  margin-left: auto;
-  margin-right: auto;
-  text-align: center;
+  width: 100% !important;
+  max-width: min(90vw, 22rem);
+  margin: 0.4rem auto 0 !important;
+  padding: 0 !important;
+  text-align: center !important;
+  letter-spacing: 0.06em;
 }
 
 @media (max-width: 480px) {
