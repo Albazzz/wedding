@@ -1527,17 +1527,20 @@
     return window.matchMedia("(orientation: landscape)").matches;
   }
 
+  /** Phone: chỉ fullscreen khi user bấm nút (không ép xoay lúc xem thường) */
+  let phoneWallFsWanted = false;
+
   function syncWallFsButton() {
     const btn = $("#wall-letter-fs");
     const label = $("#wall-letter-fs-label");
     if (!btn) return;
-    const phone = isPhoneNoFsApi();
-    btn.hidden = phone;
-    btn.setAttribute("aria-hidden", phone ? "true" : "false");
-    btn.classList.toggle("is-phone-hidden", phone);
-    if (phone) return;
+    /* Mobile cũng hiện nút — xem thường không bắt xoay */
+    btn.hidden = false;
+    btn.setAttribute("aria-hidden", "false");
+    btn.classList.remove("is-phone-hidden");
 
-    const on = isWallFullscreen();
+    const pending = phoneWallFsWanted && isPhoneNoFsApi() && !isLandscapeOrientation();
+    const on = isWallFullscreen() || pending;
     btn.setAttribute("aria-pressed", on ? "true" : "false");
     btn.classList.toggle("is-active", on);
     const text = on
@@ -1549,27 +1552,35 @@
 
   function exitWallFullscreen() {
     const stage = $("#wishes-wall-stage");
+    phoneWallFsWanted = false;
     if (document.fullscreenElement || document.webkitFullscreenElement) {
       const exit = document.exitFullscreen || document.webkitExitFullscreen;
       if (exit) exit.call(document).catch(() => {});
     }
-    stage?.classList.remove("is-fs", "is-fs-phone-landscape");
+    stage?.classList.remove(
+      "is-fs",
+      "is-fs-phone-landscape",
+      "is-phone-portrait",
+      "is-phone-fs-pending"
+    );
     document.body.classList.remove("wall-fs-lock");
+    setWallRotateHintVisible(false);
     restoreLetterRevealHome();
     syncWallFsButton();
-    /* reflow flight bounds after size change */
     if (stage && wallFlyRunning) {
       window.setTimeout(() => startWallHeartFlight(stage), 80);
     }
   }
 
-  /** CSS-only fullscreen (no Fullscreen API) — used on phones in landscape */
+  /** CSS-only fullscreen (no Fullscreen API) — phone landscape sau khi user bấm */
   function enterWallCssFullscreen(fromPhoneLandscape) {
     const stage = $("#wishes-wall-stage");
     if (!stage) return;
     stage.classList.add("is-fs");
+    stage.classList.remove("is-phone-fs-pending", "is-phone-portrait");
     if (fromPhoneLandscape) stage.classList.add("is-fs-phone-landscape");
     document.body.classList.add("wall-fs-lock");
+    setWallRotateHintVisible(false);
     mountLetterRevealInWallFs();
     syncWallFsButton();
     window.setTimeout(() => startWallHeartFlight(stage), 100);
@@ -1578,9 +1589,9 @@
   function enterWallFullscreen() {
     const stage = $("#wishes-wall-stage");
     if (!stage) return;
-    /* Phones: never call Fullscreen API — landscape handles it */
     if (isPhoneNoFsApi()) {
-      enterWallCssFullscreen(true);
+      phoneWallFsWanted = true;
+      syncPhoneLandscapeFullscreen();
       return;
     }
     const req = stage.requestFullscreen || stage.webkitRequestFullscreen;
@@ -1592,7 +1603,6 @@
           window.setTimeout(() => startWallHeartFlight(stage), 120);
         })
         .catch(() => {
-          /* blocked — CSS fallback */
           enterWallCssFullscreen(false);
         });
     } else {
@@ -1608,9 +1618,11 @@
       hint = document.createElement("div");
       hint.className = "wall-letter__rotate-hint";
       hint.id = "wall-letter-rotate-hint";
+      hint.hidden = true;
       hint.innerHTML =
         '<span class="wall-letter__rotate-icon" aria-hidden="true">↻</span>' +
-        '<p class="wall-letter__rotate-text" id="wall-letter-rotate-text"></p>';
+        '<p class="wall-letter__rotate-text" id="wall-letter-rotate-text"></p>' +
+        '<button type="button" class="wall-letter__rotate-cancel" id="wall-letter-rotate-cancel">Hủy</button>';
       stage.appendChild(hint);
     }
     const textEl = $("#wall-letter-rotate-text", hint) || $("#wall-letter-rotate-text");
@@ -1619,6 +1631,15 @@
         t(cfg.guestbook.wallRotateHint) ||
         "Xoay ngang điện thoại để xem toàn màn hình";
       textEl.textContent = raw.replace(/\n/g, " · ");
+    }
+    const cancel = $("#wall-letter-rotate-cancel", hint) || $("#wall-letter-rotate-cancel");
+    if (cancel && !cancel._bound) {
+      cancel._bound = true;
+      cancel.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        exitWallFullscreen();
+      });
     }
     return hint;
   }
@@ -1629,20 +1650,36 @@
     hint.hidden = !show;
     hint.setAttribute("aria-hidden", show ? "false" : "true");
     const stage = $("#wishes-wall-stage");
-    stage?.classList.toggle("is-phone-portrait", !!show);
+    stage?.classList.toggle("is-phone-fs-pending", !!show);
+    /* không dùng is-phone-portrait ép mờ khi xem thường */
+    if (!show) stage?.classList.remove("is-phone-portrait");
   }
 
   /**
-   * Phone: portrait → gợi ý xoay ngang (màn thấp);
-   *        landscape → CSS fullscreen ngang.
-   * Desktop/tablet: nút + Fullscreen API.
+   * Chỉ khi phoneWallFsWanted (user bấm nút):
+   *  - portrait → hiện “xoay ngang”
+   *  - landscape → full màn hình CSS
+   * Không bấm → hiển thị bình thường (không ép xoay).
    */
   function syncPhoneLandscapeFullscreen() {
     const stage = $("#wishes-wall-stage");
     if (!stage) return;
 
     if (!isPhoneNoFsApi()) {
-      stage.classList.remove("is-fs-phone-landscape", "is-phone-portrait");
+      stage.classList.remove("is-fs-phone-landscape", "is-phone-portrait", "is-phone-fs-pending");
+      setWallRotateHintVisible(false);
+      syncWallFsButton();
+      return;
+    }
+
+    if (!phoneWallFsWanted) {
+      stage.classList.remove(
+        "is-fs",
+        "is-fs-phone-landscape",
+        "is-phone-portrait",
+        "is-phone-fs-pending"
+      );
+      if (!document.fullscreenElement) document.body.classList.remove("wall-fs-lock");
       setWallRotateHintVisible(false);
       syncWallFsButton();
       return;
@@ -1666,7 +1703,7 @@
         }
       }
     } else {
-      /* dọc: thoát FS, hiện overlay “xoay ngang” */
+      /* user muốn FS nhưng đang dọc → gợi ý xoay (tim vẫn xem được phía dưới) */
       if (isPhoneFs || stage.classList.contains("is-fs")) {
         stage.classList.remove("is-fs", "is-fs-phone-landscape");
         document.body.classList.remove("wall-fs-lock");
@@ -1689,9 +1726,13 @@
     btn.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
-      /* Phones use rotate-to-landscape instead of this button */
       if (isPhoneNoFsApi()) {
-        syncPhoneLandscapeFullscreen();
+        if (phoneWallFsWanted) {
+          exitWallFullscreen();
+        } else {
+          phoneWallFsWanted = true;
+          syncPhoneLandscapeFullscreen();
+        }
         return;
       }
       if (isWallFullscreen()) exitWallFullscreen();
@@ -1700,8 +1741,7 @@
 
     const onFsChange = () => {
       if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-        /* Don't strip phone-landscape CSS FS when native FS ends */
-        if (!stage.classList.contains("is-fs-phone-landscape")) {
+        if (!stage.classList.contains("is-fs-phone-landscape") && !phoneWallFsWanted) {
           stage.classList.remove("is-fs");
           document.body.classList.remove("wall-fs-lock");
           restoreLetterRevealHome();
@@ -1720,9 +1760,8 @@
     document.addEventListener("keydown", (e) => {
       if (
         e.key === "Escape" &&
-        stage.classList.contains("is-fs") &&
-        !document.fullscreenElement &&
-        !stage.classList.contains("is-fs-phone-landscape")
+        (stage.classList.contains("is-fs") || phoneWallFsWanted) &&
+        !document.fullscreenElement
       ) {
         exitWallFullscreen();
       }
@@ -1742,8 +1781,10 @@
       }
     }
 
+    phoneWallFsWanted = false;
+    setWallRotateHintVisible(false);
     syncWallFsButton();
-    syncPhoneLandscapeFullscreen();
+    /* không auto-FS khi load — chỉ khi user bấm */
   }
 
   function makeFlyBody(el, stageW, stageH, i, total) {

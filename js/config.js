@@ -155,17 +155,16 @@ window.WEDDING_CONFIG = {
       vi: "Chạm trái tim mang tên khách — mở lá thư lời chúc",
       en: "Tap a heart with a guest's name to open their letter",
     },
-    /** Gợi ý trên điện thoại (ẩn nút toàn màn hình; xoay ngang) */
+    /** Subtitle phone — xem thường, không ép xoay */
     wallSubtitlePhone: {
-      vi: "Chạm ♥ để đọc thư · Xoay ngang màn hình để xem toàn màn hình",
-      en: "Tap ♥ to read · Rotate landscape for fullscreen",
+      vi: "Chạm ♥ để đọc thư · Bấm ⛶ rồi xoay ngang nếu muốn toàn màn hình",
+      en: "Tap ♥ to read · Tap ⛶ then rotate for fullscreen",
     },
-    /** Overlay khi phone dọc — màn thấp, yêu cầu xoay ngang */
+    /** Chỉ hiện sau khi bấm Toàn màn hình lúc đang dọc */
     wallRotateHint: {
-      vi: "Xoay ngang điện thoại\nđể xem bầu trời lời chúc toàn màn hình",
-      en: "Rotate your phone landscape\nfor fullscreen sky of wishes",
+      vi: "Xoay ngang điện thoại để xem toàn màn hình",
+      en: "Rotate landscape for fullscreen",
     },
-    wallRotateHintIcon: "📱",
     /** Chữ glow giữa orbit */
     wallCenterTitle: { vi: "Trăm năm hạnh phúc", en: "A hundred years of happiness" },
     wallCenterHint: { vi: "Chạm ♥ để đọc thư", en: "Tap ♥ to read the letter" },
