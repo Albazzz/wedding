@@ -160,10 +160,10 @@ window.WEDDING_CONFIG = {
       vi: "Chạm ♥ để đọc thư · Bấm ⛶ rồi xoay ngang nếu muốn toàn màn hình",
       en: "Tap ♥ to read · Tap ⛶ then rotate for fullscreen",
     },
-    /** Chỉ hiện sau khi bấm Toàn màn hình lúc đang dọc */
+    /** Overlay full màn sau khi bấm ⛶ nếu đang dọc */
     wallRotateHint: {
-      vi: "Xoay ngang điện thoại để xem toàn màn hình",
-      en: "Rotate landscape for fullscreen",
+      vi: "Đã phóng toàn màn hình — xoay ngang điện thoại để xem bầu trời lời chúc",
+      en: "Fullscreen ready — rotate landscape to view the sky of wishes",
     },
     /** Chữ glow giữa orbit */
     wallCenterTitle: { vi: "Trăm năm hạnh phúc", en: "A hundred years of happiness" },

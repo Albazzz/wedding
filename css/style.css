@@ -3560,15 +3560,30 @@ body.wall-fs-lock {
   }
 }
 
-/* Chỉ mờ khi đang chờ xoay (đã bấm FS, chưa xoay) — không ép lúc xem thường */
-.wishes-wall__stage.wall-letter.is-phone-fs-pending .wall-letter__orbits,
-.wishes-wall__stage.wall-letter.is-phone-fs-pending .wall-letter__fly {
-  opacity: 0.3;
-  filter: blur(1px);
+/*
+  is-fs + pending: đã phóng full màn (dọc), che content bằng hint xoay.
+  is-fs-phone-landscape: đã ngang, hiện wall.
+*/
+.wishes-wall__stage.wall-letter.is-fs.is-phone-fs-pending {
+  /* full màn dọc — nền tối, chờ xoay */
+  background:
+    radial-gradient(ellipse at 50% 42%, rgba(107, 63, 69, 0.45) 0%, transparent 42%),
+    linear-gradient(165deg, #1a1210 0%, #281c18 38%, #3d2428 68%, #2a1a1c 100%);
 }
 
-.wishes-wall__stage.wall-letter.is-phone-fs-pending .wall-letter__center {
-  opacity: 0.2;
+.wishes-wall__stage.wall-letter.is-fs.is-phone-fs-pending .wall-letter__orbits,
+.wishes-wall__stage.wall-letter.is-fs.is-phone-fs-pending .wall-letter__fly,
+.wishes-wall__stage.wall-letter.is-fs.is-phone-fs-pending .wall-letter__center,
+.wishes-wall__stage.wall-letter.is-fs.is-phone-fs-pending .wall-letter__fx,
+.wishes-wall__stage.wall-letter.is-fs.is-phone-fs-pending .wall-letter__vignette {
+  opacity: 0.22;
+  filter: blur(2px);
+  pointer-events: none;
+}
+
+.wishes-wall__stage.wall-letter.is-fs.is-phone-fs-pending .wall-letter__fs {
+  z-index: 20;
+  pointer-events: auto;
 }
 
 /* Phone: vẫn hiện nút toàn màn hình */

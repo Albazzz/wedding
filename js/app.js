@@ -1656,10 +1656,11 @@
   }
 
   /**
-   * Chỉ khi phoneWallFsWanted (user bấm nút):
-   *  - portrait → hiện “xoay ngang”
-   *  - landscape → full màn hình CSS
-   * Không bấm → hiển thị bình thường (không ép xoay).
+   * Phone + đã bấm ⛶:
+   *  1) Luôn phóng full màn (is-fs) ngay
+   *  2) Dọc → overlay “xoay ngang” trên full màn
+   *  3) Ngang → ẩn overlay, hiện wall fullscreen
+   * Không bấm ⛶ → stage bình thường trong trang (không ép xoay).
    */
   function syncPhoneLandscapeFullscreen() {
     const stage = $("#wishes-wall-stage");
@@ -1682,37 +1683,38 @@
       if (!document.fullscreenElement) document.body.classList.remove("wall-fs-lock");
       setWallRotateHintVisible(false);
       syncWallFsButton();
+      if (wallFlyRunning) {
+        window.setTimeout(() => startWallHeartFlight(stage), 80);
+      }
       return;
     }
 
+    /* —— User đã bấm ⛶: luôn full màn trước —— */
+    if (document.fullscreenElement || document.webkitFullscreenElement) {
+      const exit = document.exitFullscreen || document.webkitExitFullscreen;
+      if (exit) exit.call(document).catch(() => {});
+    }
+
+    stage.classList.add("is-fs");
+    document.body.classList.add("wall-fs-lock");
+    mountLetterRevealInWallFs();
+
     const land = isLandscapeOrientation();
-    const isPhoneFs = stage.classList.contains("is-fs-phone-landscape");
 
     if (land) {
+      stage.classList.add("is-fs-phone-landscape");
+      stage.classList.remove("is-phone-fs-pending", "is-phone-portrait");
       setWallRotateHintVisible(false);
-      if (!isPhoneFs) {
-        if (document.fullscreenElement || document.webkitFullscreenElement) {
-          const exit = document.exitFullscreen || document.webkitExitFullscreen;
-          if (exit) exit.call(document).catch(() => {});
-        }
-        enterWallCssFullscreen(true);
-      } else {
-        syncWallFsButton();
-        if (wallFlyRunning) {
-          window.setTimeout(() => startWallHeartFlight(stage), 80);
-        }
-      }
+      syncWallFsButton();
+      window.setTimeout(() => startWallHeartFlight(stage), 100);
     } else {
-      /* user muốn FS nhưng đang dọc → gợi ý xoay (tim vẫn xem được phía dưới) */
-      if (isPhoneFs || stage.classList.contains("is-fs")) {
-        stage.classList.remove("is-fs", "is-fs-phone-landscape");
-        document.body.classList.remove("wall-fs-lock");
-        restoreLetterRevealHome();
-      }
+      /* Full màn dọc + yêu cầu xoay */
+      stage.classList.remove("is-fs-phone-landscape");
+      stage.classList.add("is-phone-fs-pending");
       setWallRotateHintVisible(true);
       syncWallFsButton();
       if (wallFlyRunning) {
-        window.setTimeout(() => startWallHeartFlight(stage), 100);
+        window.setTimeout(() => startWallHeartFlight(stage), 80);
       }
     }
   }
