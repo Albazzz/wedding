@@ -123,10 +123,10 @@ window.WEDDING_CONFIG = {
       {
         src: "assets/images/gallery-5.jpg",
         alt: "Nguyễn Văn Quân & Thông Thị Tú Trâm 5",
-        title: { vi: "Trọn vẹn", en: "Complete" },
+        title: { vi: "Mãi bên nhau", en: "Forever together" },
         description: {
-          vi: "Cảm ơn vì đã chọn nhau — và chọn hôm nay.",
-          en: "Thank you for choosing each other — and today.",
+          vi: "Từ hôm nay, mọi hành trình đều có hai người.",
+          en: "From today on, every journey has two of us.",
         },
       },
     ],
