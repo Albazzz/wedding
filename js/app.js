@@ -34,6 +34,19 @@
     perfMode = "full";
     document.body.classList.remove("is-low-power");
     document.body.dataset.perf = "full";
+    /* đảm bảo không kẹt booting blur */
+    if (!document.getElementById("intro") || document.getElementById("intro")?.hidden) {
+      document.body.classList.add("is-camera-in");
+      document.body.classList.remove("is-booting", "intro-lock");
+    }
+  }
+
+  /**
+   * Luôn cho phép animation — bỏ qua OS “prefers-reduced-motion”
+   * (Windows hay bật “Hiệu ứng hình ảnh” tắt → animation desktop đứng hình).
+   */
+  function prefersReducedMotion() {
+    return false;
   }
 
   /* ---------- Helpers ---------- */
@@ -306,7 +319,7 @@
     setTimeout(() => root.classList.add("soft-float-ready"), 1600);
 
     const target = new Date(cfg.wedding?.datetime || Date.now()).getTime();
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reduce = prefersReducedMotion();
 
     function setFlipUnit(unit, value) {
       const el = root.querySelector(`[data-unit="${unit}"]`);
@@ -370,7 +383,7 @@
   /* ---------- Cursor glow + soft trail ---------- */
   function setupCursorFx() {
     if (perfMode === "low") return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (prefersReducedMotion()) return;
     if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
 
     const glow = $("#cursor-glow");
@@ -450,7 +463,7 @@
   /* ---------- 3D tilt on cards (desktop) ---------- */
   function setupCardTilt() {
     if (perfMode === "low") return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (prefersReducedMotion()) return;
     if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
 
     const maxDeg = 7;
@@ -487,7 +500,7 @@
   /* ---------- Click ripple ---------- */
   function setupClickRipple() {
     if (perfMode === "low") return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (prefersReducedMotion()) return;
 
     document.addEventListener(
       "pointerdown",
@@ -529,7 +542,7 @@
   function setupSectionMotion() {
     const sections = $$("main > section");
     if (!sections.length) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if (prefersReducedMotion()) {
       sections.forEach((s) => s.classList.add("is-section-in"));
       return;
     }
@@ -627,7 +640,7 @@
     const media = $$(".timeline__media", root);
     if (!items.length) return;
 
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reduce = prefersReducedMotion();
 
     if (reduce) {
       items.forEach((el) => el.classList.add("is-in"));
@@ -1196,7 +1209,7 @@
     resetEnvelope();
     clearLetterFxLayers();
 
-    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reduce = prefersReducedMotion();
     let cx = window.innerWidth / 2;
     let cy = window.innerHeight / 2;
     if (originEl && originEl.getBoundingClientRect) {
@@ -1386,7 +1399,7 @@
   function startWallLetterFx(stage) {
     const canvas = $("#wall-letter-fx", stage) || $("#wall-letter-fx");
     if (!canvas || !canvas.getContext) return;
-    if (perfMode === "low" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if (perfMode === "low" || prefersReducedMotion()) {
       stopWallLetterFx();
       const ctx = canvas.getContext("2d");
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -1790,7 +1803,7 @@
     if (!stage || !host) return;
 
     const reduce =
-      perfMode === "low" || window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      perfMode === "low" || prefersReducedMotion();
     let rect = stage.getBoundingClientRect();
     /* stage may be 0×0 before layout — retry once */
     if (rect.width < 40 || rect.height < 40) {
@@ -1993,7 +2006,7 @@
     const oldBody = wallFlyBodies.find((b) => b.el === leave);
     leave.classList.add("is-leaving");
     const leaveMs =
-      perfMode === "low" || window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      perfMode === "low" || prefersReducedMotion()
         ? 60
         : 500;
 
@@ -2259,7 +2272,7 @@
   function setupPetals() {
     const canvas = $("#petals-canvas");
     if (!canvas || !cfg.effects?.petals) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (prefersReducedMotion()) return;
 
     const ctx = canvas.getContext("2d");
     let w, h, layers, raf;
@@ -2414,7 +2427,7 @@
     const hero = $("#hero");
     if (!hero) return;
     if (perfMode === "low") return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (prefersReducedMotion()) return;
     if (window.matchMedia("(hover: none)").matches) return;
 
     let mx = 0;
@@ -2615,7 +2628,7 @@
 
     function typeChars() {
       const chars = msgEl ? $$(".char", msgEl) : [];
-      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const reduce = prefersReducedMotion();
       const speed = reduce ? 0 : Math.max(40, cfgIntro.typeSpeed || 100);
       const afterDelay = reduce ? 0 : Math.max(0, cfgIntro.afterTypeDelay ?? 700);
       let i = 0;
@@ -2659,7 +2672,7 @@
     function openScroll() {
       scroll?.classList.add("is-open");
       /* chờ cuộn mở xong rồi gõ chữ */
-      const openMs = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      const openMs = prefersReducedMotion()
         ? 80
         : Math.max(1200, cfgIntro.openDuration || 2800);
       typeTimer = setTimeout(typeChars, openMs);

@@ -633,15 +633,7 @@ body.intro-lock {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .scroll-letter__panel,
-  .scroll-letter__roll,
-  .scroll-letter__message .char,
-  .scroll-letter__names,
-  .intro__enter {
-    transition-duration: 0.01ms !important;
-  }
-}
+/* prefers-reduced-motion: site luôn animate (không tắt FX) */
 
 /* ---------- Petals ---------- */
 #petals-canvas {
@@ -1817,36 +1809,7 @@ button.timeline__img:hover .timeline__media {
   display: none;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .timeline__item,
-  .timeline__date,
-  .timeline__title,
-  .timeline__desc,
-  .timeline__img,
-  .timeline__dot {
-    opacity: 1 !important;
-    transform: none !important;
-    transition: none !important;
-    will-change: auto;
-    animation: none !important;
-  }
-
-  .timeline__progress {
-    transform: scaleY(1);
-  }
-
-  .timeline__img img,
-  .timeline__media {
-    transform: none;
-    height: 100%;
-    will-change: auto;
-  }
-
-  .timeline__item.is-in .timeline__dot::after,
-  .timeline__item.is-in .timeline__dot::before {
-    animation: none;
-  }
-}
+/* prefers-reduced-motion: timeline vẫn animate */
 
 /* ---------- Events ---------- */
 .events__grid {
@@ -2878,32 +2841,7 @@ body.is-low-power .wishes-wall__stage {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .letter-reveal__glow,
-  .envelope__flap,
-  .envelope__card-slot,
-  .envelope__card::after,
-  .letter-full__frame::after,
-  .letter-shard,
-  .letter-ribbon,
-  .wall-heart.is-tapped .wall-heart__icon {
-    animation: none !important;
-    transition-duration: 0.01ms !important;
-  }
-
-  .envelope.is-open .envelope__flap {
-    transform: rotateX(178deg);
-  }
-
-  .envelope.is-open .envelope__card-slot {
-    height: 248px;
-    transform: translateY(-128px);
-  }
-
-  .letter-reveal.is-reading .letter-full {
-    transform: translate3d(-50%, -50%, 0);
-  }
-}
+/* prefers-reduced-motion: letter/envelope vẫn animate */
 
 /* ---------- RSVP ---------- */
 .rsvp__deadline {
@@ -4187,23 +4125,7 @@ body.is-low-power .wall-orbit {
   animation-duration: 120s;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .wall-letter__title,
-  .wall-orbit,
-  .wall-heart__icon,
-  .wall-heart__wing,
-  .wall-orbit__star::after {
-    animation: none !important;
-  }
-
-  .wall-heart {
-    opacity: 1;
-  }
-
-  .wall-heart__body {
-    transition: none;
-  }
-}
+/* prefers-reduced-motion: wall letter vẫn animate */
 
 /* Wishes gallery + filter */
 
@@ -5046,59 +4968,7 @@ body.is-low-power .wall-orbit {
   }
 }
 
-/* ---------- Reduced motion ---------- */
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
-
-  .fade-up,
-  .reveal,
-  .hero__bg,
-  .hero__photo,
-  .hero__ambient,
-  .hero__glow,
-  .soft-float,
-  .soft-float--slow,
-  .scroll-hint__arrow,
-  .music-toggle.is-playing,
-  .music-toggle.is-playing::after,
-  .music-eq i,
-  .glass-shine::after,
-  .countdown__num.is-flip .countdown__curr,
-  .countdown__num.is-flip .countdown__next {
-    animation: none !important;
-    transition: none !important;
-    opacity: 1;
-    transform: none;
-    filter: none;
-  }
-
-  .cursor-glow,
-  .cursor-dot,
-  .cursor-trail {
-    display: none !important;
-  }
-
-  .ripple-ink {
-    display: none !important;
-  }
-
-  .section:not(.hero):not(.is-section-in),
-  .section {
-    opacity: 1 !important;
-    filter: none !important;
-    transform: none !important;
-  }
-
-  .tilt-card {
-    transform: none !important;
-  }
-
-  .section__header .section__eyebrow,
-  .section__header .section__title,
-  .section__header .section__subtitle {
-    opacity: 1;
-    transform: none;
-  }
-}
+/*
+  Reduced motion OS setting is IGNORED for this wedding site —
+  animations always run (Windows “Animation effects” off was killing all FX).
+*/
