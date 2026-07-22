@@ -195,7 +195,7 @@
     if (bg && cfg.hero?.backgroundImage) {
       const url = cfg.hero.backgroundImage;
       /*
-        hero.jpg cắt 31% mép trên (chừa tóc). Không Ken Burns.
+        hero.jpg cắt 20% mép trên — thấy đầu chú rể/cô dâu, bớt xám.
         focusY / backgroundPosition chỉnh neo dọc nếu còn lệch.
       */
       const focusY = cfg.hero?.focusY || "0%";
@@ -203,7 +203,7 @@
         focusY && focusY !== "0%" && focusY !== "top"
           ? `center ${focusY}`
           : cfg.hero?.backgroundPosition || "center top";
-      const cacheVer = "v=cropTop31";
+      const cacheVer = "v=cropTop20";
       const applyPos = (el) => {
         if (!el) return;
         el.style.setProperty("--hero-focus-y", focusY === "top" ? "0%" : focusY);
