@@ -194,26 +194,32 @@
     const overlay = $("#hero-overlay");
     if (bg && cfg.hero?.backgroundImage) {
       const url = cfg.hero.backgroundImage;
-      /* hero.jpg cắt 8% mép trên — cover + neo top, không zoom/pan */
+      /* hero.jpg cắt 8% mép trên; focusY hạ khung dọc (vd 5% = nudge xuống) */
       const cacheVer = "v=cropTop8";
       const withVer = (u) => u + (u.includes("?") ? "&" : "?") + cacheVer;
+      const fyRaw = String(cfg.hero?.focusY ?? "0%").trim();
+      const focusY =
+        !fyRaw || fyRaw === "0" || fyRaw === "0%" || fyRaw === "top"
+          ? "top"
+          : fyRaw.endsWith("%")
+            ? fyRaw
+            : `${fyRaw}%`;
+      const pos = focusY === "top" ? "center top" : `center ${focusY}`;
 
       if (photo) {
-        photo.style.objectPosition = "center top";
+        photo.style.objectPosition = pos;
         photo.style.transform = "";
       }
-      if (bg) {
-        bg.style.backgroundPosition = "center top";
-      }
+      if (bg) bg.style.backgroundPosition = pos;
 
       const reveal = () => {
         if (photo) {
           photo.src = withVer(url);
-          photo.style.objectPosition = "center top";
+          photo.style.objectPosition = pos;
         } else {
           bg.style.backgroundImage = `url("${withVer(url)}")`;
           bg.style.backgroundSize = "cover";
-          bg.style.backgroundPosition = "center top";
+          bg.style.backgroundPosition = pos;
         }
         bg.classList.add("has-image");
       };

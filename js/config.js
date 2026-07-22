@@ -61,11 +61,13 @@ window.WEDDING_CONFIG = {
     backgroundImage: "assets/images/hero.jpg",
     /**
      * Crop mép trên ảnh gốc 5158×7733 (đã bake vào hero.jpg): ~8% H
-     * Neo: center top (cover, không zoom/pan)
+     * focusY: 0% = mép trên; 5% = hạ khung ~nudge(5)
      */
     cropTopPxOriginal: 618,
     cropTopPercent: 8,
     backgroundPosition: "center top",
+    /** Hạ khung 5% (tương đương heroTune.nudge(5) từ top) */
+    focusY: "5%",
     /** Overlay tối (0–1) để chữ dễ đọc */
     overlayOpacity: 0.12,
   },
