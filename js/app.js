@@ -216,20 +216,41 @@
     const bg = $("#hero-bg");
     const photo = $("#hero-photo");
     const overlay = $("#hero-overlay");
-    if (bg && cfg.hero?.backgroundImage) {
-      const url = cfg.hero.backgroundImage;
-      /* hero.jpg crop ~8%; cover + object-position đơn giản */
-      const cacheVer = "v=cropTop8";
-      const withVer = (u) => u + (u.includes("?") ? "&" : "?") + cacheVer;
-      const fyRaw = String(cfg.hero?.focusY ?? "0%").trim();
-      const focusY =
-        !fyRaw || fyRaw === "0" || fyRaw === "0%" || fyRaw === "top"
-          ? "top"
-          : fyRaw.endsWith("%")
-            ? fyRaw
-            : `${fyRaw}%`;
-      const pos = focusY === "top" ? "center top" : `center ${focusY}`;
+    if (!bg || !cfg.hero?.backgroundImage) {
+      if (overlay) {
+        const o = cfg.hero?.overlayOpacity ?? 0.45;
+        overlay.style.background = `rgba(40, 28, 24, ${o})`;
+      }
+      return;
+    }
 
+    const cacheVer = "v=heroMobile1";
+    const withVer = (u) => u + (u.includes("?") ? "&" : "?") + cacheVer;
+
+    function heroUrl() {
+      const desk = cfg.hero.backgroundImage;
+      const mob = cfg.hero.backgroundImageMobile;
+      if (isPhoneLayout() && mob) return mob;
+      return desk;
+    }
+
+    function heroPos() {
+      if (isPhoneLayout()) {
+        const m = String(cfg.hero?.focusYMobile || "center top").trim();
+        if (m === "top" || m === "0" || m === "0%") return "center top";
+        if (m.includes(" ")) return m;
+        if (m.endsWith("%")) return `center ${m}`;
+        return "center top";
+      }
+      const fyRaw = String(cfg.hero?.focusY ?? "0%").trim();
+      if (!fyRaw || fyRaw === "0" || fyRaw === "0%" || fyRaw === "top") return "center top";
+      if (fyRaw.includes(" ")) return fyRaw;
+      return fyRaw.endsWith("%") ? `center ${fyRaw}` : `center ${fyRaw}%`;
+    }
+
+    function loadHero() {
+      const url = withVer(heroUrl());
+      const pos = heroPos();
       if (photo) {
         photo.style.objectPosition = pos;
         photo.style.transform = "";
@@ -239,26 +260,44 @@
       }
       if (bg) bg.style.backgroundPosition = pos;
 
-      const reveal = () => {
+      const probe = new Image();
+      probe.onload = () => {
         if (photo) {
-          photo.src = withVer(url);
+          photo.src = url;
           photo.style.objectPosition = pos;
-          photo.style.transform = "";
         } else {
-          bg.style.backgroundImage = `url("${withVer(url)}")`;
+          bg.style.backgroundImage = `url("${url}")`;
           bg.style.backgroundSize = "cover";
           bg.style.backgroundPosition = pos;
         }
         bg.classList.add("has-image");
       };
-
-      const probe = new Image();
-      probe.onload = reveal;
       probe.onerror = () => {
-        /* keep gradient fallback */
+        const fall = withVer(cfg.hero.backgroundImage);
+        if (url === fall) return;
+        const p2 = new Image();
+        p2.onload = () => {
+          if (photo) {
+            photo.src = fall;
+            photo.style.objectPosition = pos;
+          }
+          bg.classList.add("has-image");
+        };
+        p2.src = fall;
       };
-      probe.src = withVer(url);
+      probe.src = url;
     }
+
+    loadHero();
+
+    if (!bg._heroMobileBound) {
+      bg._heroMobileBound = true;
+      const mq = window.matchMedia("(max-width: 767px)");
+      const onChange = () => loadHero();
+      if (mq.addEventListener) mq.addEventListener("change", onChange);
+      else if (mq.addListener) mq.addListener(onChange);
+    }
+
     if (overlay) {
       const o = cfg.hero?.overlayOpacity ?? 0.45;
       overlay.style.background = `rgba(40, 28, 24, ${o})`;

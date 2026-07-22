@@ -4549,6 +4549,7 @@ body.is-low-power .wall-orbit {
     max-width: none;
     height: 100%;
     object-fit: cover;
+    /* mobile.png — neo top; JS có thể ghi đè focusYMobile */
     object-position: center top;
     transform: none;
   }

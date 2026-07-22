@@ -57,17 +57,15 @@ window.WEDDING_CONFIG = {
       vi: "Chúc mừng đến với lễ thành hôn",
       en: "Welcome to our wedding celebration",
     },
-    /** Ảnh nền hero (đường dẫn local hoặc URL) */
+    /** Ảnh nền hero desktop / tablet */
     backgroundImage: "assets/images/hero.jpg",
-    /**
-     * Crop mép trên ảnh gốc 5158×7733 (đã bake vào hero.jpg): ~8% H
-     * focusY: 0% = mép trên; 5% = hạ khung ~nudge(5)
-     */
-    cropTopPxOriginal: 618,
-    cropTopPercent: 8,
+    /** Ảnh hero riêng cho điện thoại (≤767px) — mobile.png */
+    backgroundImageMobile: "assets/images/hero-mobile.jpg",
     backgroundPosition: "center top",
-    /** object-position Y (0/top = mép trên) */
+    /** object-position Y desktop (0/top = mép trên) */
     focusY: "5%",
+    /** object-position Y trên phone cho hero-mobile */
+    focusYMobile: "center top",
     /** Overlay tối (0–1) để chữ dễ đọc */
     overlayOpacity: 0.12,
   },
