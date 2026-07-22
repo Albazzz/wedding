@@ -190,21 +190,38 @@
   /* ---------- Hero ---------- */
   function setupHero() {
     const bg = $("#hero-bg");
+    const photo = $("#hero-photo");
     const overlay = $("#hero-overlay");
     if (bg && cfg.hero?.backgroundImage) {
       const url = cfg.hero.backgroundImage;
+      /* center top = crop từ trên xuống, giữ mặt cô dâu chú rể */
       const pos = cfg.hero?.backgroundPosition || "center top";
-      bg.style.backgroundPosition = pos;
-      const img = new Image();
-      img.onload = () => {
-        bg.style.backgroundImage = `url("${url}")`;
-        bg.style.backgroundPosition = pos;
+      const applyPos = (el) => {
+        if (!el) return;
+        el.style.objectPosition = pos;
+        el.style.backgroundPosition = pos;
+      };
+      applyPos(photo);
+      applyPos(bg);
+
+      const reveal = () => {
+        if (photo) {
+          photo.src = url;
+          applyPos(photo);
+        } else {
+          bg.style.backgroundImage = `url("${url}")`;
+          bg.style.backgroundSize = "cover";
+          applyPos(bg);
+        }
         bg.classList.add("has-image");
       };
-      img.onerror = () => {
+
+      const probe = new Image();
+      probe.onload = reveal;
+      probe.onerror = () => {
         /* keep gradient fallback */
       };
-      img.src = url;
+      probe.src = url;
     }
     if (overlay) {
       const o = cfg.hero?.overlayOpacity ?? 0.45;

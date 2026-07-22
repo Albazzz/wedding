@@ -875,27 +875,44 @@ body.intro-lock {
 
 .hero__parallax {
   position: absolute;
-  inset: -4%;
+  inset: 0;
   z-index: 0;
   will-change: transform;
   transition: transform 0.45s var(--ease-expo);
+  overflow: hidden;
 }
 
 .hero__bg {
   position: absolute;
   inset: 0;
+  overflow: hidden;
   background:
     linear-gradient(145deg, #c4a898 0%, #a88878 45%, #8b6b5a 100%);
-  background-size: cover;
-  /* Neo từ trên xuống (không crop giữa) để thấy mặt cô dâu chú rể */
-  background-position: center top;
-  transform: scale(1.06);
-  animation: hero-ken 26s ease-in-out infinite alternate;
+}
+
+/* Ảnh hero: cover + neo TOP (cắt dưới, giữ đầu/mặt) — không crop giữa */
+.hero__photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  display: block;
+  opacity: 0;
+  transform: scale(1.02);
+  transform-origin: center top;
+  transition: opacity 0.6s ease;
+  will-change: transform;
+  animation: hero-ken 28s ease-in-out infinite alternate;
+}
+
+.hero__bg.has-image .hero__photo {
+  opacity: 1;
 }
 
 .hero__bg.has-image {
   background-color: #a88878;
-  background-position: center top;
 }
 
 .hero__glow {
@@ -923,12 +940,13 @@ body.intro-lock {
   }
 }
 
+/* Zoom nhẹ, neo từ TRÊN — tránh cắt ngang đầu khi scale */
 @keyframes hero-ken {
   from {
-    transform: scale(1.05);
+    transform: scale(1.02);
   }
   to {
-    transform: scale(1.1);
+    transform: scale(1.06);
   }
 }
 
@@ -4921,6 +4939,7 @@ body.is-low-power .wall-orbit {
   .fade-up,
   .reveal,
   .hero__bg,
+  .hero__photo,
   .hero__ambient,
   .hero__glow,
   .soft-float,
