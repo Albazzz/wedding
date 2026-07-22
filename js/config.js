@@ -27,8 +27,8 @@ window.WEDDING_CONFIG = {
 
   /* ---------- Cặp đôi ---------- */
   couple: {
-    bride: "Tú Trâm",
-    groom: "Văn Quân",
+    bride: "Thông Thị Tú Trâm",
+    groom: "Nguyễn Văn Quân",
     /** Thứ tự hiển thị: "bride-groom" | "groom-bride" */
     displayOrder: "groom-bride",
     /** Chữ nối giữa 2 tên, vd: "&", "và", "and" */
@@ -83,11 +83,11 @@ window.WEDDING_CONFIG = {
       en: "A few frames we'd love to share",
     },
     images: [
-      { src: "assets/images/gallery-1.jpg", alt: "Văn Quân & Tú Trâm 1" },
-      { src: "assets/images/gallery-2.jpg", alt: "Văn Quân & Tú Trâm 2" },
-      { src: "assets/images/gallery-3.jpg", alt: "Văn Quân & Tú Trâm 3" },
-      { src: "assets/images/gallery-4.jpg", alt: "Văn Quân & Tú Trâm 4" },
-      { src: "assets/images/gallery-5.jpg", alt: "Văn Quân & Tú Trâm 5" },
+      { src: "assets/images/gallery-1.jpg", alt: "Nguyễn Văn Quân & Thông Thị Tú Trâm 1" },
+      { src: "assets/images/gallery-2.jpg", alt: "Nguyễn Văn Quân & Thông Thị Tú Trâm 2" },
+      { src: "assets/images/gallery-3.jpg", alt: "Nguyễn Văn Quân & Thông Thị Tú Trâm 3" },
+      { src: "assets/images/gallery-4.jpg", alt: "Nguyễn Văn Quân & Thông Thị Tú Trâm 4" },
+      { src: "assets/images/gallery-5.jpg", alt: "Nguyễn Văn Quân & Thông Thị Tú Trâm 5" },
     ],
     /** Video YouTube — để rỗng "" để ẩn (đã bỏ pre-wedding) */
     youtubeVideoId: "",
@@ -476,7 +476,7 @@ window.WEDDING_CONFIG = {
 
   /* ---------- SEO / meta ---------- */
   meta: {
-    title: "Văn Quân & Tú Trâm Wedding",
+    title: "Nguyễn Văn Quân & Thông Thị Tú Trâm Wedding",
     description: {
       vi: "Trang thiệp cưới online — kính mời bạn đến chung vui ngày trọng đại của chúng mình.",
       en: "Online wedding invitation — we'd love for you to celebrate with us.",
