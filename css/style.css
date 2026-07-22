@@ -3467,25 +3467,20 @@ input[type="range"] {
 .wishes-wall__stage.wall-letter.is-fs {
   position: fixed;
   inset: 0;
-  width: 100vw;
-  height: 100vh;
-  height: 100dvh;
-  min-height: 100dvh;
+  width: auto;
+  height: auto;
+  min-height: 0;
   max-height: none;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-/* Phone landscape auto-FS: cover safe areas, no browser FS API */
+/* Phone landscape: full viewport, không padding stage (tránh lệch tâm iPhone) */
 .wishes-wall__stage.wall-letter.is-fs-phone-landscape {
-  width: 100vw;
-  width: 100dvw;
-  height: 100vh;
-  height: 100dvh;
-  min-height: 100dvh;
-  padding:
-    max(0.35rem, env(safe-area-inset-top))
-    max(0.35rem, env(safe-area-inset-right))
-    max(0.35rem, env(safe-area-inset-bottom))
-    max(0.35rem, env(safe-area-inset-left));
+  width: auto;
+  height: auto;
+  min-height: 0;
+  padding: 0;
   box-sizing: border-box;
 }
 
@@ -3501,18 +3496,24 @@ body.wall-fs-lock {
 */
 .wishes-wall__stage.wall-letter.is-fs.is-wall-viewer {
   position: fixed !important;
+  /* inset 0 + auto size — tránh 100vw lệch trên iOS Chrome */
   inset: 0 !important;
-  width: 100vw !important;
-  width: 100dvw !important;
-  height: 100vh !important;
-  height: 100dvh !important;
+  top: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  width: auto !important;
+  height: auto !important;
   max-width: none !important;
   max-height: none !important;
-  min-height: 100dvh !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  padding: 0 !important;
   z-index: 900 !important;
   border-radius: 0 !important;
   border: none !important;
   margin: 0 !important;
+  box-sizing: border-box !important;
 }
 
 body.wall-fs-lock {
@@ -3626,54 +3627,73 @@ body.wall-fs-lock {
   }
 }
 
-/* Phone landscape / wall viewer: căn giữa chữ chắc (full-width + flex) */
+/* Phone landscape / wall viewer: grid place-items = căn giữa thật (iPhone OK) */
 .wishes-wall__stage.wall-letter.is-fs-phone-landscape,
 .wishes-wall__stage.wall-letter.is-fs.is-wall-viewer {
-  z-index: 600;
+  z-index: 900;
 }
 
 .wishes-wall__stage.wall-letter.is-fs-phone-landscape .wall-letter__center,
 .wishes-wall__stage.wall-letter.is-fs.is-wall-viewer .wall-letter__center {
   position: absolute !important;
+  inset: 0 !important;
   left: 0 !important;
   right: 0 !important;
-  top: 50% !important;
-  bottom: auto !important;
-  width: 100% !important;
-  max-width: 100% !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  width: auto !important;
+  max-width: none !important;
+  height: auto !important;
   margin: 0 !important;
-  padding: 0.35rem max(1rem, env(safe-area-inset-left), env(safe-area-inset-right)) !important;
+  /* safe-area đều 4 phía — chữ vẫn place-items center trong vùng an toàn */
+  padding:
+    max(0.5rem, env(safe-area-inset-top, 0px))
+    max(0.75rem, env(safe-area-inset-right, 0px))
+    max(0.5rem, env(safe-area-inset-bottom, 0px))
+    max(0.75rem, env(safe-area-inset-left, 0px)) !important;
   box-sizing: border-box !important;
-  transform: translateY(-50%) !important;
-  transform-origin: center center !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  justify-content: center !important;
+  transform: none !important;
+  display: grid !important;
+  place-items: center !important;
+  place-content: center !important;
+  align-content: center !important;
+  justify-items: center !important;
   text-align: center !important;
-  pointer-events: none;
-  z-index: 3;
+  pointer-events: none !important;
+  z-index: 3 !important;
 }
 
 .wishes-wall__stage.wall-letter.is-fs-phone-landscape .wall-letter__title,
 .wishes-wall__stage.wall-letter.is-fs.is-wall-viewer .wall-letter__title {
-  width: 100% !important;
-  max-width: min(90vw, 28rem);
+  display: block !important;
+  width: auto !important;
+  max-width: min(86vw, 22rem) !important;
   margin: 0 auto !important;
   padding: 0 !important;
-  font-size: clamp(1.2rem, 5.5vh, 1.9rem) !important;
-  line-height: 1.25 !important;
+  font-size: clamp(1.15rem, 5vh, 1.85rem) !important;
+  line-height: 1.3 !important;
   text-align: center !important;
+  justify-self: center !important;
 }
 
 .wishes-wall__stage.wall-letter.is-fs-phone-landscape .wall-letter__hint,
 .wishes-wall__stage.wall-letter.is-fs.is-wall-viewer .wall-letter__hint {
-  width: 100% !important;
-  max-width: min(90vw, 22rem);
-  margin: 0.4rem auto 0 !important;
+  display: block !important;
+  width: auto !important;
+  max-width: min(86vw, 20rem) !important;
+  margin: 0.45rem auto 0 !important;
   padding: 0 !important;
   text-align: center !important;
   letter-spacing: 0.06em;
+  justify-self: center !important;
+}
+
+/* Bọc title+hint thành 1 cụm giữa (grid 1 cell stack) */
+.wishes-wall__stage.wall-letter.is-fs-phone-landscape .wall-letter__center,
+.wishes-wall__stage.wall-letter.is-fs.is-wall-viewer .wall-letter__center {
+  grid-auto-flow: row;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto auto;
 }
 
 @media (max-width: 480px) {
