@@ -380,7 +380,7 @@
     setInterval(tick, 1000);
   }
 
-  /* ---------- Cursor glow + soft trail ---------- */
+  /* ---------- Cursor glow + soft trail (+ ♥ khi hover tim) ---------- */
   function setupCursorFx() {
     if (perfMode === "low") return;
     if (prefersReducedMotion()) return;
@@ -395,6 +395,7 @@
     let y = window.innerHeight / 2;
     let gx = x;
     let gy = y;
+    let overHeart = false;
     let raf = 0;
     const trails = [];
     const MAX_TRAIL = 10;
@@ -403,8 +404,21 @@
       gx += (x - gx) * 0.12;
       gy += (y - gy) * 0.12;
       glow.style.transform = `translate3d(${gx}px, ${gy}px, 0)`;
-      dot.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+      /* is-heart dùng scale riêng trong CSS — đừng ghi đè transform scale ở đây khi hover */
+      if (dot.classList.contains("is-heart")) {
+        dot.style.transform = `translate3d(${x}px, ${y}px, 0) scale(1.15)`;
+      } else if (dot.classList.contains("is-hover")) {
+        dot.style.transform = `translate3d(${x}px, ${y}px, 0) scale(2.2)`;
+      } else {
+        dot.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+      }
       raf = requestAnimationFrame(loop);
+    }
+
+    function setHeartCursor(on) {
+      overHeart = !!on;
+      dot.classList.toggle("is-heart", overHeart);
+      glow.classList.toggle("is-heart", overHeart);
     }
 
     window.addEventListener(
@@ -415,8 +429,11 @@
         glow.classList.add("is-on");
         dot.classList.add("is-on");
 
+        const heart = e.target.closest?.(".wall-heart:not(.wall-heart--demo)");
+        setHeartCursor(!!heart);
+
         const t = document.createElement("span");
-        t.className = "cursor-trail";
+        t.className = "cursor-trail" + (overHeart ? " is-heart" : "");
         t.style.transform = `translate3d(${x}px, ${y}px, 0)`;
         document.body.appendChild(t);
         trails.push(t);
@@ -437,17 +454,29 @@
     document.addEventListener(
       "pointerover",
       (e) => {
+        const heart = e.target.closest?.(".wall-heart:not(.wall-heart--demo)");
         const hit = e.target.closest(
-          "a, button, .gallery__item, .gallery-tl__photo, .wish-card, .wall-card, input, textarea, select, label"
+          "a, button, .gallery__item, .gallery-tl__photo, .wish-card, .wall-card, .wall-heart, input, textarea, select, label"
         );
-        dot.classList.toggle("is-hover", !!hit);
+        setHeartCursor(!!heart);
+        dot.classList.toggle("is-hover", !!hit && !heart);
+      },
+      true
+    );
+
+    document.addEventListener(
+      "pointerout",
+      (e) => {
+        if (e.target.closest?.(".wall-heart") && !e.relatedTarget?.closest?.(".wall-heart")) {
+          setHeartCursor(false);
+        }
       },
       true
     );
 
     document.addEventListener("mouseleave", () => {
-      glow.classList.remove("is-on");
-      dot.classList.remove("is-on");
+      glow.classList.remove("is-on", "is-heart");
+      dot.classList.remove("is-on", "is-hover", "is-heart");
     });
 
     loop();

@@ -1197,7 +1197,8 @@ body.intro-lock {
   body.has-cursor-fx .gallery__item,
   body.has-cursor-fx .gallery-tl__photo,
   body.has-cursor-fx .wish-card,
-  body.has-cursor-fx .wall-card {
+  body.has-cursor-fx .wall-card,
+  body.has-cursor-fx .wall-heart {
     cursor: none;
   }
 
@@ -1218,12 +1219,13 @@ body.intro-lock {
     z-index: 9998;
     mix-blend-mode: screen;
     opacity: 0;
-    transition: opacity 0.35s ease;
+    transition: opacity 0.35s ease, width 0.25s ease, height 0.25s ease, margin 0.25s ease, background 0.25s ease;
     will-change: transform;
   }
 
   .cursor-dot {
-    display: block;
+    display: grid;
+    place-items: center;
     position: fixed;
     width: 8px;
     height: 8px;
@@ -1234,8 +1236,11 @@ body.intro-lock {
     pointer-events: none;
     z-index: 9999;
     opacity: 0;
-    transition: opacity 0.25s ease, transform 0.2s var(--ease-expo);
+    transition: opacity 0.25s ease, transform 0.2s var(--ease-expo), width 0.2s ease, height 0.2s ease, margin 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
     will-change: transform;
+    font-size: 0;
+    line-height: 1;
+    color: transparent;
   }
 
   body.has-cursor-fx .cursor-glow.is-on,
@@ -1248,6 +1253,40 @@ body.intro-lock {
     background: rgba(255, 230, 210, 0.95);
   }
 
+  /* Hover tim lời chúc → con trỏ ♥ rõ + halo hồng */
+  body.has-cursor-fx .cursor-dot.is-heart {
+    width: 28px;
+    height: 28px;
+    margin: -14px 0 0 -14px;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    font-size: 1.55rem;
+    color: #ff6b8a;
+    text-shadow:
+      0 0 8px rgba(255, 120, 150, 0.95),
+      0 0 20px rgba(255, 80, 120, 0.75),
+      0 2px 6px rgba(40, 20, 30, 0.45);
+    transform: scale(1.15);
+  }
+
+  body.has-cursor-fx .cursor-dot.is-heart::before {
+    content: "♥";
+  }
+
+  body.has-cursor-fx .cursor-glow.is-heart {
+    width: 160px;
+    height: 160px;
+    margin: -80px 0 0 -80px;
+    background: radial-gradient(
+      circle,
+      rgba(255, 120, 150, 0.45) 0%,
+      rgba(255, 100, 140, 0.18) 38%,
+      transparent 68%
+    );
+    opacity: 0.95;
+  }
+
   .cursor-trail {
     position: fixed;
     width: 5px;
@@ -1258,6 +1297,21 @@ body.intro-lock {
     pointer-events: none;
     z-index: 9997;
     mix-blend-mode: screen;
+  }
+
+  .cursor-trail.is-heart {
+    width: 10px;
+    height: 10px;
+    margin: -5px 0 0 -5px;
+    border-radius: 0;
+    background: transparent;
+    font-size: 0.7rem;
+    color: rgba(255, 110, 145, 0.75);
+    text-shadow: 0 0 8px rgba(255, 100, 140, 0.7);
+  }
+
+  .cursor-trail.is-heart::before {
+    content: "♥";
   }
 }
 
@@ -3884,11 +3938,31 @@ body.wall-fs-lock {
   transition: filter 0.3s ease, transform 0.3s var(--ease-expo);
 }
 
+/* Hover tim: glow + phóng to rõ (desktop chuột) */
 .wall-heart:hover .wall-heart__body,
 .wall-heart:focus-visible .wall-heart__body {
-  filter: drop-shadow(0 0 14px rgba(255, 255, 255, 0.35))
-    drop-shadow(0 0 12px rgba(212, 165, 165, 0.55));
-  transform: scale(1.08);
+  filter:
+    drop-shadow(0 0 10px rgba(255, 255, 255, 0.55))
+    drop-shadow(0 0 22px rgba(255, 120, 150, 0.75))
+    drop-shadow(0 0 36px rgba(232, 165, 180, 0.5));
+  transform: scale(1.22);
+}
+
+.wall-heart:hover .wall-heart__icon,
+.wall-heart:focus-visible .wall-heart__icon {
+  color: #ff8aa3;
+  text-shadow:
+    0 0 10px rgba(255, 140, 170, 0.95),
+    0 0 22px rgba(255, 100, 140, 0.7);
+  animation: wall-heart-hover-pulse 0.7s ease-in-out infinite alternate;
+}
+
+.wall-heart:hover .wall-heart__name,
+.wall-heart:focus-visible .wall-heart__name {
+  color: #fff4e8;
+  background: rgba(80, 40, 50, 0.72);
+  border-color: rgba(255, 180, 190, 0.45);
+  transform: translateX(-50%) scale(1.06);
 }
 
 .wall-heart:focus-visible {
@@ -3896,9 +3970,42 @@ body.wall-fs-lock {
 }
 
 .wall-heart:focus-visible .wall-heart__body {
-  outline: 2px solid rgba(232, 213, 181, 0.7);
-  outline-offset: 6px;
-  border-radius: 12px;
+  outline: 2px solid rgba(255, 170, 185, 0.85);
+  outline-offset: 8px;
+  border-radius: 14px;
+}
+
+@keyframes wall-heart-hover-pulse {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.12);
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .wall-heart:not(.wall-heart--demo)::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 120, 150, 0.35) 0%, transparent 70%);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0;
+    transition: width 0.35s ease, height 0.35s ease, opacity 0.35s ease;
+  }
+
+  .wall-heart:not(.wall-heart--demo):hover::after {
+    width: 5.5rem;
+    height: 5.5rem;
+    opacity: 1;
+  }
 }
 
 .wall-heart__core {
