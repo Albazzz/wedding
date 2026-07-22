@@ -1595,7 +1595,11 @@
     document.body.style.left = "";
     document.body.style.right = "";
     document.body.style.width = "";
-    window.scrollTo(0, wallViewerScrollY || 0);
+    document.body.style.overflow = "";
+    const y = wallViewerScrollY || 0;
+    requestAnimationFrame(() => {
+      window.scrollTo(0, y);
+    });
   }
 
   function exitWallFullscreen() {

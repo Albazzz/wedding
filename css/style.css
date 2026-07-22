@@ -131,10 +131,17 @@
 }
 
 html {
-  scroll-behavior: smooth;
+  /* smooth chỉ desktop — mobile smooth dễ “kéo dính” banner */
+  scroll-behavior: auto;
   scroll-padding-top: var(--header-offset);
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  html {
+    scroll-behavior: smooth;
+  }
 }
 
 body {
@@ -144,11 +151,13 @@ body {
   color: var(--color-ink);
   background: var(--color-bg);
   line-height: 1.65;
-  overflow-x: hidden;
+  /* clip thay hidden — ít gây lỗi scroll dọc trên iOS */
+  overflow-x: clip;
   -webkit-font-smoothing: antialiased;
   /* Avoid content under home indicator when scrolling ends */
   padding-left: var(--sal);
   padding-right: var(--sar);
+  overscroll-behavior-y: auto;
 }
 
 img {
@@ -854,11 +863,14 @@ body.intro-lock {
 .hero {
   position: relative;
   min-height: 100svh;
+  min-height: 100dvh;
   display: grid;
   place-items: center;
   text-align: center;
   color: #fff;
   overflow: hidden;
+  /* Vuốt dọc truyền ra document — không “nuốt” gesture */
+  touch-action: pan-y;
 }
 
 .hero__ambient {
@@ -4587,18 +4599,29 @@ body.is-low-power .wall-orbit {
    Device polish — phone / iPad portrait / iPad landscape / desktop
    ============================================================ */
 
-/* --- Phones (≤767px): full-bleed, tên 2 hàng, không khe hở phải --- */
+/* --- Phones (≤767px): full-bleed, tên 2 hàng, scroll mượt --- */
 @media (max-width: 767px) {
+  html {
+    scroll-behavior: auto !important;
+  }
+
   html,
   body {
-    overflow-x: hidden;
-    max-width: 100%;
+    /* Không max-width:100% + overflow-x:hidden (iOS hay kéo dính đầu trang) */
+    overflow-x: clip;
+    max-width: none;
+    width: 100%;
+    overscroll-behavior-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .hero {
     width: 100%;
-    max-width: 100vw;
+    max-width: none;
+    min-height: 100svh;
+    min-height: 100dvh;
     overflow: hidden;
+    touch-action: pan-y;
   }
 
   .hero__parallax,
@@ -4609,7 +4632,14 @@ body.is-low-power .wall-orbit {
     left: 0;
     right: 0;
     width: 100%;
-    max-width: 100%;
+    max-width: none;
+    /* parallax layers không chặn vuốt */
+    pointer-events: none;
+    touch-action: pan-y;
+  }
+
+  .hero__content {
+    touch-action: pan-y;
   }
 
   .hero__photo {
@@ -4630,6 +4660,9 @@ body.is-low-power .wall-orbit {
     padding-top: calc(var(--header-offset) + 1.75rem);
     padding-bottom: max(3.25rem, calc(1.75rem + var(--sab)));
     margin-inline: 0;
+    /* nội dung hero vẫn nhận tap, vuốt dọc scroll page */
+    pointer-events: auto;
+    touch-action: pan-y;
   }
 
   .hero__eyebrow {
