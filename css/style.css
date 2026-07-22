@@ -4548,8 +4548,8 @@ body.is-low-power .wall-orbit {
     width: 100%;
     max-width: none;
     object-fit: cover;
-    /* cắt thêm ~2% mép trên so với desktop (center top) */
-    object-position: center 2% !important;
+    /* fallback: focusY 5% + phone extra 2% = 7% (JS setupHero ghi đè) */
+    object-position: center 7%;
   }
 
   .hero__content {
