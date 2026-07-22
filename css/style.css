@@ -1914,54 +1914,95 @@ body.intro-lock {
   color: var(--color-accent-deep);
 }
 
-/* ---------- Gallery ---------- */
+/* ---------- Gallery (reveal + parallax kiểu Love Story) ---------- */
+.gallery {
+  --gal-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --gal-duration: 1.05s;
+}
+
 .gallery__grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 0.65rem;
+  gap: 0.75rem;
 }
 
 @media (min-width: 640px) {
   .gallery__grid {
     grid-template-columns: repeat(3, 1fr);
-    gap: 0.85rem;
+    gap: 1rem;
   }
 }
 
 .gallery__item {
+  --gal-from-y: 48px;
   position: relative;
   aspect-ratio: 1;
+  border: 0;
+  padding: 0;
   border-radius: var(--radius-sm);
   overflow: hidden;
   cursor: pointer;
   background: var(--color-bg-alt);
-  box-shadow: var(--shadow);
+  box-shadow:
+    0 12px 36px rgba(61, 44, 36, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  opacity: 0;
+  transform: translate3d(0, var(--gal-from-y), 0) scale(0.94);
+  transition:
+    opacity var(--gal-duration) var(--gal-ease),
+    transform var(--gal-duration) var(--gal-ease),
+    box-shadow 0.45s var(--gal-ease);
+  will-change: opacity, transform;
 }
 
+.gallery__item.is-in {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1);
+}
+
+.gallery__media {
+  position: absolute;
+  inset: -8%;
+  display: block;
+  overflow: hidden;
+  transform: translate3d(0, var(--gal-parallax, 0px), 0) scale(1.06);
+  will-change: transform;
+}
+
+.gallery__photo,
 .gallery__item img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.5s var(--ease);
+  display: block;
+  transition:
+    transform 0.9s var(--gal-ease),
+    filter 0.7s ease;
 }
 
-.gallery__item {
-  transition: transform var(--motion-mid) var(--ease-expo), box-shadow var(--motion-mid) var(--ease);
-}
-
-.gallery__item:hover {
-  transform: scale(1.03) rotate(0.6deg);
+.gallery__item.is-in:hover {
+  transform: scale(1.03) rotate(0.5deg);
   box-shadow: var(--shadow-lg);
   z-index: 1;
 }
 
-.gallery__item:hover img {
+.gallery__item.is-in:hover .gallery__photo,
+.gallery__item.is-in:hover img {
   transform: scale(1.08);
   filter: brightness(1.04) saturate(1.05);
 }
 
-.gallery__item img {
-  transition: transform 0.9s var(--ease-expo), filter 0.7s ease;
+@media (prefers-reduced-motion: reduce) {
+  .gallery__item {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .gallery__media {
+    inset: 0;
+    transform: none;
+  }
 }
 
 .music-toggle.is-playing::after {

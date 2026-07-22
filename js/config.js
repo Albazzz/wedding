@@ -27,10 +27,10 @@ window.WEDDING_CONFIG = {
 
   /* ---------- Cặp đôi ---------- */
   couple: {
-    bride: "Nguyễn Thị A",
-    groom: "Trần Văn B",
+    bride: "Tú Trâm",
+    groom: "Văn Quân",
     /** Thứ tự hiển thị: "bride-groom" | "groom-bride" */
-    displayOrder: "bride-groom",
+    displayOrder: "groom-bride",
     /** Chữ nối giữa 2 tên, vd: "&", "và", "and" */
     joiner: "&",
   },
@@ -52,7 +52,7 @@ window.WEDDING_CONFIG = {
 
   /* ---------- Hero / trang bìa ---------- */
   hero: {
-    monogram: "A & B",
+    monogram: "Q & T",
     tagline: {
       vi: "Chúc mừng đến với lễ thành hôn",
       en: "Welcome to our wedding celebration",
@@ -63,54 +63,7 @@ window.WEDDING_CONFIG = {
     overlayOpacity: 0.12,
   },
 
-  /* ---------- Câu chuyện tình yêu (timeline) ---------- */
-  story: {
-    title: { vi: "Câu chuyện của chúng mình", en: "Our Love Story" },
-    subtitle: {
-      vi: "Những dấu mốc đáng nhớ trên hành trình yêu nhau",
-      en: "Milestones along our journey together",
-    },
-    milestones: [
-      {
-        date: { vi: "Tháng 3, 2020", en: "March 2020" },
-        title: { vi: "Lần đầu gặp", en: "First Meet" },
-        description: {
-          vi: "Một buổi chiều tình cờ — và mọi thứ bắt đầu từ đó.",
-          en: "A chance afternoon — and everything started from there.",
-        },
-        image: "assets/images/story-1.jpg",
-      },
-      {
-        date: { vi: "Tháng 8, 2021", en: "August 2021" },
-        title: { vi: "Chính thức hẹn hò", en: "Officially Dating" },
-        description: {
-          vi: "Từ bạn bè thành người yêu, cả hai quyết định đi cùng nhau.",
-          en: "From friends to lovers — we chose each other.",
-        },
-        image: "assets/images/story-2.jpg",
-      },
-      {
-        date: { vi: "Tháng 2, 2025", en: "February 2025" },
-        title: { vi: "Cầu hôn", en: "The Proposal" },
-        description: {
-          vi: "Một lời cầu hôn giản dị nhưng đầy cảm xúc.",
-          en: "A simple proposal filled with emotion.",
-        },
-        image: "assets/images/story-3.jpg",
-      },
-      {
-        date: { vi: "Tháng 12, 2026", en: "December 2026" },
-        title: { vi: "Ngày cưới", en: "Wedding Day" },
-        description: {
-          vi: "Chúng mình chính thức về chung một nhà.",
-          en: "We become one family.",
-        },
-        image: "assets/images/story-4.jpg",
-      },
-    ],
-  },
-
-  /* ---------- Thư viện ảnh / video ---------- */
+  /* ---------- Thư viện ảnh (Love Story đã gỡ) ---------- */
   gallery: {
     title: { vi: "Khoảnh khắc đẹp", en: "Beautiful Moments" },
     subtitle: {
@@ -118,16 +71,15 @@ window.WEDDING_CONFIG = {
       en: "A few frames we'd love to share",
     },
     images: [
-      { src: "assets/images/gallery-1.jpg", alt: "Photo 1" },
-      { src: "assets/images/gallery-2.jpg", alt: "Photo 2" },
-      { src: "assets/images/gallery-3.jpg", alt: "Photo 3" },
-      { src: "assets/images/gallery-4.jpg", alt: "Photo 4" },
-      { src: "assets/images/gallery-5.jpg", alt: "Photo 5" },
-      { src: "assets/images/gallery-6.jpg", alt: "Photo 6" },
+      { src: "assets/images/gallery-1.jpg", alt: "Văn Quân & Tú Trâm 1" },
+      { src: "assets/images/gallery-2.jpg", alt: "Văn Quân & Tú Trâm 2" },
+      { src: "assets/images/gallery-3.jpg", alt: "Văn Quân & Tú Trâm 3" },
+      { src: "assets/images/gallery-4.jpg", alt: "Văn Quân & Tú Trâm 4" },
+      { src: "assets/images/gallery-5.jpg", alt: "Văn Quân & Tú Trâm 5" },
     ],
-    /** Video YouTube — để rỗng "" nếu chưa có */
-    youtubeVideoId: "dQw4w9WgXcQ",
-    youtubeTitle: { vi: "Video pre-wedding", en: "Pre-wedding video" },
+    /** Video YouTube — để rỗng "" để ẩn (đã bỏ pre-wedding) */
+    youtubeVideoId: "",
+    youtubeTitle: { vi: "", en: "" },
   },
 
   /* ---------- Guestbook + thiệp tự trang trí ---------- */
@@ -512,7 +464,7 @@ window.WEDDING_CONFIG = {
 
   /* ---------- SEO / meta ---------- */
   meta: {
-    title: "A & B Wedding",
+    title: "Văn Quân & Tú Trâm Wedding",
     description: {
       vi: "Trang thiệp cưới online — kính mời bạn đến chung vui ngày trọng đại của chúng mình.",
       en: "Online wedding invitation — we'd love for you to celebrate with us.",
@@ -537,8 +489,7 @@ window.WEDDING_CONFIG = {
   labels: {
     nav: {
       home: { vi: "Trang chủ", en: "Home" },
-      story: { vi: "Câu chuyện", en: "Story" },
-      gallery: { vi: "Album", en: "Gallery" },
+      gallery: { vi: "Khoảnh khắc", en: "Moments" },
       guestbook: { vi: "Lời chúc", en: "Wishes" },
     },
     countdown: {

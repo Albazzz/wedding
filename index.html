@@ -56,11 +56,10 @@
 
     <!-- Header / Nav -->
     <header class="header" id="header">
-      <a href="#hero" class="header__logo font-script" data-bind="monogram">A & B</a>
+      <a href="#hero" class="header__logo font-script" data-bind="monogram">Q & T</a>
       <nav class="nav" id="nav" aria-label="Main">
         <a href="#hero" data-i18n="nav.home">Trang chủ</a>
-        <a href="#story" data-i18n="nav.story">Câu chuyện</a>
-        <a href="#gallery" data-i18n="nav.gallery">Album</a>
+        <a href="#gallery" data-i18n="nav.gallery">Khoảnh khắc</a>
         <a href="#guestbook" data-i18n="nav.guestbook">Lời chúc</a>
       </nav>
       <div class="header__actions">
@@ -102,7 +101,7 @@
             Chúc mừng đến với lễ thành hôn
           </p>
           <h1 class="hero__names fade-up delay-1">
-            <span class="font-script soft-float" data-bind="coupleNames">Nguyễn Thị A & Trần Văn B</span>
+            <span class="font-script soft-float" data-bind="coupleNames">Văn Quân & Tú Trâm</span>
           </h1>
           <div class="hero__divider fade-up delay-2">
             <span class="ornament">❧</span>
@@ -152,48 +151,24 @@
           </div>
           <p class="countdown__ended" id="countdown-ended" hidden></p>
 
-          <a href="#story" class="scroll-hint fade-up delay-4">
+          <a href="#gallery" class="scroll-hint fade-up delay-4">
             <span data-i18n="scrollDown">Vuốt xuống</span>
             <span class="scroll-hint__arrow" aria-hidden="true">↓</span>
           </a>
         </div>
       </section>
 
-      <!-- STORY -->
-      <section class="section story" id="story">
-        <div class="container">
-          <header class="section__header">
-            <p class="section__eyebrow font-script">Love Story</p>
-            <h2 class="section__title" data-i18n="story.title">Câu chuyện của chúng mình</h2>
-            <p class="section__subtitle" data-i18n="story.subtitle"></p>
-          </header>
-          <!-- Articles rendered by app.js; Apple-style scroll FX in CSS + setupTimelineScroll -->
-          <div class="timeline" id="story-timeline"></div>
-        </div>
-      </section>
-
-      <!-- GALLERY -->
+      <!-- GALLERY — Khoảnh khắc đẹp (hiệu ứng reveal kiểu Love Story) -->
       <section class="section gallery section--alt" id="gallery">
         <div class="container">
           <header class="section__header">
             <p class="section__eyebrow font-script">Gallery</p>
             <h2 class="section__title" data-i18n="gallery.title">Khoảnh khắc đẹp</h2>
-            <p class="section__subtitle" data-i18n="gallery.subtitle"></p>
+            <p class="section__subtitle" data-i18n="gallery.subtitle">
+              Một vài khung hình chúng mình muốn chia sẻ
+            </p>
           </header>
           <div class="gallery__grid" id="gallery-grid"></div>
-          <div class="gallery__video" id="gallery-video" hidden>
-            <h3 class="gallery__video-title" data-i18n="gallery.youtubeTitle"></h3>
-            <div class="gallery__video-wrap">
-              <iframe
-                id="youtube-iframe"
-                src=""
-                title="Pre-wedding video"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowfullscreen
-                loading="lazy"
-              ></iframe>
-            </div>
-          </div>
         </div>
       </section>
 
@@ -399,7 +374,7 @@
     <footer class="footer" id="footer">
       <div class="container">
         <p class="footer__thanks font-script" data-i18n="footer.thankYou">Cảm ơn bạn</p>
-        <p class="footer__names font-script" data-bind="coupleNames">A & B</p>
+        <p class="footer__names font-script" data-bind="coupleNames">Văn Quân & Tú Trâm</p>
         <p class="footer__sign" data-i18n="footer.signature">Với tất cả yêu thương</p>
         <div class="footer__ornament" aria-hidden="true">❧</div>
       </div>
