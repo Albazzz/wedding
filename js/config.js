@@ -73,7 +73,8 @@ window.WEDDING_CONFIG = {
      * F12 live: heroTune.setY('12%') rồi gửi lại số cho dev
      */
     backgroundPosition: "center top",
-    focusY: "0%",
+    /** heroTune.nudge(5) từ 0% → hạ khung 5% */
+    focusY: "5%",
     /** Overlay tối (0–1) để chữ dễ đọc */
     overlayOpacity: 0.12,
   },
