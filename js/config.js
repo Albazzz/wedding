@@ -60,27 +60,12 @@ window.WEDDING_CONFIG = {
     /** Ảnh nền hero (đường dẫn local hoặc URL) */
     backgroundImage: "assets/images/hero.jpg",
     /**
-     * Crop mép trên ảnh gốc 5158×7733 (đã bake vào hero.jpg):
-     * 8% H — chừa đầu; tinh chỉnh thêm bằng focusY hoặc F12 (xem heroTune).
+     * Crop mép trên ảnh gốc 5158×7733 (đã bake vào hero.jpg): ~8% H
+     * Neo: center top (cover, không zoom/pan)
      */
     cropTopPxOriginal: 618,
     cropTopPercent: 8,
-    /**
-     * Neo khung ảnh (object-position):
-     * focusX: "0%" trái · "50%" giữa · "100%" phải
-     * focusY: "0%" trên · tăng % = hạ khung (thấy thân hơn)
-     * F12: heroTune.help() | setX/setY | nudgeX/nudgeY
-     */
     backgroundPosition: "center top",
-    /** Trái ← → phải (50% = giữa). F12: heroTune.nudgeX(±5) */
-    focusX: "50%",
-    /** Trên ↑ ↓ dưới — 5% = hạ nhẹ so với mép trên */
-    focusY: "5%",
-    /**
-     * Phóng ảnh > 1 để luôn pan được 2 trục (màn wide trước đây X không đổi).
-     * 1.2–1.4 hợp lý; cao quá sẽ hơi zoom.
-     */
-    panScale: 1.28,
     /** Overlay tối (0–1) để chữ dễ đọc */
     overlayOpacity: 0.12,
   },

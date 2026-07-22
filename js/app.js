@@ -194,137 +194,26 @@
     const overlay = $("#hero-overlay");
     if (bg && cfg.hero?.backgroundImage) {
       const url = cfg.hero.backgroundImage;
-      /*
-        hero.jpg cắt 8% mép trên.
-        Pan 2 trục qua CSS vars + scale (object-position X không đủ trên màn wide).
-        F12: heroTune.help()
-      */
-      let focusX = cfg.hero?.focusX || "50%";
-      let focusY = cfg.hero?.focusY || "0%";
-      const panScale = Number(cfg.hero?.panScale) > 1 ? Number(cfg.hero.panScale) : 1.28;
+      /* hero.jpg cắt 8% mép trên — cover + neo top, không zoom/pan */
       const cacheVer = "v=cropTop8";
-
-      function normAxis(v, fallback) {
-        const s = String(v == null ? "" : v).trim();
-        if (!s) return fallback;
-        if (s === "left" || s === "top") return "0%";
-        if (s === "center" || s === "middle") return "50%";
-        if (s === "right" || s === "bottom") return "100%";
-        if (/^-?\d+(\.\d+)?$/.test(s)) return `${s}%`;
-        if (/%$/.test(s)) return s;
-        return s;
-      }
-
-      function axisNum(v, fallback) {
-        const n = parseFloat(String(normAxis(v, `${fallback}%`)).replace("%", ""));
-        return Number.isFinite(n) ? Math.max(0, Math.min(100, n)) : fallback;
-      }
-
-      function applyPos(el, x, y) {
-        if (!el) return;
-        const fx = axisNum(x, 50);
-        const fy = axisNum(y, 0);
-        el.style.setProperty("--hero-fx", String(fx));
-        el.style.setProperty("--hero-fy", String(fy));
-        el.style.setProperty("--hero-pan-scale", String(panScale));
-        /* fallback inline transform nếu browser lạ với nested translate */
-        const tx = (50 - fx) * 0.55;
-        const ty = (50 - fy) * 0.55;
-        el.style.transform = `translate(-50%, -50%) scale(${panScale}) translate(${tx}%, ${ty}%)`;
-        el.style.objectPosition = "center center";
-        el.style.backgroundPosition = `${fx}% ${fy}%`;
-      }
-
-      function applyAll(x, y) {
-        if (x != null) focusX = normAxis(x, focusX);
-        if (y != null) focusY = normAxis(y, focusY);
-        applyPos(photo, focusX, focusY);
-        /* bg gradient không pan ảnh */
-      }
-
-      function logPos(tag) {
-        const msg =
-          `[heroTune]${tag ? " " + tag : ""} focusX: "${focusX}", focusY: "${focusY}"\n` +
-          `  gửi lại cho dev →  focusX: "${focusX}",  focusY: "${focusY}"`;
-        console.log(msg);
-        return { focusX, focusY };
-      }
-
-      function parseDelta(d) {
-        const n = Number(d);
-        return Number.isFinite(n) ? n : 0;
-      }
-
-      function clampPct(n) {
-        return Math.max(0, Math.min(100, n));
-      }
-
-      applyAll(focusX, focusY);
-
-      window.heroTune = {
-        getX() {
-          return focusX;
-        },
-        getY() {
-          return focusY;
-        },
-        get() {
-          return { focusX, focusY, panScale };
-        },
-        setX(x) {
-          applyAll(x, null);
-          return logPos("X");
-        },
-        setY(y) {
-          applyAll(null, y);
-          return logPos("Y");
-        },
-        set(x, y) {
-          applyAll(x, y);
-          return logPos("XY");
-        },
-        /** nudgeX(5) phải · nudgeX(-5) trái — giờ pan thật (scale overflow) */
-        nudgeX(deltaPercent) {
-          const n = axisNum(focusX, 50);
-          const next = `${clampPct(n + parseDelta(deltaPercent))}%`;
-          return window.heroTune.setX(next);
-        },
-        /** nudgeY(5) hạ · nudgeY(-5) lên */
-        nudgeY(deltaPercent) {
-          const n = axisNum(focusY, 0);
-          const next = `${clampPct(n + parseDelta(deltaPercent))}%`;
-          return window.heroTune.setY(next);
-        },
-        nudge(deltaPercent) {
-          return window.heroTune.nudgeY(deltaPercent);
-        },
-        help() {
-          console.log(
-            [
-              "=== heroTune — pan ảnh hero (trái/phải + trên/dưới) ===",
-              "heroTune.nudgeX(-5)  // TRÁI",
-              "heroTune.nudgeX(5)   // PHẢI",
-              "heroTune.nudgeY(-5)  // LÊN (thấy đầu)",
-              "heroTune.nudgeY(5)   // XUỐNG",
-              "heroTune.setX('40%')",
-              "heroTune.setY('8%')",
-              "heroTune.set('45%','8%')",
-              "heroTune.get()",
-              "Gửi lại: focusX + focusY",
-            ].join("\n")
-          );
-        },
-      };
-
       const withVer = (u) => u + (u.includes("?") ? "&" : "?") + cacheVer;
+
+      if (photo) {
+        photo.style.objectPosition = "center top";
+        photo.style.transform = "";
+      }
+      if (bg) {
+        bg.style.backgroundPosition = "center top";
+      }
 
       const reveal = () => {
         if (photo) {
           photo.src = withVer(url);
-          applyAll(focusX, focusY);
+          photo.style.objectPosition = "center top";
         } else {
           bg.style.backgroundImage = `url("${withVer(url)}")`;
           bg.style.backgroundSize = "cover";
+          bg.style.backgroundPosition = "center top";
         }
         bg.classList.add("has-image");
       };
