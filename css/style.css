@@ -309,15 +309,15 @@ body.intro-lock {
   pointer-events: none;
 }
 
-/* Cụm cuộn thư — cinematic 3D open */
+/* Cụm cuộn thư — cinematic 3D open (rộng hơn cho tên đầy đủ) */
 .scroll-letter {
   position: relative;
   z-index: 1;
   display: flex;
   align-items: stretch;
   justify-content: center;
-  width: min(92vw, 560px);
-  max-height: min(78svh, 520px);
+  width: min(96vw, 760px);
+  max-height: min(82svh, 580px);
   filter: drop-shadow(0 28px 56px rgba(0, 0, 0, 0.5));
   perspective: 1200px;
   transform: scale(0.94) translateY(12px);
@@ -416,7 +416,7 @@ body.intro-lock {
 }
 
 .scroll-letter.is-open .scroll-letter__panel {
-  max-width: 520px;
+  max-width: 720px;
   opacity: 1;
   filter: blur(0);
   transform: rotateX(0) scale(1);
@@ -442,14 +442,14 @@ body.intro-lock {
 .scroll-letter__inner {
   position: relative;
   z-index: 1;
-  width: min(92vw, 520px);
-  padding: clamp(1.75rem, 5vw, 2.75rem) clamp(1.25rem, 4vw, 2.25rem);
+  width: min(96vw, 720px);
+  padding: clamp(1.75rem, 5vw, 2.75rem) clamp(1.35rem, 4.5vw, 2.75rem);
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: min(62svh, 420px);
+  min-height: min(62svh, 440px);
   box-sizing: border-box;
 }
 
@@ -484,16 +484,19 @@ body.intro-lock {
 
 .scroll-letter__message {
   font-family: var(--font-display);
-  font-size: clamp(1.35rem, 4.2vw, 1.85rem);
+  font-size: clamp(1.2rem, 3.4vw, 1.75rem);
   font-weight: 500;
   line-height: 1.55;
   color: var(--color-ink);
   min-height: 3.2em;
-  max-width: min(92vw, 22em);
-  letter-spacing: 0.02em;
+  max-width: min(94vw, 40em);
+  width: 100%;
+  letter-spacing: 0.015em;
   /* wrap only between words, never mid-glyph */
   overflow-wrap: normal;
   word-break: normal;
+  box-sizing: border-box;
+  padding-inline: 0.15em;
 }
 
 /* Word / names groups — keeps inline-block .char from wrapping mid-name */
@@ -503,9 +506,12 @@ body.intro-lock {
   vertical-align: baseline;
 }
 
+/* Tên đầy đủ dài — khung rộng, hơi nhỏ chữ cho vừa 1 dòng */
 .scroll-letter__message .char-word--names {
   white-space: nowrap !important;
   max-width: 100%;
+  font-size: 0.92em;
+  letter-spacing: 0.01em;
 }
 
 .scroll-letter__message .char {
@@ -528,9 +534,9 @@ body.intro-lock {
 
 .scroll-letter__names {
   margin-top: 1.15rem;
-  font-size: clamp(1.75rem, 6.5vw, 2.85rem);
+  font-size: clamp(1.35rem, 4.5vw, 2.45rem);
   color: var(--color-accent-deep);
-  line-height: 1.2;
+  line-height: 1.25;
   opacity: 0;
   transform: scale(0.92);
   transition: opacity 1.2s ease, transform 1.2s cubic-bezier(0.22, 1, 0.36, 1);
@@ -540,6 +546,7 @@ body.intro-lock {
   overflow-y: hidden;
   scrollbar-width: none;
   text-align: center;
+  padding-inline: 0.25em;
 }
 
 .scroll-letter__names::-webkit-scrollbar {
@@ -596,16 +603,33 @@ body.intro-lock {
 }
 
 @media (max-width: 480px) {
+  .scroll-letter {
+    width: min(98vw, 760px);
+  }
+
+  .scroll-letter__inner {
+    width: min(98vw, 720px);
+    padding-inline: 0.85rem;
+  }
+
+  .scroll-letter__message {
+    font-size: clamp(1.05rem, 4.2vw, 1.35rem);
+  }
+
+  .scroll-letter__message .char-word--names {
+    font-size: 0.88em;
+  }
+
   .scroll-letter__roll {
-    flex-basis: 18px;
-    width: 18px;
+    flex-basis: 16px;
+    width: 16px;
   }
 
   .scroll-letter__roll::before,
   .scroll-letter__roll::after {
-    width: 26px;
+    width: 24px;
     height: 11px;
-    margin-left: -13px;
+    margin-left: -12px;
   }
 }
 
