@@ -60,11 +60,13 @@ window.WEDDING_CONFIG = {
     /** Ảnh nền hero (đường dẫn local hoặc URL) */
     backgroundImage: "assets/images/hero.jpg",
     /**
-     * Crop mép trên ảnh gốc (px trên file gốc 5158×7733).
-     * 255/7733 ≈ 3.297% — hero.jpg đã cắt sẵn; CSS dùng % này nếu cần tinh chỉnh.
+     * Crop mép trên theo khung hiển thị:
+     * w hiện tại 727px, cắt 255px → 255/727 ≈ 35.076%
+     * Map lên ảnh gốc 5158×7733: top ≈ 1809px — đã bake vào hero.jpg
      */
-    cropTopPxOriginal: 255,
-    cropTopPercent: 3.297,
+    cropRefWidth: 727,
+    cropTopPxAtRef: 255,
+    cropTopPercent: 35.076,
     /**
      * Neo khung sau khi đã bỏ mép trên: "center top" = cắt tiếp từ trên xuống
      */

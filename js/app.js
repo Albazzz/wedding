@@ -195,16 +195,15 @@
     if (bg && cfg.hero?.backgroundImage) {
       const url = cfg.hero.backgroundImage;
       /*
-        Ảnh hero.jpg đã cắt sẵn 255px trên file gốc (7733px ≈ 3.297%).
+        hero.jpg đã cắt top theo 255/727 ≈ 35.076% (ref width 727px).
         object-position: center top → neo mép trên mới, crop phần dưới.
-        cropTopPercent chỉ dùng nếu muốn lệch thêm (thường 0 vì đã bake vào file).
       */
       const extraCrop = Number(cfg.hero?.cropTopPercentExtra) || 0;
       const pos = cfg.hero?.backgroundPosition || "center top";
+      const cacheVer = "v=crop727x255";
       const applyPos = (el) => {
         if (!el) return;
         el.style.setProperty("--hero-crop-top", `${extraCrop}%`);
-        /* "center top" hoặc "center 0%" — top sau khi đã crop file */
         if (extraCrop > 0) {
           el.style.objectPosition = `center ${extraCrop}%`;
           el.style.backgroundPosition = `center ${extraCrop}%`;
@@ -216,13 +215,14 @@
       applyPos(photo);
       applyPos(bg);
 
+      const withVer = (u) => u + (u.includes("?") ? "&" : "?") + cacheVer;
+
       const reveal = () => {
         if (photo) {
-          /* cache-bust để browser lấy bản đã crop */
-          photo.src = url + (url.includes("?") ? "&" : "?") + "v=crop255";
+          photo.src = withVer(url);
           applyPos(photo);
         } else {
-          bg.style.backgroundImage = `url("${url}?v=crop255")`;
+          bg.style.backgroundImage = `url("${withVer(url)}")`;
           bg.style.backgroundSize = "cover";
           applyPos(bg);
         }
@@ -234,7 +234,7 @@
       probe.onerror = () => {
         /* keep gradient fallback */
       };
-      probe.src = url + (url.includes("?") ? "&" : "?") + "v=crop255";
+      probe.src = withVer(url);
     }
     if (overlay) {
       const o = cfg.hero?.overlayOpacity ?? 0.45;
