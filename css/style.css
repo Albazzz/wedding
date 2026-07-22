@@ -890,14 +890,20 @@ body.intro-lock {
     linear-gradient(145deg, #c4a898 0%, #a88878 45%, #8b6b5a 100%);
 }
 
-/* Ảnh hero: cover + neo TOP (cắt dưới, giữ đầu/mặt) — không crop giữa */
+/*
+  Ảnh hero: file đã cắt 255px trên (gốc 7733px ≈ 3.297%).
+  object-position top = cắt tiếp phần DƯỚI, không cắt ngang đầu.
+  --hero-crop-top: tinh chỉnh thêm theo % chiều cao ảnh (0 = không lệch).
+*/
 .hero__photo {
+  --hero-crop-top: 0%;
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center top;
+  /* 50% X% — X lệch xuống theo cropTopPercent nếu set từ JS */
+  object-position: center var(--hero-crop-top, 0%);
   display: block;
   opacity: 0;
   transform: scale(1.02);

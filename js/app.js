@@ -194,22 +194,35 @@
     const overlay = $("#hero-overlay");
     if (bg && cfg.hero?.backgroundImage) {
       const url = cfg.hero.backgroundImage;
-      /* center top = crop từ trên xuống, giữ mặt cô dâu chú rể */
+      /*
+        Ảnh hero.jpg đã cắt sẵn 255px trên file gốc (7733px ≈ 3.297%).
+        object-position: center top → neo mép trên mới, crop phần dưới.
+        cropTopPercent chỉ dùng nếu muốn lệch thêm (thường 0 vì đã bake vào file).
+      */
+      const extraCrop = Number(cfg.hero?.cropTopPercentExtra) || 0;
       const pos = cfg.hero?.backgroundPosition || "center top";
       const applyPos = (el) => {
         if (!el) return;
-        el.style.objectPosition = pos;
-        el.style.backgroundPosition = pos;
+        el.style.setProperty("--hero-crop-top", `${extraCrop}%`);
+        /* "center top" hoặc "center 0%" — top sau khi đã crop file */
+        if (extraCrop > 0) {
+          el.style.objectPosition = `center ${extraCrop}%`;
+          el.style.backgroundPosition = `center ${extraCrop}%`;
+        } else {
+          el.style.objectPosition = pos.includes("top") ? "center top" : pos;
+          el.style.backgroundPosition = el.style.objectPosition;
+        }
       };
       applyPos(photo);
       applyPos(bg);
 
       const reveal = () => {
         if (photo) {
-          photo.src = url;
+          /* cache-bust để browser lấy bản đã crop */
+          photo.src = url + (url.includes("?") ? "&" : "?") + "v=crop255";
           applyPos(photo);
         } else {
-          bg.style.backgroundImage = `url("${url}")`;
+          bg.style.backgroundImage = `url("${url}?v=crop255")`;
           bg.style.backgroundSize = "cover";
           applyPos(bg);
         }
@@ -221,7 +234,7 @@
       probe.onerror = () => {
         /* keep gradient fallback */
       };
-      probe.src = url;
+      probe.src = url + (url.includes("?") ? "&" : "?") + "v=crop255";
     }
     if (overlay) {
       const o = cfg.hero?.overlayOpacity ?? 0.45;
