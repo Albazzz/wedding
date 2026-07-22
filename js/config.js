@@ -66,14 +66,15 @@ window.WEDDING_CONFIG = {
     cropTopPxOriginal: 618,
     cropTopPercent: 8,
     /**
-     * Neo dọc (object-position Y):
-     * - "0%" / "top" = neo mép trên ảnh
-     * - tăng % (vd "15%") = khung nhìn thấp hơn (thấy nhiều thân hơn)
-     * - giảm về 0 = thấy nhiều phần trên (đầu) hơn
-     * F12 live: heroTune.setY('12%') rồi gửi lại số cho dev
+     * Neo khung ảnh (object-position):
+     * focusX: "0%" trái · "50%" giữa · "100%" phải
+     * focusY: "0%" trên · tăng % = hạ khung (thấy thân hơn)
+     * F12: heroTune.help() | setX/setY | nudgeX/nudgeY
      */
     backgroundPosition: "center top",
-    /** heroTune.nudge(5) từ 0% → hạ khung 5% */
+    /** Trái ← → phải (50% = giữa) */
+    focusX: "50%",
+    /** Trên ↑ ↓ dưới — 5% = hạ nhẹ so với mép trên */
     focusY: "5%",
     /** Overlay tối (0–1) để chữ dễ đọc */
     overlayOpacity: 0.12,

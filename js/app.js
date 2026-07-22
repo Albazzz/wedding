@@ -195,68 +195,137 @@
     if (bg && cfg.hero?.backgroundImage) {
       const url = cfg.hero.backgroundImage;
       /*
-        hero.jpg cắt 8% mép trên. Chỉnh live bằng window.heroTune (F12).
-        focusY: 0% = trên cùng; tăng % = hạ khung (thấy nhiều thân).
+        hero.jpg cắt 8% mép trên. Chỉnh live: window.heroTune (F12).
+        focusX: trái/phải · focusY: trên/dưới
       */
+      let focusX = cfg.hero?.focusX || "50%";
       let focusY = cfg.hero?.focusY || "0%";
       const cacheVer = "v=cropTop8";
 
-      function resolvePos(y) {
-        const v = String(y == null ? "0%" : y).trim();
-        if (!v || v === "0" || v === "0%" || v === "top") return "center top";
-        if (v.startsWith("center")) return v;
-        return `center ${v}`;
+      function normAxis(v, fallback) {
+        const s = String(v == null ? "" : v).trim();
+        if (!s) return fallback;
+        if (s === "left" || s === "top") return "0%";
+        if (s === "center" || s === "middle") return "50%";
+        if (s === "right" || s === "bottom") return "100%";
+        if (/^-?\d+(\.\d+)?$/.test(s)) return `${s}%`;
+        if (/%$/.test(s)) return s;
+        return s;
       }
 
-      function applyPos(el, y) {
+      function buildPos(x, y) {
+        const xx = normAxis(x, "50%");
+        const yy = normAxis(y, "0%");
+        /* object-position keywords khi đúng chuẩn top/center */
+        if (xx === "50%" && (yy === "0%" || yy === "top")) return "center top";
+        if (xx === "50%" && yy === "50%") return "center center";
+        return `${xx} ${yy}`;
+      }
+
+      function applyPos(el, x, y) {
         if (!el) return;
-        const pos = resolvePos(y);
-        const yy = pos === "center top" ? "0%" : pos.replace(/^center\s+/, "");
+        const xx = normAxis(x, "50%");
+        const yy = normAxis(y, "0%");
+        const pos = buildPos(xx, yy);
+        el.style.setProperty("--hero-focus-x", xx);
         el.style.setProperty("--hero-focus-y", yy);
         el.style.objectPosition = pos;
         el.style.backgroundPosition = pos;
       }
 
-      function applyAll(y) {
-        focusY = y;
-        applyPos(photo, y);
-        applyPos(bg, y);
+      function applyAll(x, y) {
+        if (x != null) focusX = normAxis(x, focusX);
+        if (y != null) focusY = normAxis(y, focusY);
+        applyPos(photo, focusX, focusY);
+        applyPos(bg, focusX, focusY);
       }
 
-      applyAll(focusY);
+      function logPos(tag) {
+        const pos = buildPos(focusX, focusY);
+        console.log(
+          `[heroTune]${tag ? " " + tag : ""} object-position: ${pos}\n` +
+            `  gửi lại cho dev →  focusX: "${focusX}",  focusY: "${focusY}"`
+        );
+        return pos;
+      }
+
+      function parseDelta(d) {
+        const n = Number(d);
+        return Number.isFinite(n) ? n : 0;
+      }
+
+      function clampPct(n) {
+        return Math.max(0, Math.min(100, n));
+      }
+
+      applyAll(focusX, focusY);
 
       /* F12: chỉnh tay rồi copy thông số gửi lại */
       window.heroTune = {
-        /** object-position Y hiện tại */
+        getX() {
+          return focusX;
+        },
         getY() {
           return focusY;
         },
-        /** setY('0%') | setY('12%') | setY('top') — xem ngay trên trang */
-        setY(y) {
-          applyAll(y);
-          const pos = resolvePos(y);
-          console.log(
-            `[heroTune] object-position: ${pos}  |  gửi lại cho dev: focusY: "${y}"`
-          );
-          return pos;
+        get() {
+          return { focusX, focusY, objectPosition: buildPos(focusX, focusY) };
         },
-        /** nudge(5) hạ khung 5%; nudge(-5) kéo lên (thấy đầu hơn) */
-        nudge(deltaPercent) {
+        /** setX('40%') | setX('left') | setX(45) — lệch ngang */
+        setX(x) {
+          applyAll(x, null);
+          return logPos("X");
+        },
+        /** setY('0%') | setY('12%') | setY('top') — lệch dọc */
+        setY(y) {
+          applyAll(null, y);
+          return logPos("Y");
+        },
+        /** set('45%', '8%') — cả hai trục */
+        set(x, y) {
+          applyAll(x, y);
+          return logPos("XY");
+        },
+        /**
+         * nudgeX(5)  → phải 5%
+         * nudgeX(-5) → trái 5%
+         */
+        nudgeX(deltaPercent) {
+          const n = parseFloat(String(focusX).replace("%", "")) || 50;
+          const next = `${clampPct(n + parseDelta(deltaPercent))}%`;
+          return window.heroTune.setX(next);
+        },
+        /**
+         * nudgeY(5)  → hạ 5%
+         * nudgeY(-5) → kéo lên 5% (thấy đầu hơn)
+         * alias: nudge(5) = nudgeY(5)
+         */
+        nudgeY(deltaPercent) {
           const n = parseFloat(String(focusY).replace("%", "")) || 0;
-          const next = `${Math.max(0, Math.min(100, n + Number(deltaPercent) || 0))}%`;
+          const next = `${clampPct(n + parseDelta(deltaPercent))}%`;
           return window.heroTune.setY(next);
         },
-        /** In hướng dẫn nhanh */
+        nudge(deltaPercent) {
+          return window.heroTune.nudgeY(deltaPercent);
+        },
         help() {
           console.log(
             [
-              "=== heroTune (chỉnh khung ảnh hero) ===",
-              "heroTune.setY('0%')   // neo trên — thấy đầu hơn",
-              "heroTune.setY('15%')  // hạ khung — thấy thân/hoa hơn",
-              "heroTune.nudge(-5)    // kéo lên 5% (thấy đầu)",
-              "heroTune.nudge(5)     // hạ xuống 5%",
-              "heroTune.getY()       // xem giá trị hiện tại",
-              "Khi ưng, gửi: focusY + screenshot",
+              "=== heroTune — chỉnh khung ảnh hero ===",
+              "— TRÁI / PHẢI —",
+              "heroTune.nudgeX(-5)   // sang trái 5%",
+              "heroTune.nudgeX(5)    // sang phải 5%",
+              "heroTune.setX('40%')  // đặt ngang",
+              "heroTune.setX('left') // sát trái",
+              "— TRÊN / DƯỚI —",
+              "heroTune.nudgeY(-5)   // kéo lên (thấy đầu)",
+              "heroTune.nudgeY(5)    // hạ xuống",
+              "heroTune.nudge(5)     // = nudgeY(5)",
+              "heroTune.setY('0%')   // mép trên",
+              "— KHÁC —",
+              "heroTune.set('45%','8%')  // cả X và Y",
+              "heroTune.get()            // xem số hiện tại",
+              "Khi ưng, gửi: focusX + focusY (+ screenshot)",
             ].join("\n")
           );
         },
@@ -267,11 +336,11 @@
       const reveal = () => {
         if (photo) {
           photo.src = withVer(url);
-          applyAll(focusY);
+          applyAll(focusX, focusY);
         } else {
           bg.style.backgroundImage = `url("${withVer(url)}")`;
           bg.style.backgroundSize = "cover";
-          applyAll(focusY);
+          applyAll(focusX, focusY);
         }
         bg.classList.add("has-image");
       };

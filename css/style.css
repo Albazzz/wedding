@@ -915,17 +915,18 @@ body.intro-lock {
 }
 
 /*
-  Ảnh hero: cắt nhẹ ~8% mép trên. Chỉnh live: F12 → Console → heroTune.help()
-  --hero-focus-y: 0% = trên (thấy đầu); tăng % = hạ khung.
+  Ảnh hero: cắt ~8% mép trên.
+  F12: heroTune.help() — focusX trái/phải, focusY trên/dưới
 */
 .hero__photo {
+  --hero-focus-x: 50%;
   --hero-focus-y: 0%;
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center var(--hero-focus-y, 0%);
+  object-position: var(--hero-focus-x, 50%) var(--hero-focus-y, 0%);
   display: block;
   opacity: 0;
   transform: none;
