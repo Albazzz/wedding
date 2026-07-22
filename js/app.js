@@ -507,9 +507,6 @@
 
     const cards = galleryImages
       .map((img, i) => {
-        const date =
-          t(img.date) ||
-          (lang === "vi" ? `Khoảnh khắc ${String(i + 1).padStart(2, "0")}` : `Moment ${String(i + 1).padStart(2, "0")}`);
         const title = t(img.title) || img.alt || (lang === "vi" ? "Kỷ niệm" : "Memory");
         const desc = t(img.description) || "";
         const alt = escapeHtml(img.alt || title);
@@ -517,7 +514,6 @@
           <article class="timeline__item">
             <span class="timeline__dot" aria-hidden="true"></span>
             <div class="timeline__card glass-shine">
-              <p class="timeline__date">${escapeHtml(date)}</p>
               <h3 class="timeline__title">${escapeHtml(title)}</h3>
               ${desc ? `<p class="timeline__desc">${escapeHtml(desc)}</p>` : ""}
               <button type="button" class="timeline__img gallery-tl__photo" data-index="${i}"
