@@ -1665,41 +1665,83 @@
     }
   }
 
+  function ensureWallRotateHint() {
+    const stage = $("#wishes-wall-stage");
+    if (!stage) return null;
+    let hint = $("#wall-letter-rotate-hint", stage) || $("#wall-letter-rotate-hint");
+    if (!hint) {
+      hint = document.createElement("div");
+      hint.className = "wall-letter__rotate-hint";
+      hint.id = "wall-letter-rotate-hint";
+      hint.innerHTML =
+        '<span class="wall-letter__rotate-icon" aria-hidden="true">↻</span>' +
+        '<p class="wall-letter__rotate-text" id="wall-letter-rotate-text"></p>';
+      stage.appendChild(hint);
+    }
+    const textEl = $("#wall-letter-rotate-text", hint) || $("#wall-letter-rotate-text");
+    if (textEl) {
+      const raw =
+        t(cfg.guestbook.wallRotateHint) ||
+        "Xoay ngang điện thoại để xem toàn màn hình";
+      textEl.textContent = raw.replace(/\n/g, " · ");
+    }
+    return hint;
+  }
+
+  function setWallRotateHintVisible(show) {
+    const hint = ensureWallRotateHint();
+    if (!hint) return;
+    hint.hidden = !show;
+    hint.setAttribute("aria-hidden", show ? "false" : "true");
+    const stage = $("#wishes-wall-stage");
+    stage?.classList.toggle("is-phone-portrait", !!show);
+  }
+
   /**
-   * Phone: portrait → normal wall; landscape → CSS fullscreen.
-   * Desktop/tablet: button + Fullscreen API unchanged.
+   * Phone: portrait → gợi ý xoay ngang (màn thấp);
+   *        landscape → CSS fullscreen ngang.
+   * Desktop/tablet: nút + Fullscreen API.
    */
   function syncPhoneLandscapeFullscreen() {
     const stage = $("#wishes-wall-stage");
     if (!stage) return;
 
     if (!isPhoneNoFsApi()) {
-      stage.classList.remove("is-fs-phone-landscape");
-      /* leave desktop FS state alone */
+      stage.classList.remove("is-fs-phone-landscape", "is-phone-portrait");
+      setWallRotateHintVisible(false);
       syncWallFsButton();
       return;
     }
 
-    const wantFs = isLandscapeOrientation();
+    const land = isLandscapeOrientation();
     const isPhoneFs = stage.classList.contains("is-fs-phone-landscape");
 
-    if (wantFs && !isPhoneFs) {
-      /* exit any stuck native FS first */
-      if (document.fullscreenElement || document.webkitFullscreenElement) {
-        const exit = document.exitFullscreen || document.webkitExitFullscreen;
-        if (exit) exit.call(document).catch(() => {});
+    if (land) {
+      setWallRotateHintVisible(false);
+      if (!isPhoneFs) {
+        if (document.fullscreenElement || document.webkitFullscreenElement) {
+          const exit = document.exitFullscreen || document.webkitExitFullscreen;
+          if (exit) exit.call(document).catch(() => {});
+        }
+        enterWallCssFullscreen(true);
+      } else {
+        syncWallFsButton();
+        if (wallFlyRunning) {
+          window.setTimeout(() => startWallHeartFlight(stage), 80);
+        }
       }
-      enterWallCssFullscreen(true);
-    } else if (!wantFs && isPhoneFs) {
-      stage.classList.remove("is-fs", "is-fs-phone-landscape");
-      document.body.classList.remove("wall-fs-lock");
-      restoreLetterRevealHome();
+    } else {
+      /* dọc: thoát FS, hiện overlay “xoay ngang” */
+      if (isPhoneFs || stage.classList.contains("is-fs")) {
+        stage.classList.remove("is-fs", "is-fs-phone-landscape");
+        document.body.classList.remove("wall-fs-lock");
+        restoreLetterRevealHome();
+      }
+      setWallRotateHintVisible(true);
       syncWallFsButton();
       if (wallFlyRunning) {
         window.setTimeout(() => startWallHeartFlight(stage), 100);
       }
-    } else {
-      syncWallFsButton();
     }
   }
 
@@ -2096,6 +2138,14 @@
     if (orbits) renderWallHearts(picks);
     else {
       stage.innerHTML = `
+        <button type="button" class="wall-letter__fs" id="wall-letter-fs" aria-pressed="false" title="Toàn màn hình">
+          <span class="wall-letter__fs-icon" aria-hidden="true">⛶</span>
+          <span class="wall-letter__fs-label" id="wall-letter-fs-label">Toàn màn hình</span>
+        </button>
+        <div class="wall-letter__rotate-hint" id="wall-letter-rotate-hint" hidden>
+          <span class="wall-letter__rotate-icon" aria-hidden="true">↻</span>
+          <p class="wall-letter__rotate-text" id="wall-letter-rotate-text"></p>
+        </div>
         <canvas class="wall-letter__fx" id="wall-letter-fx" aria-hidden="true"></canvas>
         <div class="wall-letter__vignette" aria-hidden="true"></div>
         <div class="wall-letter__center">
@@ -2103,22 +2153,23 @@
           <p class="wall-letter__hint" id="wall-letter-hint"></p>
         </div>
         <div class="wall-letter__orbits" id="wall-letter-orbits"></div>
-        <p class="wishes-wall__empty" id="wall-letter-empty" hidden></p>
-        <button type="button" class="wall-letter__fs" id="wall-letter-fs" aria-pressed="false" title="Toàn màn hình">
-          <span class="wall-letter__fs-icon" aria-hidden="true">⛶</span>
-          <span class="wall-letter__fs-label" id="wall-letter-fs-label">Toàn màn hình</span>
-        </button>`;
+        <p class="wishes-wall__empty" id="wall-letter-empty" hidden></p>`;
       updateWallLetterLabels();
       setupWallFullscreen();
       renderWallHearts(picks);
     }
 
+    ensureWallRotateHint();
+    syncPhoneLandscapeFullscreen();
     bindWallLetterClicks(stage);
     startWallLetterFx(stage);
     startWallHeartFlight(stage);
     /* second pass after layout so positions use real stage size */
     window.setTimeout(() => {
-      if (stage.isConnected) startWallHeartFlight(stage);
+      if (stage.isConnected) {
+        startWallHeartFlight(stage);
+        syncPhoneLandscapeFullscreen();
+      }
     }, 200);
     if (realCount > 0) startWallTimer();
     else if (wallTimer) {

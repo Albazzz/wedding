@@ -3558,6 +3558,77 @@ body.wall-fs-lock {
   overflow: hidden;
 }
 
+/* Phone rotate-to-landscape hint (portrait — màn thấp) */
+.wall-letter__rotate-hint {
+  position: absolute;
+  inset: 0;
+  z-index: 14;
+  display: grid;
+  place-content: center;
+  place-items: center;
+  gap: 0.65rem;
+  padding: 1.25rem;
+  text-align: center;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 50% 45%, rgba(40, 28, 24, 0.35) 0%, rgba(20, 14, 12, 0.72) 100%);
+  color: #f3e6d8;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.wall-letter__rotate-hint[hidden] {
+  display: none !important;
+}
+
+.wall-letter__rotate-icon {
+  display: grid;
+  place-items: center;
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 50%;
+  border: 1.5px solid rgba(232, 213, 181, 0.45);
+  font-size: 1.55rem;
+  line-height: 1;
+  color: #e9ce94;
+  animation: wall-rotate-nudge 1.8s ease-in-out infinite;
+  box-shadow: 0 0 24px rgba(196, 165, 116, 0.25);
+}
+
+.wall-letter__rotate-text {
+  margin: 0;
+  max-width: 16rem;
+  font-family: var(--font-body);
+  font-size: 0.92rem;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  line-height: 1.45;
+  color: rgba(250, 246, 242, 0.95);
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.45);
+}
+
+@keyframes wall-rotate-nudge {
+  0%,
+  100% {
+    transform: rotate(-18deg);
+  }
+  50% {
+    transform: rotate(22deg);
+  }
+}
+
+/* Portrait phone: làm mờ tim phía sau hint (vẫn thấy nền) */
+.wishes-wall__stage.wall-letter.is-phone-portrait .wall-letter__orbits,
+.wishes-wall__stage.wall-letter.is-phone-portrait .wall-letter__fly {
+  opacity: 0.35;
+  filter: blur(1px);
+  transition: opacity 0.35s ease, filter 0.35s ease;
+}
+
+.wishes-wall__stage.wall-letter.is-phone-portrait .wall-letter__center {
+  opacity: 0.25;
+}
+
 /* Phones: Fullscreen API unreliable — hide button; rotate landscape instead */
 @media (hover: none) and (pointer: coarse) {
   .wall-letter__fs,
@@ -3566,13 +3637,29 @@ body.wall-fs-lock {
   }
 }
 
-/* Phone landscape: stage fills the short viewport (rotate = “fullscreen”) */
+/* Phone landscape FS: ưu tiên chiều ngang full */
+.wishes-wall__stage.wall-letter.is-fs-phone-landscape {
+  z-index: 600;
+}
+
+.wishes-wall__stage.wall-letter.is-fs-phone-landscape .wall-letter__center {
+  transform: scale(0.92);
+}
+
+.wishes-wall__stage.wall-letter.is-fs-phone-landscape .wall-letter__title {
+  font-size: clamp(1.1rem, 4.5vh, 1.65rem);
+}
+
 @media (hover: none) and (pointer: coarse) and (orientation: landscape) {
   .wishes-wall__stage.wall-letter:not(.is-fs) {
     min-height: 100svh;
     max-height: none;
     height: 100svh;
     border-radius: 0;
+  }
+
+  .wall-letter__rotate-hint {
+    display: none !important;
   }
 }
 
