@@ -4758,7 +4758,8 @@ body.is-low-power .wall-orbit {
     width: 100%;
     box-sizing: border-box;
     padding-inline: 1rem;
-    padding-top: calc(var(--header-offset) + 1.75rem);
+    /* +10px so content sits a bit lower on phone */
+    padding-top: calc(var(--header-offset) + 1.75rem + 10px);
     padding-bottom: max(3.25rem, calc(1.75rem + var(--sab)));
     margin-inline: 0;
     /* nội dung hero vẫn nhận tap, vuốt dọc scroll page */

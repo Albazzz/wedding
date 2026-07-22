@@ -62,9 +62,12 @@
     return displayOrder === "groom-bride" ? groom + j + bride : bride + j + groom;
   }
 
-  /** 2 dòng trên phone: chú rể / cô dâu (hoặc ngược lại theo displayOrder) */
+  /** Phone layout: max-width CSS + short edge (tránh desktop-wide DevTools / iPad) */
   function isPhoneLayout() {
-    return window.matchMedia("(max-width: 767px)").matches;
+    if (window.matchMedia("(max-width: 767px)").matches) return true;
+    /* fallback: màn hình thật hẹp (một số webview) */
+    const short = Math.min(window.innerWidth || 0, window.innerHeight || 0);
+    return short > 0 && short <= 480;
   }
 
   function coupleNamesParts() {

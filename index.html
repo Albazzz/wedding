@@ -22,7 +22,7 @@
       href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Great+Vibes&family=Outfit:wght@300;400;500;600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="css/style.css?v=names3" />
+    <link rel="stylesheet" href="css/style.css?v=hero10" />
   </head>
   <body class="intro-lock is-booting">
     <!-- Petals canvas -->
@@ -109,7 +109,15 @@
             Chúc mừng đến với lễ thành hôn
           </p>
           <h1 class="hero__names fade-up delay-1">
-            <span class="font-script soft-float" data-bind="coupleNames">Nguyễn Văn Quân & Thông Thị Tú Trâm</span>
+            <span
+              class="font-script soft-float couple-names-stack"
+              data-bind="coupleNames"
+              aria-label="Nguyễn Văn Quân & Thông Thị Tú Trâm"
+            >
+              <span class="couple-names-stack__line">Nguyễn Văn Quân</span>
+              <span class="couple-names-stack__joiner" aria-hidden="true">&</span>
+              <span class="couple-names-stack__line">Thông Thị Tú Trâm</span>
+            </span>
           </h1>
           <div class="hero__divider fade-up delay-2">
             <span class="ornament">❧</span>
@@ -433,9 +441,9 @@
     <!-- Heart fireworks (Three.js) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
-    <script src="js/config.js?v=names3"></script>
-    <script src="js/firebase-wishes.js?v=names3"></script>
-    <script src="js/card-editor.js?v=names3"></script>
-    <script src="js/app.js?v=names3"></script>
+    <script src="js/config.js?v=hero10"></script>
+    <script src="js/firebase-wishes.js?v=hero10"></script>
+    <script src="js/card-editor.js?v=hero10"></script>
+    <script src="js/app.js?v=hero10"></script>
   </body>
 </html>
