@@ -26,23 +26,14 @@
   let perfMode = "full";
 
   function detectPerfMode() {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      return "low";
-    }
-    const cores = navigator.hardwareConcurrency || 8;
-    /* deviceMemory often undefined on desktop — đừng default 4 (sẽ luôn low-power) */
-    const mem = navigator.deviceMemory;
-    const saveData = !!(navigator.connection && navigator.connection.saveData);
-    if (saveData || (mem != null && mem <= 2) || cores <= 2) return "low";
-    if ((mem != null && mem <= 4) || cores <= 4) return "balanced";
+    /* Không giới hạn theo CPU/RAM — luôn full FX */
     return "full";
   }
 
   function applyPerfMode() {
-    perfMode = detectPerfMode();
-    /* Chỉ tắt FX nặng khi low — balanced vẫn chạy soft-float / ambient / glass */
-    document.body.classList.toggle("is-low-power", perfMode === "low");
-    document.body.dataset.perf = perfMode;
+    perfMode = "full";
+    document.body.classList.remove("is-low-power");
+    document.body.dataset.perf = "full";
   }
 
   /* ---------- Helpers ---------- */
